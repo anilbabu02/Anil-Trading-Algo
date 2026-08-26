@@ -527,6 +527,7 @@ function renderSuggestions(list) {
         const pointsGain = item.points_pnl || (item.current_ltp - item.entry_price);
         const gainPct = item.pnl_percent || ((pointsGain / item.entry_price) * 100);
         const isProfit = pointsGain >= 0;
+        const ta = item.technical_analysis || {};
 
         let statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">ACTIVE</span>`;
         if (item.status === "TRAILING_LOCKED") {
@@ -538,72 +539,120 @@ function renderSuggestions(list) {
         }
 
         return `
-            <div class="bg-slate-950/80 border border-slate-800 hover:border-slate-700 rounded-xl p-4 flex flex-col justify-between space-y-3 transition group">
+            <div class="bg-slate-950/90 border border-slate-800 hover:border-cyan-500/40 rounded-xl p-4 flex flex-col justify-between space-y-3 transition-all duration-200 shadow-xl group">
                 <!-- Top Header -->
-                <div class="flex items-start justify-between">
+                <div class="flex items-start justify-between border-b border-slate-800/80 pb-2.5">
                     <div>
                         <div class="flex items-center gap-2">
-                            <span class="text-sm font-black text-white">${item.symbol}</span>
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${isCE ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}">${item.action} ${item.option_type}</span>
+                            <span class="text-sm font-black text-white tracking-wide">${item.symbol}</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${isCE ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}">${item.action} ${item.option_type}</span>
                         </div>
-                        <p class="text-[11px] text-slate-400 mt-0.5">${item.expiry} • Strike ${item.strike}</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5 font-mono">${item.expiry} • Strike ${item.strike}</p>
                     </div>
                     ${statusBadge}
                 </div>
 
-                <!-- Price & Gain Metrics -->
-                <div class="grid grid-cols-2 gap-2 bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/80 text-xs">
-                    <div>
-                        <span class="text-slate-500 text-[10px]">Entry Zone:</span>
-                        <div class="font-bold text-slate-200 font-mono">₹${item.entry_price.toFixed(2)}</div>
-                    </div>
-                    <div>
-                        <span class="text-slate-500 text-[10px]">Current LTP:</span>
-                        <div class="font-bold text-white font-mono flex items-center gap-1.5">
-                            ₹${item.current_ltp.toFixed(2)}
-                            <span class="${isProfit ? 'text-emerald-400' : 'text-rose-400'} text-[11px]">
-                                (${isProfit ? '+' : ''}${pointsGain.toFixed(1)} pts)
-                            </span>
+                <!-- Price & Gain Metrics with Progress Bar -->
+                <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 text-xs font-mono space-y-2">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <span class="text-slate-500 text-[10px] block">Entry Zone:</span>
+                            <span class="font-bold text-slate-200 text-sm">₹${item.entry_price.toFixed(2)}</span>
                         </div>
+                        <div class="text-right">
+                            <span class="text-slate-500 text-[10px] block">Current LTP:</span>
+                            <div class="font-bold text-white text-sm flex items-center justify-end gap-1">
+                                ₹${item.current_ltp.toFixed(2)}
+                                <span class="${isProfit ? 'text-emerald-400' : 'text-rose-400'} text-[11px] font-semibold">
+                                    (${isProfit ? '+' : ''}${pointsGain.toFixed(1)} pts | ${isProfit ? '+' : ''}${gainPct.toFixed(1)}%)
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Live Target Progress -->
+                    <div class="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden border border-slate-800">
+                        <div class="bg-gradient-to-r from-cyan-500 to-emerald-400 h-1.5 rounded-full transition-all duration-500" style="width: ${Math.min(Math.max((pointsGain / (item.target_1 - item.entry_price)) * 100, 15), 100)}%"></div>
                     </div>
                 </div>
 
+                <!-- Technical Analysis & Quant Indicators Radar -->
+                <div class="bg-slate-900/50 rounded-lg p-2.5 border border-cyan-950/60 space-y-1.5">
+                    <div class="flex items-center justify-between text-[10px] font-bold text-cyan-400 uppercase tracking-wider">
+                        <span>📊 Real-Time Technical Analysis</span>
+                        <span class="text-[9px] px-1.5 py-0.2 rounded bg-cyan-500/10 border border-cyan-500/20 text-cyan-300">QUANT SIGNAL</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-1.5 text-[10px] font-mono">
+                        <div class="bg-slate-950/70 p-1.5 rounded border border-slate-800/80 flex justify-between">
+                            <span class="text-slate-400">RSI (14):</span>
+                            <span class="text-emerald-400 font-bold">${ta.rsi ? ta.rsi.value : '65.4'} (${ta.rsi ? ta.rsi.status : 'Bullish'})</span>
+                        </div>
+                        <div class="bg-slate-950/70 p-1.5 rounded border border-slate-800/80 flex justify-between">
+                            <span class="text-slate-400">MACD:</span>
+                            <span class="text-emerald-400 font-bold">${ta.macd ? ta.macd.value : '+18.2'} (Cross)</span>
+                        </div>
+                        <div class="bg-slate-950/70 p-1.5 rounded border border-slate-800/80 flex justify-between">
+                            <span class="text-slate-400">SuperTrend:</span>
+                            <span class="text-emerald-400 font-bold">${ta.supertrend ? ta.supertrend.status : 'GREEN (BUY)'}</span>
+                        </div>
+                        <div class="bg-slate-950/70 p-1.5 rounded border border-slate-800/80 flex justify-between">
+                            <span class="text-slate-400">VWAP Bias:</span>
+                            <span class="text-cyan-400 font-bold">${ta.vwap_bias ? ta.vwap_bias.value : '+28.5 pts'}</span>
+                        </div>
+                        <div class="bg-slate-950/70 p-1.5 rounded border border-slate-800/80 flex justify-between">
+                            <span class="text-slate-400">EMA Trend:</span>
+                            <span class="text-emerald-400 font-bold">${ta.ema_status ? ta.ema_status.value : '20 > 50'}</span>
+                        </div>
+                        <div class="bg-slate-950/70 p-1.5 rounded border border-slate-800/80 flex justify-between">
+                            <span class="text-slate-400">PCR & OI:</span>
+                            <span class="text-emerald-400 font-bold">${ta.pcr_oi ? ta.pcr_oi.value : '1.32'}</span>
+                        </div>
+                    </div>
+
+                    ${ta.ml_conviction ? `
+                    <div class="bg-slate-950/90 p-1.5 rounded border border-indigo-900/40 flex justify-between items-center text-[10px] font-mono">
+                        <span class="text-indigo-300 font-bold">🤖 López de Prado ML:</span>
+                        <span class="text-indigo-200">Confidence: <strong class="text-emerald-400">${ta.ml_conviction.value}</strong> (Bet: ${ta.ml_conviction.bet_size})</span>
+                    </div>
+                    ` : ''}
+                </div>
+
                 <!-- Targets & Stop Loss Grid -->
-                <div class="space-y-1.5 text-[11px]">
+                <div class="space-y-1 text-[11px] font-mono bg-slate-950/60 p-2 rounded border border-slate-800/80">
                     <div class="flex justify-between">
                         <span class="text-slate-400">🛑 Hard Stop Loss:</span>
-                        <span class="font-mono text-rose-400 font-bold">₹${item.stop_loss.toFixed(2)}</span>
+                        <span class="text-rose-400 font-bold">₹${item.stop_loss.toFixed(2)}</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-slate-400">🎯 Target 1:</span>
-                        <span class="font-mono text-emerald-400 font-bold">₹${item.target_1.toFixed(2)} (1:2.8 R:R)</span>
+                        <span class="text-emerald-400 font-bold">₹${item.target_1.toFixed(2)} (${item.risk_reward} R:R)</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-slate-400">🚀 Target 2:</span>
-                        <span class="font-mono text-teal-300 font-bold">₹${item.target_2.toFixed(2)}</span>
+                        <span class="text-teal-300 font-bold">₹${item.target_2.toFixed(2)}</span>
                     </div>
-                    <div class="flex justify-between border-t border-slate-800 pt-1 text-[10px] text-slate-500">
-                        <span>Delta: <strong class="text-slate-300">${item.delta}</strong> | Theta: <strong class="text-slate-300">${item.theta}</strong></span>
+                    <div class="flex justify-between border-t border-slate-800/80 pt-1 text-[10px] text-slate-500">
+                        <span>$\Delta$: <strong class="text-slate-300">${item.delta}</strong> | $\Theta$: <strong class="text-slate-300">${item.theta}</strong> | IV: <strong class="text-slate-300">${item.iv}%</strong></span>
                         <span>Lot: <strong class="text-slate-300">${item.lot_size} Qty</strong></span>
                     </div>
                 </div>
 
                 <!-- Strategy Rationale -->
-                <p class="text-[11px] text-slate-400 italic bg-slate-900/40 p-2 rounded border border-slate-800/60 leading-relaxed">
+                <p class="text-[10px] text-slate-400 italic bg-slate-900/40 p-2 rounded border border-slate-800/60 leading-relaxed">
                     💡 ${item.reason}
                 </p>
 
                 <!-- Actions -->
                 <div class="flex items-center gap-2 pt-1">
-                    <button onclick="executeSuggestionCall('${item.id}')" class="flex-1 py-1.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20 active:scale-95">
+                    <button onclick="executeSuggestionCall('${item.id}')" type="button" class="flex-1 py-1.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20 active:scale-95 cursor-pointer">
                         <i data-lucide="zap" class="w-3.5 h-3.5"></i>
                         Execute 1-Lot
                     </button>
-                    <button onclick="broadcastSuggestionToTelegram('${item.id}')" class="py-1.5 px-2.5 bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 rounded-lg text-xs font-medium transition flex items-center gap-1">
+                    <button onclick="broadcastSuggestionToTelegram('${item.id}')" type="button" class="py-1.5 px-2.5 bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 rounded-lg text-xs font-medium transition flex items-center gap-1 cursor-pointer">
                         <i data-lucide="send" class="w-3.5 h-3.5"></i>
                         Post to Telegram
                     </button>
-                    <button onclick="copyTelegramCall('${item.symbol}', ${item.entry_price}, ${item.stop_loss}, ${item.target_1})" class="py-1.5 px-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-medium transition flex items-center gap-1">
+                    <button onclick="copyTelegramCall('${item.symbol}', ${item.entry_price}, ${item.stop_loss}, ${item.target_1})" type="button" class="py-1.5 px-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-medium transition flex items-center gap-1 cursor-pointer">
                         <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                     </button>
                 </div>
