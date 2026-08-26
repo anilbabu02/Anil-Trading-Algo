@@ -172,8 +172,38 @@ window.onInstrumentSelectChange = onInstrumentSelectChange;
 window.selectInstrument = selectInstrument;
 window.selectTimeframe = selectTimeframe;
 
+function isIndianMarketOpen() {
+    const now = new Date();
+    // Convert to Indian Standard Time (UTC+5:30)
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const ist = new Date(utc + (3600000 * 5.5));
+    const day = ist.getDay(); // 0 = Sun, 6 = Sat
+    if (day === 0 || day === 6) return false;
+    const timeInMin = ist.getHours() * 60 + ist.getMinutes();
+    // Indian Market Hours: 09:15 AM (555 min) to 03:30 PM (930 min)
+    return timeInMin >= 555 && timeInMin <= 930;
+}
+
+function updateMarketStatusBadge() {
+    const badge = document.getElementById("live-tick-indicator");
+    if (!badge) return;
+    const isOpen = isIndianMarketOpen();
+    if (isOpen) {
+        badge.className = "px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 font-semibold";
+        badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> LIVE (09:15-15:30)`;
+    } else {
+        badge.className = "px-1.5 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1 font-semibold";
+        badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> 🔒 CLOSED (Settlement Close)`;
+    }
+}
+
 function initLivePriceTicker() {
+    updateMarketStatusBadge();
     setInterval(() => {
+        updateMarketStatusBadge();
+        // If market is closed, freeze index at official settlement close price
+        if (!isIndianMarketOpen()) return;
+
         if (!candles || candles.length === 0) return;
         const lastCandle = candles[candles.length - 1];
         const step = (Math.random() - 0.49) * (currentLTP > 50000 ? 3.5 : 1.2);
