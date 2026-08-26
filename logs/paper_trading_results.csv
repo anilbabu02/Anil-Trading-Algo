@@ -1,0 +1,1 @@
+Trade_ID,Timestamp,Symbol,Strategy,Direction,Quantity,Entry_Price,Exit_Price,Duration_Mins,Exit_Reason,Gross_PnL,Charges_Taxes,Net_PnL,Compounded_Capital,Broker

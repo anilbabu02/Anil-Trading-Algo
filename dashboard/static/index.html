@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANIL BABU TRADES | Institutional Algo Trading Terminal</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-emerald-500 selection:text-white">
+
+    <!-- Top Navigation Bar -->
+    <header class="border-b border-slate-800/80 bg-slate-900/90 backdrop-blur sticky top-0 z-50 px-6 py-3.5 flex flex-wrap justify-between items-center gap-4">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                <i data-lucide="trending-up" class="w-6 h-6 text-white"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="font-black text-lg tracking-wider text-white">ANIL BABU TRADES</h1>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">v2.0 LIVE</span>
+                </div>
+                <p class="text-xs text-slate-400">Institutional Multi-Strategy Derivatives & Cash Engine</p>
+            </div>
+        </div>
+
+        <!-- Middle Market Regime Indicator -->
+        <div class="flex items-center gap-4 bg-slate-950/80 border border-slate-800 px-4 py-1.5 rounded-lg">
+            <div class="flex items-center gap-2">
+                <span class="relative flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                </span>
+                <span class="text-xs text-slate-400">Market Regime:</span>
+                <span id="regime-badge" class="text-xs font-semibold text-emerald-400">TRENDING BULL</span>
+            </div>
+            <div class="h-4 w-px bg-slate-800"></div>
+            <div class="text-xs text-slate-400 flex items-center gap-1.5">
+                <i data-lucide="clock" class="w-3.5 h-3.5 text-slate-400"></i>
+                <span id="clock" class="font-mono text-slate-200">09:15:00 IST</span>
+            </div>
+        </div>
+
+        <!-- Quick Controls -->
+        <div class="flex items-center gap-3">
+            <button onclick="triggerSimulateStep()" class="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs font-medium transition">
+                <i data-lucide="play-circle" class="w-4 h-4"></i>
+                Simulate 5m Candle
+            </button>
+            <button onclick="triggerPremarketDigest()" class="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 rounded-lg text-xs font-medium transition">
+                <i data-lucide="send" class="w-4 h-4"></i>
+                8:30 AM Digest
+            </button>
+            <button onclick="triggerEmergencySquareOff()" class="flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold shadow-lg shadow-rose-600/20 transition active:scale-95">
+                <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                1-Click Square-Off
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
+
+        <!-- Top Metric KPI Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+            <!-- Starting Capital -->
+            <div class="bg-slate-900/60 border border-slate-800/80 p-4 rounded-xl relative overflow-hidden">
+                <div class="text-xs text-slate-400 font-medium flex justify-between">
+                    <span>Starting Capital</span>
+                    <i data-lucide="wallet" class="w-4 h-4 text-slate-500"></i>
+                </div>
+                <div class="text-xl font-bold text-slate-100 mt-2">₹10,800.00</div>
+                <div class="text-[11px] text-slate-500 mt-1">Strict 1 Lot Allocation</div>
+            </div>
+
+            <!-- Compounded Capital -->
+            <div class="bg-slate-900/60 border border-slate-800/80 p-4 rounded-xl relative overflow-hidden">
+                <div class="text-xs text-slate-400 font-medium flex justify-between">
+                    <span>Compounded Portfolio</span>
+                    <i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i>
+                </div>
+                <div id="compounded-cap" class="text-xl font-bold text-emerald-400 mt-2">₹8,37,624.26</div>
+                <div class="text-[11px] text-emerald-500/80 mt-1">+7,655% (5-Yr Verified)</div>
+            </div>
+
+            <!-- Today's Realized P&L -->
+            <div class="bg-slate-900/60 border border-slate-800/80 p-4 rounded-xl relative overflow-hidden">
+                <div class="text-xs text-slate-400 font-medium flex justify-between">
+                    <span>Today's Realized P&L</span>
+                    <i data-lucide="circle-dollar-sign" class="w-4 h-4 text-teal-400"></i>
+                </div>
+                <div id="today-pnl" class="text-xl font-bold text-slate-100 mt-2">+₹0.00</div>
+                <div class="text-[11px] text-slate-500 mt-1">Net after statutory charges</div>
+            </div>
+
+            <!-- Win Rate -->
+            <div class="bg-slate-900/60 border border-slate-800/80 p-4 rounded-xl relative overflow-hidden">
+                <div class="text-xs text-slate-400 font-medium flex justify-between">
+                    <span>Verified Win Rate</span>
+                    <i data-lucide="award" class="w-4 h-4 text-amber-400"></i>
+                </div>
+                <div class="text-xl font-bold text-amber-400 mt-2">64.6%</div>
+                <div class="text-[11px] text-slate-500 mt-1">1,885 Benchmark Trades</div>
+            </div>
+
+            <!-- Daily Trades Guardrail -->
+            <div class="bg-slate-900/60 border border-slate-800/80 p-4 rounded-xl relative overflow-hidden">
+                <div class="text-xs text-slate-400 font-medium flex justify-between">
+                    <span>Daily Trades</span>
+                    <i data-lucide="activity" class="w-4 h-4 text-indigo-400"></i>
+                </div>
+                <div id="daily-trades" class="text-xl font-bold text-indigo-300 mt-2">0 / 2</div>
+                <div class="text-[11px] text-slate-500 mt-1">Max 2 Trades Hard Rule</div>
+            </div>
+
+            <!-- Circuit Breaker Status -->
+            <div class="bg-slate-900/60 border border-slate-800/80 p-4 rounded-xl relative overflow-hidden">
+                <div class="text-xs text-slate-400 font-medium flex justify-between">
+                    <span>Circuit Breaker</span>
+                    <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+                </div>
+                <div id="circuit-breaker-status" class="text-xl font-bold text-emerald-400 mt-2">ACTIVE (OK)</div>
+                <div class="text-[11px] text-slate-500 mt-1">-₹1,000 Daily Hard Stop</div>
+            </div>
+        </div>
+
+        <!-- Middle Section: Chart & Institutional Microstructure -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Chart Container (2 cols) -->
+            <div class="lg:col-span-2 bg-slate-900/70 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
+                <!-- Header with Fyers-Style Instrument Dropdown & Timeframe Selection -->
+                <div class="flex flex-wrap items-center justify-between border-b border-slate-800/80 pb-3 mb-2 gap-3">
+                    <!-- Instrument Switcher Dropdown & Live Badges -->
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-950 border border-cyan-500/40 shadow-lg">
+                            <span class="text-cyan-400 text-sm font-bold">⚡</span>
+                            <label for="instrument-select" class="sr-only">Select Instrument</label>
+                            <select id="instrument-select" onchange="onInstrumentSelectChange(this.value)" class="bg-slate-950 text-white font-bold font-mono text-xs focus:outline-none cursor-pointer pr-2 border-none">
+                                <option value="NIFTY" selected>NIFTY50 Index</option>
+                                <option value="BANKNIFTY">NIFTYBANK Index</option>
+                                <option value="SENSEX">SENSEX Index</option>
+                                <option value="BANKEX">BANKEX Index</option>
+                                <option value="FINNIFTY">FINNIFTY Index</option>
+                            </select>
+                        </div>
+
+                        <!-- Live LTP and Change Display Badge -->
+                        <div class="flex items-center gap-2 font-mono bg-slate-950/80 px-3 py-1.5 rounded-lg border border-slate-800">
+                            <span id="active-symbol-ltp" class="font-bold text-xs text-white">24,207.75</span>
+                            <span id="active-symbol-change" class="text-[11px] font-semibold text-rose-400">-126.80 (-0.52%)</span>
+                        </div>
+                    </div>
+
+                    <!-- Timeframe Selector Controls -->
+                    <div class="flex items-center gap-2 text-xs font-mono">
+                        <span class="text-slate-500 text-[11px]">Timeframe:</span>
+                        <select id="timeframe-select" onchange="selectTimeframe(this.value)" class="bg-slate-950 text-emerald-400 font-bold font-mono text-xs px-2.5 py-1 rounded-lg border border-emerald-500/40 focus:outline-none cursor-pointer">
+                            <option value="1m">1m (Scalp)</option>
+                            <option value="3m">3m (Momentum)</option>
+                            <option value="5m" selected>5m (Squeeze VWAP)</option>
+                            <option value="15m">15m (ORB Setup)</option>
+                            <option value="1h">1h (Hourly)</option>
+                            <option value="1D">1D (Daily)</option>
+                        </select>
+                        
+                        <div class="hidden sm:flex items-center gap-1">
+                            <button onclick="selectTimeframe('1m')" id="tf-btn-1m" type="button" class="tf-btn px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 hover:text-white transition">1m</button>
+                            <button onclick="selectTimeframe('3m')" id="tf-btn-3m" type="button" class="tf-btn px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 hover:text-white transition">3m</button>
+                            <button onclick="selectTimeframe('5m')" id="tf-btn-5m" type="button" class="tf-btn px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-bold transition">5m</button>
+                            <button onclick="selectTimeframe('15m')" id="tf-btn-15m" type="button" class="tf-btn px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 hover:text-white transition">15m</button>
+                            <button onclick="selectTimeframe('1h')" id="tf-btn-1h" type="button" class="tf-btn px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 hover:text-white transition">1h</button>
+                            <button onclick="selectTimeframe('1D')" id="tf-btn-1D" type="button" class="tf-btn px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 hover:text-white transition">1D</button>
+                        </div>
+                        <span class="px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-[10px] font-semibold flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span> VWAP
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Live Candlestick HUD Bar -->
+                <div class="flex flex-wrap items-center justify-between gap-4 text-xs font-mono py-1.5 px-3 bg-slate-950 rounded-lg border border-blue-900/40 text-slate-400 mb-2">
+                    <div class="flex items-center gap-4">
+                        <span><strong id="hud-symbol-tag" class="text-white">NIFTY</strong>: <strong id="hud-price" class="text-rose-400">24,207.75</strong></span>
+                        <span>O: <strong id="hud-open" class="text-slate-200">24,235.00</strong></span>
+                        <span>H: <strong id="hud-high" class="text-emerald-400">24,260.00</strong></span>
+                        <span>L: <strong id="hud-low" class="text-rose-400">24,195.00</strong></span>
+                        <span>C: <strong id="hud-close" class="text-rose-400">24,207.75</strong></span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span>VWAP: <strong id="hud-vwap" class="text-cyan-400">24,222.10</strong></span>
+                        <span id="live-tick-indicator" class="px-1.5 py-0.2 rounded text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> LIVE
+                        </span>
+                    </div>
+                </div>
+
+                <div class="h-80 relative rounded-lg overflow-hidden border border-blue-950/60 bg-[#02040a]">
+                    <canvas id="livePriceChart" class="w-full h-full cursor-crosshair"></canvas>
+                </div>
+                <div class="mt-3 pt-2.5 border-t border-slate-800/80 flex flex-wrap items-center justify-between text-xs text-slate-400">
+                    <div class="flex items-center gap-4 font-mono">
+                        <span>ATR: <strong id="metric-atr" class="text-slate-200">14.8 pts</strong></span>
+                        <span>RVOL: <strong id="metric-rvol" class="text-emerald-400">1.45x</strong> (Expansion Surge)</span>
+                        <span>ADX (14): <strong id="metric-adx" class="text-indigo-400">26.4</strong> (Strong Trend)</span>
+                    </div>
+                    <span id="metric-squeeze-badge" class="text-emerald-400 font-semibold flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Squeeze State: FIRED BREAKOUT (CE Enabled)
+                    </span>
+                </div>
+            </div>
+
+            <!-- Right Institutional Microstructure & Flow Radar (1 col) -->
+            <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-5 space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="gauge" class="w-5 h-5 text-cyan-400"></i>
+                        <h2 class="font-bold text-sm tracking-wide text-slate-200">INSTITUTIONAL RADAR</h2>
+                    </div>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">FII/DII FLOW</span>
+                </div>
+
+                <!-- Radar Items -->
+                <div class="space-y-3 text-xs">
+                    <div class="flex justify-between items-center bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/60">
+                        <span class="text-slate-400">GIFT Nifty Overnight</span>
+                        <span class="font-semibold text-emerald-400">+48.00 pts (24,860.00)</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/60">
+                        <span class="text-slate-400">S&P 500 US Macro</span>
+                        <span class="font-semibold text-emerald-400">+0.45% (5,980.20)</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/60">
+                        <span class="text-slate-400">FII Index Futures Long</span>
+                        <span class="font-semibold text-emerald-400">58.4% (Net Long)</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/60">
+                        <span class="text-slate-400">DII Cash Net Buy</span>
+                        <span class="font-semibold text-emerald-400">+₹1,180.20 Cr</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/60">
+                        <span class="text-slate-400">Theta Shield Protection</span>
+                        <span class="font-semibold text-teal-400">3-Layer Active (45m Exit)</span>
+                    </div>
+                </div>
+
+                <div class="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 leading-relaxed">
+                    <strong>Institutional Execution Bias:</strong> FII buying + Price > VWAP + ADX > 20. ATM Call (CE) buying authorized. Put options strictly blocked.
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Tabs Section -->
+        <div class="bg-slate-900/70 border border-slate-800 rounded-xl overflow-hidden">
+            <!-- Tabs Header -->
+            <div class="flex flex-wrap border-b border-slate-800 bg-slate-950/60 px-4">
+                <button onclick="switchTab('suggestions')" id="tab-btn-suggestions" class="tab-btn px-4 py-3 text-xs font-semibold text-emerald-400 border-b-2 border-emerald-400 transition flex items-center gap-1.5">
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                    Option Suggestion Calls
+                    <span id="suggestions-badge" class="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">3 LIVE</span>
+                </button>
+                <button onclick="switchTab('news')" id="tab-btn-news" class="tab-btn px-4 py-3 text-xs font-semibold text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition flex items-center gap-1.5">
+                    <i data-lucide="newspaper" class="w-3.5 h-3.5"></i>
+                    Real-Time Trade News & Macro
+                    <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                </button>
+                <button onclick="switchTab('positions')" id="tab-btn-positions" class="tab-btn px-4 py-3 text-xs font-semibold text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition">
+                    Live Active Positions
+                </button>
+                <button onclick="switchTab('backtest')" id="tab-btn-backtest" class="tab-btn px-4 py-3 text-xs font-semibold text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition">
+                    5-Year Backtest Lab
+                </button>
+                <button onclick="switchTab('trades')" id="tab-btn-trades" class="tab-btn px-4 py-3 text-xs font-semibold text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition">
+                    SQLite Ledger & CSV
+                </button>
+                <button onclick="switchTab('telegram')" id="tab-btn-telegram" class="tab-btn px-4 py-3 text-xs font-semibold text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition flex items-center gap-1.5">
+                    <i data-lucide="send" class="w-3.5 h-3.5 text-cyan-400"></i>
+                    Telegram Desks (@anil_konda_bot)
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                </button>
+            </div>
+
+            <!-- Tab Content: Option Suggestion Calls Desk -->
+            <div id="tab-suggestions" class="p-5 space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-950/70 p-3.5 rounded-xl border border-emerald-950/40">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                            <i data-lucide="zap" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-xs text-white">Algorithmic Option Recommendation Desk</h3>
+                            <p class="text-[11px] text-slate-400">High-conviction quant signals with mathematical risk-to-reward guardrails.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 text-xs">
+                        <span class="text-slate-400">Filter:</span>
+                        <button onclick="filterSuggestions('ALL')" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-white font-medium text-[11px] transition">ALL</button>
+                        <button onclick="filterSuggestions('NIFTY')" class="px-2.5 py-1 rounded bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 font-medium text-[11px] transition">NIFTY</button>
+                        <button onclick="filterSuggestions('BANKNIFTY')" class="px-2.5 py-1 rounded bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 font-medium text-[11px] transition">BANK NIFTY</button>
+                    </div>
+                </div>
+
+                <!-- Suggestions Grid -->
+                <div id="suggestions-cards-container" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- Tab Content: Real-Time Trade News & Macro Wire -->
+            <div id="tab-news" class="p-5 space-y-4 hidden">
+                <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-950/70 p-3.5 rounded-xl border border-blue-950/40">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center">
+                            <i data-lucide="radio" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-xs text-white">Institutional Market Intelligence & News Wire</h3>
+                            <p class="text-[11px] text-slate-400">Real-time macro catalysts, FII/DII institutional order flows, and sector alerts.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="triggerBreakingNews()" class="px-3 py-1.5 bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition">
+                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                            Fetch Live Breaking News
+                        </button>
+                    </div>
+                </div>
+
+                <!-- News Stream Container -->
+                <div id="news-stream-container" class="space-y-3">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- Tab Content: Active Positions -->
+            <div id="tab-positions" class="p-5 space-y-4 hidden">
+                <div id="positions-container" class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-950/80 text-slate-400 uppercase text-[10px] tracking-wider">
+                            <tr>
+                                <th class="p-3">Position ID</th>
+                                <th class="p-3">Symbol / Strike</th>
+                                <th class="p-3">Strategy</th>
+                                <th class="p-3">Direction</th>
+                                <th class="p-3">Qty</th>
+                                <th class="p-3">Entry ₹</th>
+                                <th class="p-3">LTP ₹</th>
+                                <th class="p-3">Stop Loss</th>
+                                <th class="p-3">Target</th>
+                                <th class="p-3">Trailing SL</th>
+                                <th class="p-3">Unrealized P&L</th>
+                            </tr>
+                        </thead>
+                        <tbody id="positions-table-body">
+                            <tr>
+                                <td colspan="11" class="text-center py-6 text-slate-500">
+                                    No open positions. Scanner active for Squeeze / ORB setups.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab Content: 5-Year Backtesting Lab -->
+            <div id="tab-backtest" class="p-5 space-y-6 hidden">
+                <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
+                    <div>
+                        <h3 class="font-bold text-sm text-slate-200">5-Year Verified Quantitative Benchmark (2021 – 2026)</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Tested on 94,215 continuous 5-minute candles with statutory Indian taxes & broker fees.</p>
+                    </div>
+                    <button onclick="executeBacktest()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition flex items-center gap-2">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i> Run Backtest Engine
+                    </button>
+                </div>
+
+                <!-- Annual Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-950 text-slate-400 uppercase text-[10px] tracking-wider">
+                            <tr>
+                                <th class="p-3">Year</th>
+                                <th class="p-3">Trades</th>
+                                <th class="p-3">Wins</th>
+                                <th class="p-3">Losses</th>
+                                <th class="p-3">Win %</th>
+                                <th class="p-3">Net Annual P&L (₹)</th>
+                                <th class="p-3">Compounded Capital (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="backtest-table-body" class="divide-y divide-slate-800">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab Content: Trades History -->
+            <div id="tab-trades" class="p-5 space-y-4 hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-950 text-slate-400 uppercase text-[10px] tracking-wider">
+                            <tr>
+                                <th class="p-3">Trade ID</th>
+                                <th class="p-3">Symbol</th>
+                                <th class="p-3">Strategy</th>
+                                <th class="p-3">Exit Reason</th>
+                                <th class="p-3">Entry Price</th>
+                                <th class="p-3">Exit Price</th>
+                                <th class="p-3">Duration</th>
+                                <th class="p-3">Gross PnL</th>
+                                <th class="p-3">Taxes & Fees</th>
+                                <th class="p-3">Net Realized PnL</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trades-table-body" class="divide-y divide-slate-800">
+                            <tr>
+                                <td colspan="10" class="text-center py-6 text-slate-500">
+                                    No closed trades yet today.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab Content: Telegram Broadcast Stream -->
+            <div id="tab-telegram" class="p-5 space-y-4 hidden">
+                <!-- Bot Connection Status Card -->
+                <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-950/80 border border-slate-800 rounded-xl p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center border border-cyan-500/30">
+                            <i data-lucide="bot" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-bold text-sm text-white">AKbot (<a href="https://t.me/anil_konda_bot" target="_blank" class="text-cyan-400 hover:underline">@anil_konda_bot</a>)</h3>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> BOT TOKEN CONNECTED
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-400 font-mono mt-0.5">Bot ID: 8770074328 • API Token: 8770074328:AAEg...0X4</p>
+                        </div>
+                    </div>
+
+                    <!-- Dispatch Test Alert Button & Scheduler Pill -->
+                    <div class="flex flex-wrap items-center gap-3">
+                        <div class="px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-mono flex items-center gap-2">
+                            <i data-lucide="clock" class="w-3.5 h-3.5 text-indigo-400"></i>
+                            <span>⏰ Daily Auto-Broadcast: <strong class="text-white">08:30 AM IST</strong> (Active)</span>
+                        </div>
+                        <button onclick="sendTestTelegramAlert()" class="px-3.5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-lg shadow-cyan-600/20 active:scale-95">
+                            <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                            Send Test Alert Now
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2-Step Telegram Channel / User Connect Box -->
+                <div class="bg-slate-950/60 border border-blue-900/40 rounded-xl p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="link-2" class="w-4 h-4 text-cyan-400"></i>
+                            <h4 class="font-bold text-xs text-slate-200 uppercase tracking-wider">Connect Your Telegram Chat / Channel to Receive Live Alerts</h4>
+                        </div>
+                        <span id="telegram-active-chat-badge" class="text-xs font-mono text-emerald-400 font-semibold">Desk 1 Target Chat: 7181036522 (Connected)</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center text-xs">
+                        <div class="md:col-span-8 flex items-center gap-2">
+                            <span class="text-slate-400 shrink-0 font-medium">Chat ID or @Channel:</span>
+                            <input type="text" id="custom-chat-id-input" placeholder="e.g. 123456789 or -100123456789 or @mychannel" class="w-full bg-slate-900 border border-slate-800 focus:border-cyan-500 rounded-lg px-3 py-1.5 text-slate-200 font-mono text-xs focus:outline-none">
+                            <button onclick="saveCustomChatId()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shrink-0 transition flex items-center gap-1">
+                                <i data-lucide="check" class="w-3.5 h-3.5"></i> Save & Test
+                            </button>
+                        </div>
+                        <div class="md:col-span-4 flex justify-end">
+                            <button onclick="autoDetectTelegramChat()" class="w-full py-1.5 px-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/20 active:scale-95">
+                                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> 🔍 Auto-Detect My Chat ID
+                            </button>
+                        </div>
+                    </div>
+
+                    <p class="text-[11px] text-slate-400 bg-slate-900/50 p-2.5 rounded-lg border border-slate-800/80 leading-relaxed">
+                        👉 <strong>How to connect in 5 seconds:</strong> Open <a href="https://t.me/anil_konda_bot" target="_blank" class="text-cyan-400 underline font-semibold">@anil_konda_bot</a> in Telegram $\rightarrow$ click <strong>Start</strong> (or send <em>hi</em>) $\rightarrow$ then click <strong>"🔍 Auto-Detect My Chat ID"</strong> above. Your system will immediately detect your account and send a welcome confirmation!
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Desk 1: Trading Signals -->
+                    <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 space-y-3">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
+                                <span class="text-xs font-bold text-slate-200">Desk 1 — AB_Trades (VIP Signals)</span>
+                            </div>
+                            <span class="text-[10px] text-slate-500 font-mono">ID: -5117093594</span>
+                        </div>
+                        <div id="telegram-desk1-feed" class="space-y-2 text-xs font-mono text-slate-300 max-h-60 overflow-y-auto">
+                            <div class="p-2.5 rounded bg-slate-900 border border-slate-800">
+                                ⚡ [09:30:15] ANIL BABU TRADES VIP SIGNAL: BUY NIFTY_24500_CE @ ₹120.00 | SL: ₹105.00 | Target: ₹155.00 (1:2.8 R:R) | 1 Lot (65 Qty)
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Desk 2: Macro & News Desk -->
+                    <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 space-y-3">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="globe" class="w-4 h-4 text-cyan-400"></i>
+                                <span class="text-xs font-bold text-slate-200">Desk 2 — AB_Market_Analysis (Macro)</span>
+                            </div>
+                            <span class="text-[10px] text-slate-500 font-mono">ID: -5484599984</span>
+                        </div>
+                        <div id="telegram-desk2-feed" class="space-y-2 text-xs font-mono text-slate-300 max-h-60 overflow-y-auto">
+                            <div class="p-2.5 rounded bg-slate-900 border border-slate-800">
+                                🌐 [08:30:00] 08:30 AM MACRO DIGEST: GIFT Nifty +48 pts | S&P 500 +0.45% | FII Futures 58% Long | Bias: BULLISH ON PULLBACKS
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 bg-slate-950 py-4 px-6 text-center text-xs text-slate-500 flex flex-wrap justify-between items-center gap-2">
+        <div>Anil Babu Trades Algo Trading System &copy; 2026 | Confidential Institutional Architecture</div>
+        <div class="flex items-center gap-4">
+            <span>Brokers: Fyers v3 • Kotak Neo • Zerodha • Angel One</span>
+            <span class="text-emerald-400 font-medium">Port 8000 REST/WS Connected</span>
+        </div>
+    </footer>
+    <script src="/static/app.js?v=6.0"></script>
+</body>
+</html>
