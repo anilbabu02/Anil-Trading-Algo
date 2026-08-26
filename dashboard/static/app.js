@@ -163,17 +163,6 @@ function selectTimeframe(tf) {
     const selectEl = document.getElementById("timeframe-select");
     if (selectEl && selectEl.value !== tf) selectEl.value = tf;
 
-    ['1m', '3m', '5m', '15m', '1h', '1D'].forEach(t => {
-        const btn = document.getElementById(`tf-btn-${t}`);
-        if (btn) {
-            if (t === tf) {
-                btn.className = "tf-btn px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-bold transition";
-            } else {
-                btn.className = "tf-btn px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-400 hover:text-white transition";
-            }
-        }
-    });
-
     candles = generateCandlesFor(currentInstrument, tf);
     if (chartRenderFunc) chartRenderFunc();
 }
