@@ -172,58 +172,67 @@ window.onInstrumentSelectChange = onInstrumentSelectChange;
 window.selectInstrument = selectInstrument;
 window.selectTimeframe = selectTimeframe;
 
-function isIndianMarketOpen() {
-    const now = new Date();
-    // Convert to Indian Standard Time (UTC+5:30)
-    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-    const ist = new Date(utc + (3600000 * 5.5));
-    const day = ist.getDay(); // 0 = Sun, 6 = Sat
-    if (day === 0 || day === 6) return false;
-    const timeInMin = ist.getHours() * 60 + ist.getMinutes();
-    // Indian Market Hours: 09:15 AM (555 min) to 03:30 PM (930 min)
-    return timeInMin >= 555 && timeInMin <= 930;
-}
-
-function updateMarketStatusBadge() {
-    const badge = document.getElementById("live-tick-indicator");
-    if (!badge) return;
-    const isOpen = isIndianMarketOpen();
-    if (isOpen) {
-        badge.className = "px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 font-semibold";
-        badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> LIVE (09:15-15:30)`;
-    } else {
-        badge.className = "px-1.5 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1 font-semibold";
-        badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> 🔒 CLOSED (Settlement Close)`;
-    }
-}
-
 function initLivePriceTicker() {
-    updateMarketStatusBadge();
-    setInterval(() => {
-        updateMarketStatusBadge();
-        // If market is closed, freeze index at official settlement close price
-        if (!isIndianMarketOpen()) return;
+    const badge = document.getElementById("live-tick-indicator");
+    if (badge) {
+        badge.className = "px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 font-semibold";
+        badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> LIVE TICKS`;
+    }
 
+    setInterval(() => {
         if (!candles || candles.length === 0) return;
         const lastCandle = candles[candles.length - 1];
-        const step = (Math.random() - 0.49) * (currentLTP > 50000 ? 3.5 : 1.2);
+        const stepRatio = currentLTP > 50000 ? 3.5 : (currentLTP > 30000 ? 2.0 : 0.85);
+        const tickDelta = (Math.random() - 0.49) * stepRatio;
         
-        lastCandle.c = Math.round((lastCandle.c + step) * 100) / 100;
+        lastCandle.c = Math.round((lastCandle.c + tickDelta) * 100) / 100;
         if (lastCandle.c > lastCandle.h) lastCandle.h = lastCandle.c;
         if (lastCandle.c < lastCandle.l) lastCandle.l = lastCandle.c;
 
         currentLTP = lastCandle.c;
+        const info = INSTRUMENTS_DATA[currentInstrument] || INSTRUMENTS_DATA.NIFTY;
+        const prevClose = info.basePrice - info.change;
+        currentChange = currentLTP - prevClose;
+        currentChangePct = (currentChange / prevClose) * 100;
+
+        const isPositive = currentChange >= 0;
+        const changeStr = `${isPositive ? '+' : ''}${currentChange.toFixed(2)} (${isPositive ? '+' : ''}${currentChangePct.toFixed(2)}%)`;
+
         const ltpEl = document.getElementById("active-symbol-ltp");
-        if (ltpEl) {
-            ltpEl.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const changeEl = document.getElementById("active-symbol-change");
+        if (ltpEl) ltpEl.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (changeEl) {
+            changeEl.textContent = changeStr;
+            changeEl.className = `text-[11px] font-semibold ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`;
         }
+
         const hudP = document.getElementById("hud-price");
+        const hudO = document.getElementById("hud-open");
+        const hudH = document.getElementById("hud-high");
+        const hudL = document.getElementById("hud-low");
         const hudC = document.getElementById("hud-close");
-        if (hudP && hoverIndex === -1) hudP.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        if (hudC && hoverIndex === -1) hudC.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const hudV = document.getElementById("hud-vwap");
+
+        if (hoverIndex === -1) {
+            if (hudP) {
+                hudP.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                hudP.className = isPositive ? "text-emerald-400 font-bold" : "text-rose-400 font-bold";
+            }
+            if (hudO) hudO.textContent = lastCandle.o.toFixed(2);
+            if (hudH) hudH.textContent = lastCandle.h.toFixed(2);
+            if (hudL) hudL.textContent = lastCandle.l.toFixed(2);
+            if (hudC) {
+                hudC.textContent = currentLTP.toFixed(2);
+                hudC.className = lastCandle.c >= lastCandle.o ? "text-emerald-400 font-bold" : "text-rose-400 font-bold";
+            }
+            if (hudV) {
+                const liveVWAP = candles.reduce((acc, cur) => acc + cur.c, 0) / candles.length;
+                hudV.textContent = liveVWAP.toFixed(2);
+            }
+        }
 
         if (chartRenderFunc) chartRenderFunc();
-    }, 2000);
+    }, 1000);
 }
 
 function initChart() {
