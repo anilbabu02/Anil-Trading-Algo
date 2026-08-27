@@ -79,92 +79,113 @@ function generateCandlesFor(symbol, tf) {
     return arr;
 }
 
+async function loadRealChartHistory(symbol, tf) {
+    try {
+        const res = await fetch(`/api/chart-history?symbol=${symbol || currentInstrument}&resolution=${tf || currentTimeframe}`);
+        const data = await res.json();
+        if (data.status === "SUCCESS" && data.candles && data.candles.length > 0) {
+            candles = data.candles;
+            const latest = candles[candles.length - 1];
+            currentLTP = latest.c;
+            
+            const info = INSTRUMENTS_DATA[currentInstrument] || INSTRUMENTS_DATA.NIFTY;
+            const prevClose = info.basePrice - info.change;
+            currentChange = currentLTP - prevClose;
+            currentChangePct = (currentChange / prevClose) * 100;
+
+            const chartTitle = document.getElementById("chart-title-text");
+            if (chartTitle) chartTitle.textContent = `${data.fyers_symbol ? data.fyers_symbol.replace('NSE:', '').replace('BSE:', '') : currentInstrument} • ${currentTimeframe} • NSE`;
+
+            const domSell = document.getElementById("dom-sell-price");
+            const domBuy = document.getElementById("dom-buy-price");
+            if (domSell) domSell.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            if (domBuy) domBuy.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            const hudO = document.getElementById("hud-open");
+            const hudH = document.getElementById("hud-high");
+            const hudL = document.getElementById("hud-low");
+            const hudC = document.getElementById("hud-close");
+            const hudChg = document.getElementById("hud-change-text");
+            if (hudO) hudO.textContent = latest.o.toFixed(2);
+            if (hudH) hudH.textContent = latest.h.toFixed(2);
+            if (hudL) hudL.textContent = latest.l.toFixed(2);
+            if (hudC) hudC.textContent = latest.c.toFixed(2);
+            if (hudChg) {
+                const isPos = currentChange >= 0;
+                hudChg.textContent = `${isPos ? '+' : ''}${currentChange.toFixed(2)} (${isPos ? '+' : ''}${currentChangePct.toFixed(2)}%)`;
+                hudChg.className = isPos ? "text-emerald-400 font-semibold" : "text-rose-400 font-semibold";
+            }
+
+            if (chartRenderFunc) chartRenderFunc();
+            return;
+        }
+    } catch (e) {
+        console.error("Load Chart History Error:", e);
+    }
+
+    // Fallback if network offline
+    candles = generateCandlesFor(symbol || currentInstrument, tf || currentTimeframe);
+    if (chartRenderFunc) chartRenderFunc();
+}
+
 let candles = generateCandlesFor("NIFTY", "5m");
 let hoverIndex = -1;
 let renderFramePending = false;
 let chartRenderFunc = null;
 
-function toggleInstrumentDropdown(e) {
-    if (e) {
-        e.stopPropagation();
-        e.preventDefault();
-    }
-    const menu = document.getElementById("instrument-dropdown-menu");
-    if (menu) {
-        menu.classList.toggle("hidden");
-    }
-}
-
-// Close dropdown on outside click
-document.addEventListener("click", (e) => {
-    const btn = document.getElementById("instrument-dropdown-btn");
-    const menu = document.getElementById("instrument-dropdown-menu");
-    if (btn && menu && !btn.contains(e.target) && !menu.contains(e.target)) {
-        menu.classList.add("hidden");
-    }
-});
-
-function onInstrumentSelectChange(symbol) {
-    const info = INSTRUMENTS_DATA[symbol] || INSTRUMENTS_DATA.NIFTY;
-    selectInstrument(symbol, info.name, info.basePrice, info.change, info.changePct);
-}
-
-function selectInstrument(symbol, name, ltp, change, changePct) {
+async function onInstrumentSelectChange(symbol) {
     currentInstrument = symbol;
-    currentLTP = ltp;
-    currentChange = change;
-    currentChangePct = changePct;
+    const info = INSTRUMENTS_DATA[symbol] || INSTRUMENTS_DATA.NIFTY;
+    currentLTP = info.basePrice;
+    currentChange = info.change;
+    currentChangePct = info.changePct;
 
     const selectEl = document.getElementById("instrument-select");
     if (selectEl && selectEl.value !== symbol) selectEl.value = symbol;
 
-    const titleEl = document.getElementById("active-symbol-title");
-    const ltpEl = document.getElementById("active-symbol-ltp");
-    const changeEl = document.getElementById("active-symbol-change");
-    const tagEl = document.getElementById("hud-symbol-tag");
+    const chartTitle = document.getElementById("chart-title-text");
+    if (chartTitle) chartTitle.textContent = `${info.name.toUpperCase()} • ${currentTimeframe} • NSE`;
 
-    const isPositive = change >= 0;
-    const changeStr = `${isPositive ? '+' : ''}${change.toFixed(2)} (${isPositive ? '+' : ''}${changePct.toFixed(2)}%)`;
-
-    if (titleEl) titleEl.textContent = name;
-    if (ltpEl) ltpEl.textContent = ltp.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    if (changeEl) {
-        changeEl.textContent = changeStr;
-        changeEl.className = `text-[11px] font-semibold ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`;
-    }
-    if (tagEl) tagEl.textContent = symbol;
-
-    // Update metrics
-    const info = INSTRUMENTS_DATA[symbol] || INSTRUMENTS_DATA.NIFTY;
     const atrEl = document.getElementById("metric-atr");
     const rvolEl = document.getElementById("metric-rvol");
     const adxEl = document.getElementById("metric-adx");
     const sqEl = document.getElementById("metric-squeeze-badge");
 
     if (atrEl) atrEl.textContent = `${info.atr} pts`;
-    if (rvolEl) rvolEl.textContent = `${info.rvol}x`;
-    if (adxEl) adxEl.textContent = `${info.adx}`;
-    if (sqEl) sqEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Squeeze State: ${info.squeeze}`;
+    if (rvolEl) rvolEl.textContent = `${info.rvol}x Surge`;
+    if (adxEl) adxEl.textContent = `${info.adx} (Trending)`;
+    if (sqEl) sqEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Squeeze State: ${info.squeeze}`;
 
-    // Close custom menu if present
-    const menu = document.getElementById("instrument-dropdown-menu");
-    if (menu) {
-        menu.classList.add("hidden");
-        menu.style.display = "none";
-    }
-
-    // Rebuild candles & redraw
-    candles = generateCandlesFor(symbol, currentTimeframe);
-    if (chartRenderFunc) chartRenderFunc();
+    await loadRealChartHistory(symbol, currentTimeframe);
+    fetchRealFyersQuotes();
 }
 
-function selectTimeframe(tf) {
-    currentTimeframe = tf;
-    const selectEl = document.getElementById("timeframe-select");
-    if (selectEl && selectEl.value !== tf) selectEl.value = tf;
+async function selectInstrument(symbol, name, ltp, change, changePct) {
+    await onInstrumentSelectChange(symbol);
+}
 
-    candles = generateCandlesFor(currentInstrument, tf);
-    if (chartRenderFunc) chartRenderFunc();
+async function selectTimeframe(tf) {
+    currentTimeframe = tf;
+
+    // Update active button styling
+    ["1m", "5m", "15m", "1h", "1D"].forEach(t => {
+        const btn = document.getElementById(`tf-${t}`);
+        if (btn) {
+            if (t === tf) {
+                btn.className = "px-1.5 py-0.5 rounded text-[11px] font-bold text-blue-400 bg-blue-500/10 border border-blue-500/30";
+            } else {
+                btn.className = "px-1.5 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white";
+            }
+        }
+    });
+
+    const chartTitle = document.getElementById("chart-title-text");
+    if (chartTitle) {
+        const info = INSTRUMENTS_DATA[currentInstrument] || INSTRUMENTS_DATA.NIFTY;
+        chartTitle.textContent = `${info.name.toUpperCase()} • ${tf} • NSE`;
+    }
+
+    await loadRealChartHistory(currentInstrument, tf);
 }
 
 // Global window bindings
@@ -177,12 +198,6 @@ async function fetchRealFyersQuotes() {
         const res = await fetch("/api/live-quotes");
         const data = await res.json();
         if (data.status === "SUCCESS" && data.is_live && data.quotes) {
-            const badge = document.getElementById("live-tick-indicator");
-            if (badge) {
-                badge.className = "px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 font-semibold";
-                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> 🟢 FYERS LIVE`;
-            }
-
             // Update all instruments with real live exchange data
             for (const [key, q] of Object.entries(data.quotes)) {
                 if (INSTRUMENTS_DATA[key]) {
@@ -201,45 +216,35 @@ async function fetchRealFyersQuotes() {
                 const isPositive = currentChange >= 0;
                 const changeStr = `${isPositive ? '+' : ''}${currentChange.toFixed(2)} (${isPositive ? '+' : ''}${currentChangePct.toFixed(2)}%)`;
 
-                const ltpEl = document.getElementById("active-symbol-ltp");
-                const changeEl = document.getElementById("active-symbol-change");
-                if (ltpEl) ltpEl.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                if (changeEl) {
-                    changeEl.textContent = changeStr;
-                    changeEl.className = `text-[11px] font-semibold ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`;
-                }
+                const domSell = document.getElementById("dom-sell-price");
+                const domBuy = document.getElementById("dom-buy-price");
+                if (domSell) domSell.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                if (domBuy) domBuy.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
                 if (candles && candles.length > 0) {
                     const lastCandle = candles[candles.length - 1];
                     lastCandle.c = currentLTP;
                     if (currentLTP > lastCandle.h) lastCandle.h = currentLTP;
                     if (currentLTP < lastCandle.l) lastCandle.l = currentLTP;
-                    if (activeQ.high && activeQ.high > lastCandle.h) lastCandle.h = activeQ.high;
-                    if (activeQ.low && activeQ.low < lastCandle.l) lastCandle.l = activeQ.low;
                 }
 
-                const hudP = document.getElementById("hud-price");
                 const hudO = document.getElementById("hud-open");
                 const hudH = document.getElementById("hud-high");
                 const hudL = document.getElementById("hud-low");
                 const hudC = document.getElementById("hud-close");
-                const hudV = document.getElementById("hud-vwap");
+                const hudChg = document.getElementById("hud-change-text");
 
                 if (hoverIndex === -1) {
-                    if (hudP) {
-                        hudP.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                        hudP.className = isPositive ? "text-emerald-400 font-bold" : "text-rose-400 font-bold";
-                    }
                     if (hudO) hudO.textContent = (activeQ.open || currentLTP).toFixed(2);
                     if (hudH) hudH.textContent = (activeQ.high || currentLTP).toFixed(2);
                     if (hudL) hudL.textContent = (activeQ.low || currentLTP).toFixed(2);
                     if (hudC) {
                         hudC.textContent = currentLTP.toFixed(2);
-                        hudC.className = isPositive ? "text-emerald-400 font-bold" : "text-rose-400 font-bold";
+                        hudC.className = isPositive ? "text-emerald-400 font-semibold" : "text-rose-400 font-semibold";
                     }
-                    if (hudV && candles && candles.length > 0) {
-                        const liveVWAP = candles.reduce((acc, cur) => acc + cur.c, 0) / candles.length;
-                        hudV.textContent = liveVWAP.toFixed(2);
+                    if (hudChg) {
+                        hudChg.textContent = changeStr;
+                        hudChg.className = isPositive ? "text-emerald-400 font-semibold" : "text-rose-400 font-semibold";
                     }
                 }
 
@@ -250,38 +255,10 @@ async function fetchRealFyersQuotes() {
     } catch (e) {
         console.error("Fetch Fyers Live Quotes Error:", e);
     }
-
-    // Fallback simulation micro-tick
-    if (!candles || candles.length === 0) return;
-    const lastCandle = candles[candles.length - 1];
-    const stepRatio = currentLTP > 50000 ? 3.5 : (currentLTP > 30000 ? 2.0 : 0.85);
-    const tickDelta = (Math.random() - 0.49) * stepRatio;
-    
-    lastCandle.c = Math.round((lastCandle.c + tickDelta) * 100) / 100;
-    if (lastCandle.c > lastCandle.h) lastCandle.h = lastCandle.c;
-    if (lastCandle.c < lastCandle.l) lastCandle.l = lastCandle.c;
-
-    currentLTP = lastCandle.c;
-    const info = INSTRUMENTS_DATA[currentInstrument] || INSTRUMENTS_DATA.NIFTY;
-    const prevClose = info.basePrice - info.change;
-    currentChange = currentLTP - prevClose;
-    currentChangePct = (currentChange / prevClose) * 100;
-
-    const isPositive = currentChange >= 0;
-    const changeStr = `${isPositive ? '+' : ''}${currentChange.toFixed(2)} (${isPositive ? '+' : ''}${currentChangePct.toFixed(2)}%)`;
-
-    const ltpEl = document.getElementById("active-symbol-ltp");
-    const changeEl = document.getElementById("active-symbol-change");
-    if (ltpEl) ltpEl.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    if (changeEl) {
-        changeEl.textContent = changeStr;
-        changeEl.className = `text-[11px] font-semibold ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`;
-    }
-
-    if (chartRenderFunc) chartRenderFunc();
 }
 
 function initLivePriceTicker() {
+    loadRealChartHistory(currentInstrument, currentTimeframe);
     fetchRealFyersQuotes();
     setInterval(fetchRealFyersQuotes, 1500);
 }

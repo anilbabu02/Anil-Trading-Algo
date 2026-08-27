@@ -164,6 +164,63 @@ def get_live_quotes() -> Dict[str, Any]:
 
     return {"status": "SUCCESS", "is_live": bool(data_map), "quotes": data_map}
 
+@app.get("/api/chart-history")
+def get_chart_history(symbol: str = "NIFTY", resolution: str = "5") -> Dict[str, Any]:
+    """
+    Fetches official live historical intraday candlesticks from Fyers API v3.
+    """
+    import httpx
+    sym_map = {
+        "NIFTY": "NSE:NIFTY50-INDEX",
+        "BANKNIFTY": "NSE:NIFTYBANK-INDEX",
+        "SENSEX": "BSE:SENSEX-INDEX",
+        "BANKEX": "BSE:BANKEX-INDEX",
+        "FINNIFTY": "NSE:FINNIFTY-INDEX"
+    }
+    fyers_sym = sym_map.get(symbol.upper(), symbol)
+    res_str = resolution.replace("m", "").replace("D", "1D")
+    if res_str in ["1", "5", "15", "60", "D", "1D"]:
+        res_val = res_str
+    else:
+        res_val = "5"
+    
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    candles_list = []
+
+    try:
+        token_str = f"{settings.FYERS_APP_ID}:{settings.FYERS_ACCESS_TOKEN}"
+        headers = {"Authorization": token_str, "User-Agent": "Mozilla/5.0"}
+        url = f"https://api-t1.fyers.in/data/history?symbol={fyers_sym}&resolution={res_val}&date_format=1&range_from={today_str}&range_to={today_str}&cont_flag=1"
+        
+        with httpx.Client() as client:
+            resp = client.get(url, headers=headers, timeout=6.0)
+            data = resp.json()
+            if data.get("s") == "ok" and "candles" in data:
+                for c in data["candles"]:
+                    ts, o, h, l, cl, vol = c[0], c[1], c[2], c[3], c[4], c[5]
+                    dt = datetime.fromtimestamp(ts)
+                    time_str = dt.strftime("%H:%M")
+                    candles_list.append({
+                        "time": time_str,
+                        "o": round(float(o), 2),
+                        "h": round(float(h), 2),
+                        "l": round(float(l), 2),
+                        "c": round(float(cl), 2),
+                        "v": int(vol),
+                        "timestamp": ts
+                    })
+    except Exception as e:
+        print("Chart history error:", e)
+
+    return {
+        "status": "SUCCESS",
+        "symbol": symbol,
+        "fyers_symbol": fyers_sym,
+        "resolution": res_val,
+        "count": len(candles_list),
+        "candles": candles_list
+    }
+
 # ----------------- REAL-TIME NEWS & OPTION SUGGESTIONS ----------------- #
 
 @app.get("/api/news")
