@@ -62,7 +62,7 @@ class Settings(BaseSettings):
     # Broker Credentials: Fyers API v3
     FYERS_APP_ID: str = ""
     FYERS_SECRET_KEY: str = ""
-    FYERS_REDIRECT_URI: str = "http://localhost:8000/api/broker/fyers/callback"
+    FYERS_REDIRECT_URI: str = "http://127.0.0.1:8000/api/fyers/callback"
     FYERS_ACCESS_TOKEN: str = ""
 
     # Broker Credentials: Kotak Neo
