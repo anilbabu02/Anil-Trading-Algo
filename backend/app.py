@@ -6,7 +6,7 @@ from typing import Dict, Any, List, Optional
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, HTMLResponse
 from pydantic import BaseModel
 
 from config.settings import settings
@@ -407,6 +407,70 @@ async def simulate_market_step() -> Dict[str, Any]:
 
     result = await engine.process_market_update(data_feed.candles_df, symbol="NIFTY")
     return {"status": "SUCCESS", "engine_result": str(result), "latest_price": new_close}
+
+# ----------------- FYERS API v3 OAUTH CALLBACK ----------------- #
+
+@app.get("/api/fyers/callback", response_class=HTMLResponse)
+def fyers_oauth_callback(
+    auth_code: Optional[str] = None,
+    s: Optional[str] = None,
+    code: Optional[str] = None,
+    state: Optional[str] = None
+) -> str:
+    """
+    Fyers OAuth Redirect Callback Endpoint:
+    Receives auth_code from Fyers authorization server.
+    """
+    received_code = auth_code or code or ""
+    if not received_code:
+        return """
+        <!DOCTYPE html>
+        <html>
+        <head><title>Fyers OAuth Callback</title><script src="https://cdn.tailwindcss.com"></script></head>
+        <body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-4">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 text-center space-y-4">
+                <div class="w-12 h-12 rounded-full bg-rose-500/20 text-rose-400 mx-auto flex items-center justify-center text-xl font-bold">⚠️</div>
+                <h2 class="text-lg font-bold text-white">No Authorization Code Received</h2>
+                <p class="text-xs text-slate-400">Fyers authorization was cancelled or no auth code was returned in query parameters.</p>
+                <a href="/" class="inline-block px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold">← Return to Dashboard</a>
+            </div>
+        </body>
+        </html>
+        """
+
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Fyers OAuth Authorization Successful</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-emerald-500/30 rounded-2xl max-w-lg w-full p-6 space-y-4 text-center shadow-2xl">
+            <div class="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 mx-auto flex items-center justify-center text-xl font-bold">✓</div>
+            <h2 class="text-lg font-bold text-white">Fyers Authorization Code Generated!</h2>
+            <p class="text-xs text-slate-400">Your single-use authorization code from Fyers is ready:</p>
+            
+            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-left">
+                <label class="text-[10px] text-slate-500 font-mono block mb-1">AUTH_CODE:</label>
+                <textarea id="auth-code-box" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 font-mono text-xs text-cyan-300 focus:outline-none" rows="3" readonly>{received_code}</textarea>
+                <button onclick="navigator.clipboard.writeText(document.getElementById('auth-code-box').value); alert('Auth code copied to clipboard!');" class="w-full mt-2 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition">
+                    📋 Copy Auth Code
+                </button>
+            </div>
+
+            <div class="text-[11px] text-slate-400 bg-slate-950/60 p-3 rounded-lg border border-slate-800 text-left space-y-1">
+                <p>👉 <strong>Next Step:</strong> Paste this code into your terminal or Fyers Connect modal to exchange it for your 24-hour Access Token:</p>
+                <code class="text-emerald-400 font-mono block">python scripts/fyers_auth_login.py</code>
+            </div>
+
+            <div class="pt-2">
+                <a href="/" class="text-xs text-cyan-400 hover:underline">← Return to Anil Babu Trades Dashboard</a>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
 
 # ----------------- WEBSOCKET FEED ----------------- #
 
