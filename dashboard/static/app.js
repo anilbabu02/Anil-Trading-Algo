@@ -193,11 +193,32 @@ window.onInstrumentSelectChange = onInstrumentSelectChange;
 window.selectInstrument = selectInstrument;
 window.selectTimeframe = selectTimeframe;
 
+function updateFyersLiveHeaderBadge(isLive) {
+    const badge = document.getElementById("fyers-live-header-badge");
+    if (!badge) return;
+    if (isLive) {
+        badge.className = "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-sm shadow-emerald-500/10";
+        badge.innerHTML = `
+            <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span>Fyers Live Connected</span>
+        `;
+        badge.style.display = "flex";
+    } else {
+        badge.className = "hidden";
+        badge.style.display = "none";
+        badge.innerHTML = "";
+    }
+}
+
 async function fetchRealFyersQuotes() {
     try {
         const res = await fetch("/api/live-quotes");
         const data = await res.json();
         if (data.status === "SUCCESS" && data.is_live && data.quotes) {
+            updateFyersLiveHeaderBadge(true);
             // Update all instruments with real live exchange data
             for (const [key, q] of Object.entries(data.quotes)) {
                 if (INSTRUMENTS_DATA[key]) {
@@ -251,9 +272,12 @@ async function fetchRealFyersQuotes() {
                 if (chartRenderFunc) chartRenderFunc();
                 return;
             }
+        } else {
+            updateFyersLiveHeaderBadge(false);
         }
     } catch (e) {
         console.error("Fetch Fyers Live Quotes Error:", e);
+        updateFyersLiveHeaderBadge(false);
     }
 }
 
@@ -603,14 +627,7 @@ function renderSuggestions(list) {
         const ta = item.technical_analysis || {};
 
         let statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">ACTIVE</span>`;
-        if (item.is_top_winner) {
-            statusBadge = `
-                <div class="flex items-center gap-1.5 bg-gradient-to-r from-amber-500/25 via-yellow-500/30 to-amber-500/25 border border-amber-400/80 px-2.5 py-1 rounded-lg shadow-lg shadow-amber-500/20 ring-1 ring-amber-400/50">
-                    <img src="/static/trophy_winner.png" alt="Trophy" class="w-4 h-4 object-contain">
-                    <span class="text-[10px] font-black text-amber-300 uppercase tracking-wider">🏆 Golden Winner Trophy Badge (+${gainPct.toFixed(1)}%)</span>
-                </div>
-            `;
-        } else if (item.status === "TRAILING_LOCKED") {
+        if (item.status === "TRAILING_LOCKED") {
             statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">⚡ SL LOCKED (Cost+1)</span>`;
         } else if (item.status === "EXECUTED_LIVE") {
             statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">✓ EXECUTED IN BROKER</span>`;
@@ -1223,6 +1240,7 @@ async function checkFyersAccountStatus() {
         const dot = document.getElementById("fyers-modal-dot");
 
         if (data.is_connected && data.profile && data.profile.name) {
+            updateFyersLiveHeaderBadge(true);
             const name = data.profile.name;
             const fyId = data.profile.fy_id || "FAK28459";
             const cap = data.funds?.available_capital || 13376.15;
@@ -1231,6 +1249,7 @@ async function checkFyersAccountStatus() {
             if (userInfo) userInfo.textContent = `${name} (${fyId}) • Available: ₹${cap.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
             if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse";
         } else {
+            updateFyersLiveHeaderBadge(false);
             if (statusText) statusText.textContent = "⚪ Awaiting Authentication";
             if (statusText) statusText.className = "font-bold text-amber-400 block";
             if (userInfo) userInfo.textContent = "Click Step 1 below to generate your 1-Click login token.";
@@ -1238,6 +1257,7 @@ async function checkFyersAccountStatus() {
         }
     } catch (e) {
         console.error("Fyers Account Status Error:", e);
+        updateFyersLiveHeaderBadge(false);
     }
 }
 

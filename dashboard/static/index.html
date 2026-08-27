@@ -54,6 +54,9 @@
 
         <!-- Quick Controls -->
         <div class="flex items-center gap-2.5">
+            <!-- Fyers Live Connection Indicator (Green if live, no indication if disconnected) -->
+            <div id="fyers-live-header-badge" class="hidden"></div>
+
             <button onclick="openFyersConnectModal()" type="button" class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 border border-blue-500/30 rounded-lg text-xs font-semibold transition cursor-pointer">
                 <span>⚡</span>
                 Connect Fyers
@@ -584,6 +587,6 @@
         </div>
     </div>
 
-    <script src="/static/app.js?v=21.0"></script>
+    <script src="/static/app.js?v=22.0"></script>
 </body>
 </html>
