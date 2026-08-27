@@ -294,6 +294,10 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-2 text-xs">
+                        <button onclick="fetchOptionSuggestions()" type="button" class="flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/30 text-[11px] font-semibold transition cursor-pointer">
+                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                            Refresh Today's Signals
+                        </button>
                         <span class="text-slate-400">Filter:</span>
                         <button onclick="filterSuggestions('ALL')" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-white font-medium text-[11px] transition">ALL</button>
                         <button onclick="filterSuggestions('NIFTY')" class="px-2.5 py-1 rounded bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 font-medium text-[11px] transition">NIFTY</button>
@@ -579,6 +583,6 @@
         </div>
     </div>
 
-    <script src="/static/app.js?v=11.0"></script>
+    <script src="/static/app.js?v=12.0"></script>
 </body>
 </html>
