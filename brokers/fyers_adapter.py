@@ -263,7 +263,7 @@ class FyersAdapter(BaseBroker):
             if self.fyers_model:
                 return self.fyers_model.quotes(payload)
             with httpx.Client() as client:
-                res = client.get(f"{self.base_url}/quotes?symbols={symbol_str}", headers=self.auth_headers, timeout=5.0)
+                res = client.get(f"https://api-t1.fyers.in/data/quotes?symbols={symbol_str}", headers=self.auth_headers, timeout=5.0)
                 return res.json()
         except Exception as e:
             return {"s": "error", "message": str(e)}

@@ -172,67 +172,118 @@ window.onInstrumentSelectChange = onInstrumentSelectChange;
 window.selectInstrument = selectInstrument;
 window.selectTimeframe = selectTimeframe;
 
-function initLivePriceTicker() {
-    const badge = document.getElementById("live-tick-indicator");
-    if (badge) {
-        badge.className = "px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 font-semibold";
-        badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> LIVE TICKS`;
+async function fetchRealFyersQuotes() {
+    try {
+        const res = await fetch("/api/live-quotes");
+        const data = await res.json();
+        if (data.status === "SUCCESS" && data.is_live && data.quotes) {
+            const badge = document.getElementById("live-tick-indicator");
+            if (badge) {
+                badge.className = "px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 font-semibold";
+                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> 🟢 FYERS LIVE`;
+            }
+
+            // Update all instruments with real live exchange data
+            for (const [key, q] of Object.entries(data.quotes)) {
+                if (INSTRUMENTS_DATA[key]) {
+                    INSTRUMENTS_DATA[key].basePrice = q.ltp;
+                    INSTRUMENTS_DATA[key].change = q.change;
+                    INSTRUMENTS_DATA[key].changePct = q.change_pct;
+                }
+            }
+
+            const activeQ = data.quotes[currentInstrument];
+            if (activeQ) {
+                currentLTP = activeQ.ltp;
+                currentChange = activeQ.change;
+                currentChangePct = activeQ.change_pct;
+
+                const isPositive = currentChange >= 0;
+                const changeStr = `${isPositive ? '+' : ''}${currentChange.toFixed(2)} (${isPositive ? '+' : ''}${currentChangePct.toFixed(2)}%)`;
+
+                const ltpEl = document.getElementById("active-symbol-ltp");
+                const changeEl = document.getElementById("active-symbol-change");
+                if (ltpEl) ltpEl.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                if (changeEl) {
+                    changeEl.textContent = changeStr;
+                    changeEl.className = `text-[11px] font-semibold ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`;
+                }
+
+                if (candles && candles.length > 0) {
+                    const lastCandle = candles[candles.length - 1];
+                    lastCandle.c = currentLTP;
+                    if (currentLTP > lastCandle.h) lastCandle.h = currentLTP;
+                    if (currentLTP < lastCandle.l) lastCandle.l = currentLTP;
+                    if (activeQ.high && activeQ.high > lastCandle.h) lastCandle.h = activeQ.high;
+                    if (activeQ.low && activeQ.low < lastCandle.l) lastCandle.l = activeQ.low;
+                }
+
+                const hudP = document.getElementById("hud-price");
+                const hudO = document.getElementById("hud-open");
+                const hudH = document.getElementById("hud-high");
+                const hudL = document.getElementById("hud-low");
+                const hudC = document.getElementById("hud-close");
+                const hudV = document.getElementById("hud-vwap");
+
+                if (hoverIndex === -1) {
+                    if (hudP) {
+                        hudP.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        hudP.className = isPositive ? "text-emerald-400 font-bold" : "text-rose-400 font-bold";
+                    }
+                    if (hudO) hudO.textContent = (activeQ.open || currentLTP).toFixed(2);
+                    if (hudH) hudH.textContent = (activeQ.high || currentLTP).toFixed(2);
+                    if (hudL) hudL.textContent = (activeQ.low || currentLTP).toFixed(2);
+                    if (hudC) {
+                        hudC.textContent = currentLTP.toFixed(2);
+                        hudC.className = isPositive ? "text-emerald-400 font-bold" : "text-rose-400 font-bold";
+                    }
+                    if (hudV && candles && candles.length > 0) {
+                        const liveVWAP = candles.reduce((acc, cur) => acc + cur.c, 0) / candles.length;
+                        hudV.textContent = liveVWAP.toFixed(2);
+                    }
+                }
+
+                if (chartRenderFunc) chartRenderFunc();
+                return;
+            }
+        }
+    } catch (e) {
+        console.error("Fetch Fyers Live Quotes Error:", e);
     }
 
-    setInterval(() => {
-        if (!candles || candles.length === 0) return;
-        const lastCandle = candles[candles.length - 1];
-        const stepRatio = currentLTP > 50000 ? 3.5 : (currentLTP > 30000 ? 2.0 : 0.85);
-        const tickDelta = (Math.random() - 0.49) * stepRatio;
-        
-        lastCandle.c = Math.round((lastCandle.c + tickDelta) * 100) / 100;
-        if (lastCandle.c > lastCandle.h) lastCandle.h = lastCandle.c;
-        if (lastCandle.c < lastCandle.l) lastCandle.l = lastCandle.c;
+    // Fallback simulation micro-tick
+    if (!candles || candles.length === 0) return;
+    const lastCandle = candles[candles.length - 1];
+    const stepRatio = currentLTP > 50000 ? 3.5 : (currentLTP > 30000 ? 2.0 : 0.85);
+    const tickDelta = (Math.random() - 0.49) * stepRatio;
+    
+    lastCandle.c = Math.round((lastCandle.c + tickDelta) * 100) / 100;
+    if (lastCandle.c > lastCandle.h) lastCandle.h = lastCandle.c;
+    if (lastCandle.c < lastCandle.l) lastCandle.l = lastCandle.c;
 
-        currentLTP = lastCandle.c;
-        const info = INSTRUMENTS_DATA[currentInstrument] || INSTRUMENTS_DATA.NIFTY;
-        const prevClose = info.basePrice - info.change;
-        currentChange = currentLTP - prevClose;
-        currentChangePct = (currentChange / prevClose) * 100;
+    currentLTP = lastCandle.c;
+    const info = INSTRUMENTS_DATA[currentInstrument] || INSTRUMENTS_DATA.NIFTY;
+    const prevClose = info.basePrice - info.change;
+    currentChange = currentLTP - prevClose;
+    currentChangePct = (currentChange / prevClose) * 100;
 
-        const isPositive = currentChange >= 0;
-        const changeStr = `${isPositive ? '+' : ''}${currentChange.toFixed(2)} (${isPositive ? '+' : ''}${currentChangePct.toFixed(2)}%)`;
+    const isPositive = currentChange >= 0;
+    const changeStr = `${isPositive ? '+' : ''}${currentChange.toFixed(2)} (${isPositive ? '+' : ''}${currentChangePct.toFixed(2)}%)`;
 
-        const ltpEl = document.getElementById("active-symbol-ltp");
-        const changeEl = document.getElementById("active-symbol-change");
-        if (ltpEl) ltpEl.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        if (changeEl) {
-            changeEl.textContent = changeStr;
-            changeEl.className = `text-[11px] font-semibold ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`;
-        }
+    const ltpEl = document.getElementById("active-symbol-ltp");
+    const changeEl = document.getElementById("active-symbol-change");
+    if (ltpEl) ltpEl.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (changeEl) {
+        changeEl.textContent = changeStr;
+        changeEl.className = `text-[11px] font-semibold ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`;
+    }
 
-        const hudP = document.getElementById("hud-price");
-        const hudO = document.getElementById("hud-open");
-        const hudH = document.getElementById("hud-high");
-        const hudL = document.getElementById("hud-low");
-        const hudC = document.getElementById("hud-close");
-        const hudV = document.getElementById("hud-vwap");
+    if (chartRenderFunc) chartRenderFunc();
+}
 
-        if (hoverIndex === -1) {
-            if (hudP) {
-                hudP.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                hudP.className = isPositive ? "text-emerald-400 font-bold" : "text-rose-400 font-bold";
-            }
-            if (hudO) hudO.textContent = lastCandle.o.toFixed(2);
-            if (hudH) hudH.textContent = lastCandle.h.toFixed(2);
-            if (hudL) hudL.textContent = lastCandle.l.toFixed(2);
-            if (hudC) {
-                hudC.textContent = currentLTP.toFixed(2);
-                hudC.className = lastCandle.c >= lastCandle.o ? "text-emerald-400 font-bold" : "text-rose-400 font-bold";
-            }
-            if (hudV) {
-                const liveVWAP = candles.reduce((acc, cur) => acc + cur.c, 0) / candles.length;
-                hudV.textContent = liveVWAP.toFixed(2);
-            }
-        }
-
-        if (chartRenderFunc) chartRenderFunc();
-    }, 1000);
+function initLivePriceTicker() {
+    fetchRealFyersQuotes();
+    setInterval(fetchRealFyersQuotes, 1500);
 }
 
 function initChart() {
