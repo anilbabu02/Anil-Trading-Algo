@@ -59,10 +59,6 @@
                 <span>⚡</span>
                 <span id="connect-fyers-btn-text">Connect Fyers</span>
             </button>
-            <button onclick="triggerSimulateStep()" class="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs font-medium transition cursor-pointer">
-                <i data-lucide="play-circle" class="w-3.5 h-3.5"></i>
-                Simulate 5m
-            </button>
             <button onclick="triggerPremarketDigest()" class="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 rounded-lg text-xs font-medium transition cursor-pointer">
                 <i data-lucide="send" class="w-3.5 h-3.5"></i>
                 8:30 AM Digest
@@ -148,7 +144,7 @@
                 
                 <!-- 1. Top TradingView Toolbar -->
                 <div class="bg-[#131722] border-b border-[#1e222d] px-2.5 py-1.5 flex flex-wrap items-center justify-between gap-1.5 select-none text-xs text-slate-300">
-                    <div class="flex items-center gap-1">
+                    <div class="flex items-center gap-1.5">
                         <!-- Symbol Search Dropdown -->
                         <div class="flex items-center bg-[#1e222d] hover:bg-[#2a2e39] border border-[#2a2e39] hover:border-cyan-500/50 px-2 py-1 rounded-lg transition group">
                             <i data-lucide="search" class="w-3.5 h-3.5 text-cyan-400 mr-1.5 shrink-0"></i>
@@ -161,7 +157,6 @@
                             </select>
                             <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 pointer-events-none -ml-1.5 shrink-0"></i>
                         </div>
-                        <button class="p-1 hover:bg-[#2a2e39] rounded text-slate-400 hover:text-white" title="Compare"><i data-lucide="plus" class="w-3.5 h-3.5"></i></button>
 
                         <div class="h-3.5 w-px bg-[#2a2e39] mx-1"></div>
 
@@ -176,8 +171,10 @@
 
                         <div class="h-3.5 w-px bg-[#2a2e39] mx-1"></div>
 
-                        <button class="p-1 hover:bg-[#2a2e39] rounded text-slate-300" title="Candles"><i data-lucide="candlestick-chart" class="w-3.5 h-3.5 text-emerald-400"></i></button>
-                        <button class="px-1.5 py-0.5 hover:bg-[#2a2e39] rounded text-slate-300 flex items-center gap-1 text-[11px] font-semibold" title="Indicators"><span class="italic font-bold text-blue-400">fx</span> Indicators</button>
+                        <div class="flex items-center gap-1 text-[11px] font-semibold text-slate-300">
+                            <i data-lucide="candlestick-chart" class="w-3.5 h-3.5 text-emerald-400"></i>
+                            <span>Candles</span>
+                        </div>
 
                         <div class="h-3.5 w-px bg-[#2a2e39] mx-1"></div>
 
@@ -185,7 +182,7 @@
                         <button onclick="toggleAiActionsDropdown()" class="flex items-center gap-1 px-2 py-0.5 rounded bg-gradient-to-r from-purple-900/40 to-blue-900/40 border border-purple-500/40 text-purple-300 hover:text-white text-[10px] font-bold shadow cursor-pointer">
                             <span class="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse"></span>
                             <span>AI Actions</span>
-                            <span class="px-1 rounded bg-purple-500 text-[7px] text-white uppercase font-extrabold">New</span>
+                            <span class="px-1 rounded bg-purple-500 text-[7px] text-white uppercase font-extrabold">Active</span>
                         </button>
                     </div>
 
@@ -245,14 +242,11 @@
                                 </button>
                             </div>
 
-                            <!-- Indicator Legend (MA 9, 52W H/L) -->
+                            <!-- Indicator Legend (MA 9) -->
                             <div class="space-y-0.5 text-[10px] font-mono text-slate-400">
                                 <div class="flex items-center gap-1">
-                                    <span>MA 9 close 0</span>
+                                    <span>MA 9 close 0:</span>
                                     <strong id="hud-ma9-val" class="text-blue-400 font-bold">24,145.86</strong>
-                                </div>
-                                <div class="text-[9px] text-slate-500">
-                                    <span>52W H/L close close</span>
                                 </div>
                             </div>
                         </div>
@@ -271,21 +265,14 @@
                 </div>
 
                 <!-- 3. Bottom Time Range & Live Clock Bar -->
-                <div class="bg-[#131722] border-t border-[#1e222d] px-2.5 py-1 flex flex-wrap items-center justify-between text-[11px] text-slate-400 select-none">
-                    <div class="flex items-center gap-1.5">
-                        <button class="hover:text-white">1d</button>
-                        <button class="hover:text-white">5d</button>
-                        <button class="hover:text-white">1m</button>
-                        <button class="hover:text-white">3m</button>
-                        <button class="hover:text-white">6m</button>
-                        <button class="hover:text-white">YTD</button>
-                        <button class="hover:text-white">All</button>
+                <div class="bg-[#131722] border-t border-[#1e222d] px-3 py-1.5 flex items-center justify-between text-[11px] text-slate-400 select-none">
+                    <div class="flex items-center gap-2 font-mono text-[10px] text-slate-400">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span class="text-emerald-400 font-bold">NSE/BSE Real-Time Candlestick Feed</span>
                     </div>
-                    <div class="flex items-center gap-2 font-mono text-[10px]">
-                        <div id="chart-bottom-clock" class="text-slate-300">15:18:21 UTC+5:30</div>
-                        <div class="flex items-center gap-1 text-slate-400">
-                            <button class="text-blue-400 font-bold">auto</button>
-                        </div>
+                    <div class="flex items-center gap-3 font-mono text-[10px]">
+                        <div id="chart-bottom-clock" class="text-slate-300 font-semibold">15:18:21 UTC+5:30</div>
+                        <span class="text-cyan-400 font-bold bg-cyan-950/60 px-1.5 py-0.5 rounded border border-cyan-800/40">AUTO</span>
                     </div>
                 </div>
             </div>
@@ -602,6 +589,6 @@
         </div>
     </div>
 
-    <script src="/static/app.js?v=27.0"></script>
+    <script src="/static/app.js?v=28.0"></script>
 </body>
 </html>

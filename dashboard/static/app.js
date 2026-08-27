@@ -661,8 +661,13 @@ function renderSuggestions(list) {
         const isProfit = pointsGain >= 0;
         const ta = item.technical_analysis || {};
 
+        const maxGain = Math.max(...list.map(s => s.pnl_percent || (((s.points_pnl || (s.current_ltp - s.entry_price)) / s.entry_price) * 100)));
+        const isTopWinner = gainPct === maxGain && gainPct > 0;
+
         let statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">ACTIVE</span>`;
-        if (item.status === "TRAILING_LOCKED") {
+        if (isTopWinner) {
+            statusBadge = `<span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-gradient-to-r from-amber-500/20 via-yellow-500/30 to-amber-500/20 text-amber-300 border border-amber-400/60 shadow-md shadow-amber-500/10 flex items-center gap-1">🏆 Golden Winner Trophy Badge</span>`;
+        } else if (item.status === "TRAILING_LOCKED") {
             statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">⚡ SL LOCKED (Cost+1)</span>`;
         } else if (item.status === "EXECUTED_LIVE") {
             statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">✓ EXECUTED IN BROKER</span>`;
