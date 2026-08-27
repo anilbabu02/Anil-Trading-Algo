@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  algo-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: anil_babu_trading_algo
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - TRADING_MODE=LIVE
+      - FYERS_APP_ID=B1WDODIF33-200
+      - FYERS_SECRET_KEY=oj0saUpiJIuTiafE
+      - FYERS_REDIRECT_URI=https://127.0.0.1:8000/api/fyers/callback
+      - TELEGRAM_BOT_TOKEN=8770074328:AAEgsklpSfclcJWhuXhtQRqH9TioOeCz0X4
+      - TELEGRAM_CHAT_ID=7181036522
+      - DATABASE_PATH=/app/data/ledger.db
+    volumes:
+      - ./data:/app/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
