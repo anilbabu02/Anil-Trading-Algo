@@ -102,6 +102,26 @@ def get_positions() -> Dict[str, Any]:
 def get_trades(limit: int = 50) -> List[Dict[str, Any]]:
     return db.get_all_trades(limit=limit)
 
+class PlaceOrderRequest(BaseModel):
+    symbol: str
+    direction: str
+    quantity: int = 65
+    price: float = 0.0
+    order_type: str = "MARKET"
+
+@app.post("/api/trades/place")
+async def place_quick_trade(req: PlaceOrderRequest) -> Dict[str, Any]:
+    """Places a quick 1-click trade directly via broker engine."""
+    order_res = engine.broker.place_order(
+        symbol=req.symbol,
+        direction=req.direction,
+        quantity=req.quantity,
+        price=req.price,
+        order_type=req.order_type,
+        tag="ANIL_BABU_DOM"
+    )
+    return {"status": "SUCCESS", "order": order_res}
+
 @app.get("/api/events")
 def get_events(limit: int = 50) -> List[Dict[str, Any]]:
     return db.get_recent_events(limit=limit)
