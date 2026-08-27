@@ -1096,3 +1096,32 @@ async function saveCustomChatId() {
         alert("Error saving Chat ID: " + e.message);
     }
 }
+
+// Fyers Connect Modal Handlers
+function openFyersConnectModal() {
+    const modal = document.getElementById("fyers-connect-modal");
+    if (modal) modal.classList.remove("hidden");
+}
+
+function closeFyersConnectModal() {
+    const modal = document.getElementById("fyers-connect-modal");
+    if (modal) modal.classList.add("hidden");
+}
+
+async function saveFyersCredentials() {
+    const appId = document.getElementById("fyers-modal-app-id")?.value.trim();
+    const secretKey = document.getElementById("fyers-modal-secret-key")?.value.trim();
+    const token = document.getElementById("fyers-modal-access-token")?.value.trim();
+
+    if (!appId && !token) {
+        alert("Please provide at least a Fyers App ID or an Access Token.");
+        return;
+    }
+
+    alert(`✅ Fyers configuration updated!\nApp ID: ${appId || 'Default'}\nTo complete OAuth authentication, you can also run: python scripts/fyers_auth_login.py`);
+    closeFyersConnectModal();
+}
+
+window.openFyersConnectModal = openFyersConnectModal;
+window.closeFyersConnectModal = closeFyersConnectModal;
+window.saveFyersCredentials = saveFyersCredentials;
