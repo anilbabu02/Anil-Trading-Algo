@@ -605,9 +605,9 @@ function renderSuggestions(list) {
         let statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">ACTIVE</span>`;
         if (item.is_top_winner) {
             statusBadge = `
-                <div class="flex items-center gap-1.5 bg-gradient-to-r from-amber-500/20 via-yellow-500/25 to-amber-500/20 border border-amber-400/60 px-2 py-0.5 rounded-lg shadow-md shadow-amber-500/10">
-                    <img src="/static/trophy_winner.png" alt="Top Winner" class="w-4 h-4 object-contain">
-                    <span class="text-[10px] font-black text-amber-300 uppercase tracking-wider">Top Winner (+${gainPct.toFixed(1)}%)</span>
+                <div class="flex items-center gap-1.5 bg-gradient-to-r from-amber-500/25 via-yellow-500/30 to-amber-500/25 border border-amber-400/80 px-2.5 py-1 rounded-lg shadow-lg shadow-amber-500/20 ring-1 ring-amber-400/50">
+                    <img src="/static/trophy_winner.png" alt="Trophy" class="w-4 h-4 object-contain">
+                    <span class="text-[10px] font-black text-amber-300 uppercase tracking-wider">🏆 Golden Winner Trophy Badge (+${gainPct.toFixed(1)}%)</span>
                 </div>
             `;
         } else if (item.status === "TRAILING_LOCKED") {
