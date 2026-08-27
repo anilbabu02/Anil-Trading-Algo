@@ -235,7 +235,10 @@ async def generate_breaking_news() -> Dict[str, Any]:
 
 @app.get("/api/option-suggestions")
 def get_option_suggestions() -> List[Dict[str, Any]]:
-    return option_advisor.get_all_suggestions()
+    quotes_res = get_live_quotes()
+    live_map = quotes_res.get("quotes", {})
+    return option_advisor.get_all_suggestions(live_map)
+
 
 class ExecuteSuggestionRequest(BaseModel):
     suggestion_id: str

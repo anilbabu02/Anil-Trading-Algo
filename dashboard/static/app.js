@@ -260,7 +260,9 @@ async function fetchRealFyersQuotes() {
 function initLivePriceTicker() {
     loadRealChartHistory(currentInstrument, currentTimeframe);
     fetchRealFyersQuotes();
+    fetchOptionSuggestions();
     setInterval(fetchRealFyersQuotes, 1500);
+    setInterval(fetchOptionSuggestions, 3000);
 }
 
 function initChart() {
@@ -569,10 +571,12 @@ function handleWsMessage(msg) {
 
 async function fetchOptionSuggestions() {
     try {
-        const res = await fetch("/api/option-suggestions");
+        const res = await fetch(`/api/option-suggestions?t=${Date.now()}`);
         const data = await res.json();
-        allSuggestionsData = data;
-        renderSuggestions(data);
+        if (data && Array.isArray(data)) {
+            allSuggestionsData = data;
+            renderSuggestions(data);
+        }
     } catch (e) {
         console.error("Fetch Suggestions Error:", e);
     }
