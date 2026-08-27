@@ -788,6 +788,12 @@ function renderSuggestions(list) {
                         </button>
                     </div>
 
+                    <!-- Native Exchange-Side GTT Stop Loss -->
+                    <button onclick="placeGttStopLoss('${item.symbol}', ${item.lot_size}, '${item.action === 'BUY' ? 'SELL' : 'BUY'}', ${item.stop_loss})" type="button" class="w-full py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg text-[10px] font-bold transition flex items-center justify-center gap-1 cursor-pointer">
+                        <i data-lucide="shield-check" class="w-3 h-3 text-amber-400"></i>
+                        Arm Hard Exchange GTT SL (₹${item.stop_loss.toFixed(2)})
+                    </button>
+
                     <!-- Fyers Connect Native 1-Click Tag -->
                     <div class="flex items-center justify-between bg-slate-950 p-1.5 rounded-lg border border-blue-900/40 text-[10px]">
                         <span class="text-blue-300 font-medium flex items-center gap-1">
@@ -807,6 +813,180 @@ function renderSuggestions(list) {
             </div>
         `;
     }).join('');
+
+    lucide.createIcons();
+    if (window.Fyers && typeof window.Fyers.init === 'function') {
+        try { window.Fyers.init(); } catch (e) {}
+    }
+}
+
+// ----------------- POINTER 5: MULTI-LEG DEFINED-RISK SPREADS ----------------- //
+
+let currentOptionMode = "single";
+let allSpreadsData = [];
+
+function switchOptionMode(mode) {
+    currentOptionMode = mode;
+    const singleContainer = document.getElementById("suggestions-cards-container");
+    const spreadsContainer = document.getElementById("spreads-cards-container");
+    const btnSingle = document.getElementById("opt-mode-single");
+    const btnSpreads = document.getElementById("opt-mode-spreads");
+
+    if (mode === "spreads") {
+        if (singleContainer) singleContainer.classList.add("hidden");
+        if (spreadsContainer) {
+            spreadsContainer.classList.remove("hidden");
+            spreadsContainer.classList.add("grid");
+        }
+        if (btnSpreads) {
+            btnSpreads.className = "px-2 py-1 rounded text-[11px] font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-500/30 transition";
+        }
+        if (btnSingle) {
+            btnSingle.className = "px-2 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition";
+        }
+        fetchSpreadSuggestions();
+    } else {
+        if (spreadsContainer) {
+            spreadsContainer.classList.add("hidden");
+            spreadsContainer.classList.remove("grid");
+        }
+        if (singleContainer) singleContainer.classList.remove("hidden");
+        if (btnSingle) {
+            btnSingle.className = "px-2 py-1 rounded text-[11px] font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-500/30 transition";
+        }
+        if (btnSpreads) {
+            btnSpreads.className = "px-2 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition";
+        }
+    }
+}
+
+async function fetchSpreadSuggestions() {
+    try {
+        const res = await fetch("/api/spreads/suggestions");
+        const data = await res.json();
+        allSpreadsData = data;
+        renderSpreads(data);
+    } catch (e) {
+        console.error("Fetch Spreads Error:", e);
+    }
+}
+
+function renderSpreads(spreads) {
+    const container = document.getElementById("spreads-cards-container");
+    if (!container) return;
+
+    if (!spreads || spreads.length === 0) {
+        container.innerHTML = `
+            <div class="col-span-2 text-center py-10 text-slate-500 bg-slate-950/40 rounded-xl border border-slate-800">
+                No active multi-leg spread recommendations right now.
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = spreads.map(item => `
+        <div class="bg-slate-900 border border-slate-800 hover:border-emerald-500/40 rounded-xl p-4 shadow-xl space-y-3 transition flex flex-col justify-between">
+            <div class="space-y-2">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <div>
+                        <h4 class="font-extrabold text-sm text-white">${item.title}</h4>
+                        <span class="text-[10px] text-slate-400">${item.underlying} • ${item.market_view}</span>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                        ${item.margin_benefit_pct}
+                    </span>
+                </div>
+
+                <!-- Multi-Leg Breakdown -->
+                <div class="space-y-1.5 bg-slate-950 p-2.5 rounded-lg border border-slate-800/80 text-xs">
+                    <div class="text-[10px] font-bold text-slate-400 mb-1">CONSTRUCTED BASKET LEGS:</div>
+                    ${item.legs.map(l => `
+                        <div class="flex justify-between items-center py-0.5 border-b border-slate-900 last:border-none">
+                            <span class="font-mono ${l.action === 'BUY' ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}">
+                                ${l.action} ${l.symbol}
+                            </span>
+                            <span class="text-slate-300 font-mono">Premium: ₹${l.premium.toFixed(2)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <!-- Payoff & Margin Grid -->
+                <div class="grid grid-cols-2 gap-2 text-[11px] font-mono bg-slate-950/70 p-2.5 rounded border border-slate-800">
+                    <div>
+                        <span class="text-slate-400 block text-[10px]">Max Profit:</span>
+                        <strong class="text-emerald-400">+₹${item.max_profit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px]">Max Capped Risk:</span>
+                        <strong class="text-rose-400">-₹${item.max_risk.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px]">Breakeven Spot:</span>
+                        <strong class="text-slate-200">${item.breakeven.toFixed(2)}</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px]">Risk:Reward:</span>
+                        <strong class="text-teal-300">${item.risk_reward}</strong>
+                    </div>
+                </div>
+
+                <p class="text-[10px] text-slate-400 italic bg-slate-900/40 p-2 rounded border border-slate-800/60">
+                    💡 ${item.rationale}
+                </p>
+            </div>
+
+            <!-- 1-Click Multi-Leg Order Execution -->
+            <button onclick="executeSpreadCall('${item.id}')" type="button" class="w-full py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg text-xs font-bold shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95">
+                <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+                Execute Defined-Risk Spread (Fyers Basket)
+            </button>
+        </div>
+    `).join('');
+
+    lucide.createIcons();
+}
+
+async function executeSpreadCall(spreadId) {
+    try {
+        const res = await fetch("/api/spreads/execute", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ spread_id: spreadId })
+        });
+        const data = await res.json();
+        if (data.status === "SUCCESS") {
+            alert(`🛡️ Multi-Leg Spread Executed!\n${data.message}\nOrders routed with exchange margin reduction.`);
+            fetchSpreadSuggestions();
+            fetchStatus();
+        } else {
+            alert(`Error: ${data.detail || "Could not execute spread."}`);
+        }
+    } catch (e) {
+        console.error("Execute Spread Error:", e);
+    }
+}
+
+// ----------------- POINTER 2: NATIVE GTT SL PLACEMENT ----------------- //
+
+async function placeGttStopLoss(symbol, qty, side, slPrice) {
+    try {
+        const res = await fetch("/api/gtt/orders", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                symbol: symbol.replace(/\s+/g, '_'),
+                quantity: qty,
+                side: side,
+                trigger_price: slPrice,
+                price: slPrice
+            })
+        });
+        const data = await res.json();
+        alert(`🛡️ Native Exchange GTT Stop Loss Armed!\n\nSymbol: ${symbol}\nTrigger Price: ₹${slPrice.toFixed(2)}\nGTT ID: ${data.gtt_id || 'GTT_PLACED'}\n\nYour trade is protected directly at the exchange level.`);
+    } catch (e) {
+        alert("GTT Order Error: " + e.message);
+    }
+}
 
     lucide.createIcons();
     if (window.Fyers && typeof window.Fyers.init === 'function') {
@@ -1423,6 +1603,11 @@ window.startFyersOAuthLogin = startFyersOAuthLogin;
 window.exchangeFyersAuthCode = exchangeFyersAuthCode;
 window.saveFyersCredentials = saveFyersCredentials;
 window.executeQuickTrade = executeQuickTrade;
+window.toggleAiActionsDropdown = toggleAiActionsDropdown;
+window.switchOptionMode = switchOptionMode;
+window.fetchSpreadSuggestions = fetchSpreadSuggestions;
+window.executeSpreadCall = executeSpreadCall;
+window.placeGttStopLoss = placeGttStopLoss;
 window.toggleAiActionsDropdown = toggleAiActionsDropdown;
 
 

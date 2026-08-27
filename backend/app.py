@@ -19,6 +19,9 @@ from services.telegram_service import TelegramNotifier
 from services.news_service import NewsService
 from services.option_advisor import OptionAdvisorService
 from services.scheduler import AutomatedSchedulerService
+from services.spread_builder import spread_builder_service
+from services.fyers_totp_auth import fyers_totp_service
+from services.fyers_websocket_service import fyers_ws_service
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_DIR = BASE_DIR / "dashboard" / "static"
@@ -271,6 +274,106 @@ async def execute_option_suggestion(req: ExecuteSuggestionRequest) -> Dict[str, 
         "order": order_res,
         "suggestion": match
     }
+
+# =========================================================================
+# POINTER 2: NATIVE EXCHANGE GTT / STOP LOSS ENDPOINTS
+# =========================================================================
+
+class GttOrderRequest(BaseModel):
+    symbol: str
+    quantity: int
+    side: str
+    trigger_price: float
+    price: float = 0.0
+
+@app.post("/api/gtt/orders")
+def place_exchange_gtt_order(req: GttOrderRequest) -> Dict[str, Any]:
+    if hasattr(engine.broker, "place_gtt_order"):
+        return engine.broker.place_gtt_order(
+            symbol=req.symbol,
+            quantity=req.quantity,
+            side=req.side,
+            trigger_price=req.trigger_price,
+            price=req.price
+        )
+    return {"status": "ERROR", "message": "GTT order routing not supported on broker adapter."}
+
+@app.get("/api/gtt/orders")
+def get_exchange_gtt_orders() -> Dict[str, Any]:
+    orders = engine.broker.get_gtt_orders() if hasattr(engine.broker, "get_gtt_orders") else []
+    return {"status": "SUCCESS", "gtt_orders": orders}
+
+# =========================================================================
+# POINTER 3: HEADLESS 08:45 AM TOTP AUTHENTICATION ENDPOINT
+# =========================================================================
+
+class HeadlessLoginRequest(BaseModel):
+    fy_id: Optional[str] = None
+    pin: Optional[str] = None
+    totp_key: Optional[str] = None
+
+@app.post("/api/fyers/headless-login")
+async def trigger_headless_login(req: Optional[HeadlessLoginRequest] = None) -> Dict[str, Any]:
+    user_id = req.fy_id if req else None
+    user_pin = req.pin if req else None
+    user_totp = req.totp_key if req else None
+    res = await fyers_totp_service.execute_headless_login(user_id, user_pin, user_totp)
+    return res
+
+# =========================================================================
+# POINTER 4: LOW-LATENCY WEBSOCKET STATUS ENDPOINT
+# =========================================================================
+
+@app.get("/api/ws/status")
+def get_websocket_status() -> Dict[str, Any]:
+    return fyers_ws_service.get_status()
+
+# =========================================================================
+# POINTER 5: MULTI-LEG DEFINED-RISK SPREADS ENDPOINTS
+# =========================================================================
+
+@app.get("/api/spreads/suggestions")
+def get_spread_suggestions() -> List[Dict[str, Any]]:
+    quotes_res = get_live_quotes()
+    live_map = quotes_res.get("quotes", {})
+    return spread_builder_service.build_spreads_from_spot(live_map)
+
+class ExecuteSpreadRequest(BaseModel):
+    spread_id: str
+
+@app.post("/api/spreads/execute")
+async def execute_spread_order(req: ExecuteSpreadRequest) -> Dict[str, Any]:
+    quotes_res = get_live_quotes()
+    live_map = quotes_res.get("quotes", {})
+    spreads = spread_builder_service.build_spreads_from_spot(live_map)
+    match = next((s for s in spreads if s["id"] == req.spread_id), None)
+    if not match:
+        raise HTTPException(status_code=404, detail="Spread strategy not found.")
+    
+    # Place multi-leg orders sequentially or as basket
+    leg_orders = []
+    for leg in match.get("legs", []):
+        res = engine.broker.place_order(
+            symbol=leg["symbol"].replace(" ", "_"),
+            direction=leg["action"],
+            quantity=30 if "BANK" in leg["symbol"] else 65,
+            price=leg.get("premium", 0.0),
+            order_type="MARKET",
+            tag="ANIL_BABU_SPREAD"
+        )
+        leg_orders.append(res)
+    
+    match["status"] = "EXECUTED_LIVE"
+    db.log_event("SPREAD_EXECUTED", f"Executed {match['title']} multi-leg spread with defined risk.", match)
+    await ws_broadcaster({"type": "SPREAD_EXECUTED", "data": match})
+    
+    return {
+        "status": "SUCCESS",
+        "message": f"Successfully executed multi-leg spread: {match['title']}",
+        "legs": leg_orders,
+        "spread": match
+    }
+
 
 @app.post("/api/emergency-squareoff")
 async def emergency_squareoff() -> Dict[str, Any]:

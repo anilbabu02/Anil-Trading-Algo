@@ -390,13 +390,23 @@
                         </div>
                         <div>
                             <h3 class="font-bold text-xs text-white">Algorithmic Option Recommendation Desk</h3>
-                            <p class="text-[11px] text-slate-400">High-conviction quant signals with mathematical risk-to-reward guardrails & 1-Click Fyers execution.</p>
+                            <p class="text-[11px] text-slate-400">High-conviction quant signals & SEBI multi-leg defined-risk spreads with 1-Click Fyers execution.</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-2 text-xs">
+                        <!-- Strategy Mode Switcher -->
+                        <div class="flex items-center bg-slate-900 border border-slate-800 p-0.5 rounded-lg mr-2">
+                            <button onclick="switchOptionMode('single')" id="opt-mode-single" type="button" class="px-2 py-1 rounded text-[11px] font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-500/30 transition">
+                                ⚡ Naked Options
+                            </button>
+                            <button onclick="switchOptionMode('spreads')" id="opt-mode-spreads" type="button" class="px-2 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition">
+                                🛡️ Hedged Spreads (~70% Margin)
+                            </button>
+                        </div>
+
                         <button onclick="fetchOptionSuggestions()" type="button" class="flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/30 text-[11px] font-semibold transition cursor-pointer">
                             <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
-                            Refresh Today's Signals
+                            Refresh Signals
                         </button>
                         <span class="text-slate-400">Filter:</span>
                         <button onclick="filterSuggestions('ALL')" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-white font-medium text-[11px] transition">ALL</button>
@@ -405,7 +415,13 @@
                     </div>
                 </div>
 
+                <!-- 1. Single-Leg Suggestion Cards Container -->
                 <div id="suggestions-cards-container" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Populated dynamically via JS -->
+                </div>
+
+                <!-- 2. Multi-Leg Hedged Spreads Container -->
+                <div id="spreads-cards-container" class="hidden grid-cols-1 md:grid-cols-2 gap-4">
                     <!-- Populated dynamically via JS -->
                 </div>
             </div>
@@ -586,6 +602,6 @@
         </div>
     </div>
 
-    <script src="/static/app.js?v=24.0"></script>
+    <script src="/static/app.js?v=25.0"></script>
 </body>
 </html>

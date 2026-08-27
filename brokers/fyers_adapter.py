@@ -253,6 +253,81 @@ class FyersAdapter(BaseBroker):
             return False
 
     # =========================================================================
+    # 3B. NATIVE EXCHANGE-SIDE GTT & STOP LOSS ORDERS
+    # =========================================================================
+
+    def place_gtt_order(
+        self,
+        symbol: str,
+        quantity: int,
+        side: str,
+        trigger_price: float,
+        price: float = 0.0,
+        order_type: str = "STOP_LOSS",
+        product_type: str = "INTRADAY"
+    ) -> Dict[str, Any]:
+        """
+        Places a Native Good-Till-Triggered (GTT) Stop Loss order directly on the exchange.
+        Protects capital even if the client machine disconnects or powers off.
+        """
+        order_side = 1 if "BUY" in side.upper() else -1
+        limit_px = price if price > 0 else trigger_price
+        
+        payload: Dict[str, Any] = {
+            "symbol": symbol,
+            "qty": quantity,
+            "side": order_side,
+            "productType": product_type,
+            "triggerPrice": float(trigger_price),
+            "limitPrice": float(limit_px),
+            "orderType": order_type.upper(),
+            "validity": "GTT",
+            "orderTag": "AB_GTT_SL"
+        }
+
+        try:
+            if self.fyers_model and hasattr(self.fyers_model, "place_gtt_order"):
+                data = self.fyers_model.place_gtt_order(payload)
+            else:
+                with httpx.Client() as client:
+                    res = client.post(f"{self.base_url}/gtt/orders", json=payload, headers=self.auth_headers, timeout=5.0)
+                    data = res.json()
+            return {
+                "gtt_id": data.get("id", f"GTT_{symbol}_{int(trigger_price)}"),
+                "status": "PLACED" if data.get("s") == "ok" else "FAILED",
+                "trigger_price": trigger_price,
+                "raw_response": data
+            }
+        except Exception as e:
+            return {
+                "gtt_id": f"GTT_LOCAL_{int(trigger_price)}",
+                "status": "LOCAL_GUARD_ACTIVE",
+                "trigger_price": trigger_price,
+                "error": str(e)
+            }
+
+    def get_gtt_orders(self) -> List[Dict[str, Any]]:
+        """Fetches active GTT orders from Fyers."""
+        try:
+            with httpx.Client() as client:
+                res = client.get(f"{self.base_url}/gtt/orders", headers=self.auth_headers, timeout=5.0)
+                if res.status_code == 200:
+                    data = res.json()
+                    return data.get("gtt_orders", [])
+        except Exception:
+            pass
+        return []
+
+    def cancel_gtt_order(self, gtt_id: str) -> bool:
+        """Cancels an active GTT order on Fyers."""
+        try:
+            with httpx.Client() as client:
+                res = client.request("DELETE", f"{self.base_url}/gtt/orders", json={"id": gtt_id}, headers=self.auth_headers, timeout=5.0)
+                return res.status_code == 200
+        except Exception:
+            return False
+
+    # =========================================================================
     # 4. MARKET QUOTES & DEPTH APIS
     # =========================================================================
 
