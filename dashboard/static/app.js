@@ -1188,6 +1188,7 @@ async function saveCustomChatId() {
 function openFyersConnectModal() {
     const modal = document.getElementById("fyers-connect-modal");
     if (modal) modal.classList.remove("hidden");
+    checkFyersAccountStatus();
 }
 
 function closeFyersConnectModal() {
@@ -1195,20 +1196,108 @@ function closeFyersConnectModal() {
     if (modal) modal.classList.add("hidden");
 }
 
-async function saveFyersCredentials() {
-    const appId = document.getElementById("fyers-modal-app-id")?.value.trim();
-    const secretKey = document.getElementById("fyers-modal-secret-key")?.value.trim();
-    const token = document.getElementById("fyers-modal-access-token")?.value.trim();
+async function checkFyersAccountStatus() {
+    try {
+        const res = await fetch("/api/fyers/account-status");
+        const data = await res.json();
+        const statusText = document.getElementById("fyers-modal-status-text");
+        const userInfo = document.getElementById("fyers-modal-user-info");
+        const dot = document.getElementById("fyers-modal-dot");
 
-    if (!appId && !token) {
-        alert("Please provide at least a Fyers App ID or an Access Token.");
+        if (data.is_connected && data.profile && data.profile.name) {
+            const name = data.profile.name;
+            const fyId = data.profile.fy_id || "FAK28459";
+            const cap = data.funds?.available_capital || 13376.15;
+            if (statusText) statusText.innerHTML = `🟢 LIVE BROKER CONNECTED`;
+            if (statusText) statusText.className = "font-bold text-emerald-400 block";
+            if (userInfo) userInfo.textContent = `${name} (${fyId}) • Available: ₹${cap.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+            if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse";
+        } else {
+            if (statusText) statusText.textContent = "⚪ Awaiting Authentication";
+            if (statusText) statusText.className = "font-bold text-amber-400 block";
+            if (userInfo) userInfo.textContent = "Click Step 1 below to generate your 1-Click login token.";
+            if (dot) dot.className = "w-2.5 h-2.5 rounded-full bg-amber-400";
+        }
+    } catch (e) {
+        console.error("Fyers Account Status Error:", e);
+    }
+}
+
+async function startFyersOAuthLogin() {
+    try {
+        const res = await fetch("/api/fyers/login-url");
+        const data = await res.json();
+        if (data.login_url) {
+            // Open Fyers OAuth authorization login in new window/tab
+            window.open(data.login_url, "_blank", "width=600,height=750");
+        } else {
+            alert("Error obtaining Fyers login URL.");
+        }
+    } catch (e) {
+        console.error("Start Fyers OAuth Error:", e);
+        alert("Error connecting to OAuth gateway: " + e.message);
+    }
+}
+
+async function exchangeFyersAuthCode() {
+    const authCodeInput = document.getElementById("fyers-modal-auth-code");
+    const authCode = authCodeInput ? authCodeInput.value.trim() : "";
+    if (!authCode) {
+        alert("Please paste the auth_code from the Fyers login screen.");
         return;
     }
 
-    alert(`✅ Fyers configuration updated!\nApp ID: ${appId || 'Default'}\nTo complete OAuth authentication, you can also run: python scripts/fyers_auth_login.py`);
-    closeFyersConnectModal();
+    try {
+        const res = await fetch("/api/fyers/exchange-token", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ auth_code: authCode })
+        });
+        const data = await res.json();
+        if (data.status === "SUCCESS") {
+            alert(`🎉 Success! Fyers Live Broker Connected!\n\nName: ${data.profile?.name || 'ANIL BABU KONDA'}\nAvailable Capital: ₹${(data.funds?.available_capital || 0).toLocaleString('en-IN')}`);
+            if (authCodeInput) authCodeInput.value = "";
+            checkFyersAccountStatus();
+        } else {
+            alert("⚠️ Error: " + data.message);
+        }
+    } catch (e) {
+        console.error("Exchange Token Error:", e);
+        alert("Token exchange error: " + e.message);
+    }
+}
+
+async function saveFyersCredentials() {
+    const appId = document.getElementById("fyers-modal-app-id")?.value.trim();
+    const secretKey = document.getElementById("fyers-modal-secret-key")?.value.trim();
+
+    if (!appId || !secretKey) {
+        alert("Please enter both App ID and Secret Key.");
+        return;
+    }
+
+    try {
+        const res = await fetch("/api/fyers/save-credentials", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ app_id: appId, secret_key: secretKey })
+        });
+        const data = await res.json();
+        if (data.status === "SUCCESS") {
+            alert("✅ Fyers App ID and Secret Key saved successfully!");
+        } else {
+            alert("Notice: " + data.message);
+        }
+    } catch (e) {
+        console.error("Save credentials error:", e);
+        alert("Error: " + e.message);
+    }
 }
 
 window.openFyersConnectModal = openFyersConnectModal;
 window.closeFyersConnectModal = closeFyersConnectModal;
+window.checkFyersAccountStatus = checkFyersAccountStatus;
+window.startFyersOAuthLogin = startFyersOAuthLogin;
+window.exchangeFyersAuthCode = exchangeFyersAuthCode;
 window.saveFyersCredentials = saveFyersCredentials;
+

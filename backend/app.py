@@ -507,6 +507,140 @@ def fyers_oauth_callback(
     </html>
     """
 
+class FyersExchangeReq(BaseModel):
+    auth_code: str
+
+@app.get("/api/fyers/login-url")
+def get_fyers_login_url() -> Dict[str, Any]:
+    """Generates official Fyers OAuth authorization URL."""
+    client_id = settings.FYERS_APP_ID or "B1WDODIF33-200"
+    redirect_uri = settings.FYERS_REDIRECT_URI or "http://127.0.0.1:8000/api/fyers/callback"
+    url = f"https://api-t1.fyers.in/api/v3/generate-authcode?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code&state=anil_babu_session"
+    return {"status": "SUCCESS", "login_url": url, "client_id": client_id, "redirect_uri": redirect_uri}
+
+@app.get("/api/fyers/account-status")
+def get_fyers_account_status() -> Dict[str, Any]:
+    """Returns real-time Fyers connection status, profile, and funds balance."""
+    is_connected = False
+    profile = {}
+    funds = {}
+    try:
+        if hasattr(engine.broker, "get_profile"):
+            p_res = engine.broker.get_profile()
+            if p_res.get("s") == "ok" and "data" in p_res:
+                is_connected = True
+                profile = p_res["data"]
+        funds = engine.broker.get_funds()
+    except Exception as e:
+        print("Account status error:", e)
+
+    return {
+        "status": "SUCCESS",
+        "is_connected": is_connected,
+        "app_id": settings.FYERS_APP_ID,
+        "trading_mode": settings.TRADING_MODE,
+        "profile": profile,
+        "funds": funds
+    }
+
+@app.post("/api/fyers/exchange-token")
+def exchange_fyers_auth_code(req: FyersExchangeReq) -> Dict[str, Any]:
+    """Exchanges auth_code for live Access Token and saves to .env."""
+    import hashlib
+    import httpx
+    
+    auth_code = req.auth_code.strip()
+    client_id = settings.FYERS_APP_ID or "B1WDODIF33-200"
+    secret_key = settings.FYERS_SECRET_KEY or "oj0saUpiJIuTiafE"
+
+    app_id_hash = hashlib.sha256(f"{client_id}:{secret_key}".encode("utf-8")).hexdigest()
+    payload = {
+        "grant_type": "authorization_code",
+        "appIdHash": app_id_hash,
+        "code": auth_code
+    }
+
+    try:
+        with httpx.Client() as client:
+            resp = client.post(
+                "https://api-t1.fyers.in/api/v3/validate-authcode",
+                json=payload,
+                headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"},
+                timeout=10.0
+            )
+            data = resp.json()
+            if data.get("s") == "ok" and "access_token" in data:
+                token = data["access_token"]
+                settings.FYERS_ACCESS_TOKEN = token
+                settings.TRADING_MODE = "live"
+
+                # Update .env
+                env_path = BASE_DIR / ".env"
+                if env_path.exists():
+                    txt = env_path.read_text(encoding="utf-8")
+                    lines = []
+                    for line in txt.splitlines():
+                        if line.startswith("FYERS_ACCESS_TOKEN="):
+                            lines.append(f"FYERS_ACCESS_TOKEN={token}")
+                        elif line.startswith("TRADING_MODE="):
+                            lines.append("TRADING_MODE=live")
+                        else:
+                            lines.append(line)
+                    env_path.write_text("\n".join(lines), encoding="utf-8")
+
+                # Reconnect broker adapter
+                from brokers.fyers_adapter import FyersAdapter
+                engine.broker = FyersAdapter(app_id=client_id, access_token=token)
+
+                profile = engine.broker.get_profile()
+                funds = engine.broker.get_funds()
+
+                return {
+                    "status": "SUCCESS",
+                    "message": "Fyers Access Token generated and saved successfully!",
+                    "profile": profile.get("data", {}),
+                    "funds": funds
+                }
+            else:
+                return {
+                    "status": "ERROR",
+                    "message": data.get("message", "Failed to validate auth code with Fyers."),
+                    "raw": data
+                }
+    except Exception as e:
+        return {"status": "ERROR", "message": str(e)}
+
+class SaveFyersCredsReq(BaseModel):
+    app_id: str
+    secret_key: str
+    access_token: Optional[str] = None
+
+@app.post("/api/fyers/save-credentials")
+def save_fyers_credentials_endpoint(req: SaveFyersCredsReq) -> Dict[str, Any]:
+    """Saves App ID, Secret Key, and optional Access Token to .env."""
+    settings.FYERS_APP_ID = req.app_id.strip()
+    settings.FYERS_SECRET_KEY = req.secret_key.strip()
+    if req.access_token:
+        settings.FYERS_ACCESS_TOKEN = req.access_token.strip()
+
+    env_path = BASE_DIR / ".env"
+    if env_path.exists():
+        txt = env_path.read_text(encoding="utf-8")
+        lines = []
+        for line in txt.splitlines():
+            if line.startswith("FYERS_APP_ID="):
+                lines.append(f"FYERS_APP_ID={settings.FYERS_APP_ID}")
+            elif line.startswith("FYERS_SECRET_KEY="):
+                lines.append(f"FYERS_SECRET_KEY={settings.FYERS_SECRET_KEY}")
+            elif req.access_token and line.startswith("FYERS_ACCESS_TOKEN="):
+                lines.append(f"FYERS_ACCESS_TOKEN={settings.FYERS_ACCESS_TOKEN}")
+            else:
+                lines.append(line)
+        env_path.write_text("\n".join(lines), encoding="utf-8")
+
+    return {"status": "SUCCESS", "message": "Fyers credentials saved successfully!"}
+
+
 # ----------------- WEBSOCKET FEED ----------------- #
 
 @app.websocket("/ws")
