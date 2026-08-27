@@ -36,19 +36,19 @@
         </div>
 
         <!-- Middle Market Regime Indicator -->
-        <div class="hidden md:flex items-center gap-4 bg-slate-950/80 border border-slate-800 px-3.5 py-1 rounded-lg">
+        <div class="hidden md:flex items-center gap-3.5 bg-slate-950/90 border border-slate-800/90 px-4 py-1.5 rounded-xl shrink-0 shadow-inner">
             <div class="flex items-center gap-2">
-                <span class="relative flex h-2.5 w-2.5">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                <span id="regime-dot-container" class="relative flex h-2.5 w-2.5">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
                 </span>
-                <span class="text-xs text-slate-400">Regime:</span>
-                <span id="regime-badge" class="text-xs font-bold text-emerald-400">TRENDING BULL</span>
+                <span class="text-xs text-slate-400 font-medium">Market Regime:</span>
+                <span id="regime-badge" class="text-xs font-black text-rose-400 tracking-wide">TRENDING BEAR</span>
             </div>
             <div class="h-3.5 w-px bg-slate-800"></div>
-            <div class="text-xs text-slate-400 flex items-center gap-1">
-                <i data-lucide="clock" class="w-3.5 h-3.5 text-slate-400"></i>
-                <span id="clock" class="font-mono text-slate-200">09:15:00 IST</span>
+            <div class="text-xs text-slate-400 flex items-center gap-1.5 whitespace-nowrap">
+                <i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <span id="clock" class="font-mono text-slate-200 font-bold">19:49:00 IST</span>
             </div>
         </div>
 
@@ -152,15 +152,16 @@
                 <div class="bg-[#131722] border-b border-[#1e222d] px-2.5 py-1.5 flex flex-wrap items-center justify-between gap-1.5 select-none text-xs text-slate-300">
                     <div class="flex items-center gap-1">
                         <!-- Symbol Search Dropdown -->
-                        <button class="p-1 hover:bg-[#2a2e39] rounded text-slate-400 hover:text-white" title="Search"><i data-lucide="search" class="w-3.5 h-3.5"></i></button>
-                        <div class="flex items-center bg-[#1e222d] hover:bg-[#2a2e39] px-1.5 py-0.5 rounded transition cursor-pointer">
-                            <select id="instrument-select" onchange="onInstrumentSelectChange(this.value)" class="bg-transparent text-white font-bold font-mono text-xs focus:outline-none cursor-pointer pr-1 border-none">
-                                <option value="NIFTY" selected>NIFTY50-INDEX</option>
-                                <option value="BANKNIFTY">BANKNIFTY-INDEX</option>
-                                <option value="SENSEX">SENSEX-INDEX</option>
-                                <option value="BANKEX">BANKEX-INDEX</option>
-                                <option value="FINNIFTY">FINNIFTY-INDEX</option>
+                        <div class="flex items-center bg-[#1e222d] hover:bg-[#2a2e39] border border-[#2a2e39] hover:border-cyan-500/50 px-2 py-1 rounded-lg transition group">
+                            <i data-lucide="search" class="w-3.5 h-3.5 text-cyan-400 mr-1.5 shrink-0"></i>
+                            <select id="instrument-select" onchange="onInstrumentSelectChange(this.value)" class="bg-[#1e222d] text-white font-black font-mono text-xs focus:outline-none cursor-pointer border-none outline-none appearance-none pr-3">
+                                <option value="NIFTY" class="bg-[#131722] text-white font-bold py-1">NIFTY 50 (NSE)</option>
+                                <option value="BANKNIFTY" class="bg-[#131722] text-white font-bold py-1">BANK NIFTY (NSE)</option>
+                                <option value="SENSEX" class="bg-[#131722] text-white font-bold py-1">BSE SENSEX</option>
+                                <option value="BANKEX" class="bg-[#131722] text-white font-bold py-1">BSE BANKEX</option>
+                                <option value="FINNIFTY" class="bg-[#131722] text-white font-bold py-1">NIFTY FINANCIAL (NSE)</option>
                             </select>
+                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 pointer-events-none -ml-1.5 shrink-0"></i>
                         </div>
                         <button class="p-1 hover:bg-[#2a2e39] rounded text-slate-400 hover:text-white" title="Compare"><i data-lucide="plus" class="w-3.5 h-3.5"></i></button>
 
@@ -587,6 +588,6 @@
         </div>
     </div>
 
-    <script src="/static/app.js?v=22.0"></script>
+    <script src="/static/app.js?v=23.0"></script>
 </body>
 </html>

@@ -213,12 +213,46 @@ function updateFyersLiveHeaderBadge(isLive) {
     }
 }
 
+function updateLiveMarketRegime(quotes) {
+    const regimeBadge = document.getElementById("regime-badge");
+    const dotContainer = document.getElementById("regime-dot-container");
+    if (!regimeBadge || !dotContainer) return;
+
+    let chgPct = currentChangePct || 0;
+    if (quotes && quotes.NIFTY && typeof quotes.NIFTY.change_pct === 'number') {
+        chgPct = quotes.NIFTY.change_pct;
+    }
+
+    if (chgPct <= -0.25) {
+        regimeBadge.textContent = "TRENDING BEAR";
+        regimeBadge.className = "text-xs font-black text-rose-400 tracking-wide";
+        dotContainer.innerHTML = `
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+        `;
+    } else if (chgPct >= 0.25) {
+        regimeBadge.textContent = "TRENDING BULL";
+        regimeBadge.className = "text-xs font-black text-emerald-400 tracking-wide";
+        dotContainer.innerHTML = `
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+        `;
+    } else {
+        regimeBadge.textContent = "SIDEWAYS / CHOPPY";
+        regimeBadge.className = "text-xs font-black text-amber-400 tracking-wide";
+        dotContainer.innerHTML = `
+            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-400"></span>
+        `;
+    }
+}
+
 async function fetchRealFyersQuotes() {
     try {
         const res = await fetch("/api/live-quotes");
         const data = await res.json();
         if (data.status === "SUCCESS" && data.is_live && data.quotes) {
             updateFyersLiveHeaderBadge(true);
+            updateLiveMarketRegime(data.quotes);
             // Update all instruments with real live exchange data
             for (const [key, q] of Object.entries(data.quotes)) {
                 if (INSTRUMENTS_DATA[key]) {
@@ -1362,19 +1396,24 @@ function toggleAiActionsDropdown() {
     alert("🤖 AI Quant Engine Active:\n\n• Volatility Squeeze Detection: ACTIVE\n• López de Prado Fractional Diff: ACTIVE\n• Continuous Bet Sizing: 0.85\n• Microstructure Guard: ACTIVE\n• Trailing SL: Cost+1pt locked");
 }
 
-function initBottomClock() {
-    function updateClock() {
+function initClocks() {
+    function update() {
         const now = new Date();
-        const str = now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata' }) + ' UTC+5:30';
-        const el = document.getElementById("chart-bottom-clock");
-        if (el) el.textContent = str;
+        const istTimeStr = now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata' }) + ' IST';
+        const chartTimeStr = now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata' }) + ' UTC+5:30';
+        
+        const headerClock = document.getElementById("clock");
+        if (headerClock) headerClock.textContent = istTimeStr;
+
+        const bottomEl = document.getElementById("chart-bottom-clock");
+        if (bottomEl) bottomEl.textContent = chartTimeStr;
     }
-    updateClock();
-    setInterval(updateClock, 1000);
+    update();
+    setInterval(update, 1000);
 }
 
-// Initialize clock on start
-initBottomClock();
+// Initialize clocks on start
+initClocks();
 
 window.openFyersConnectModal = openFyersConnectModal;
 window.closeFyersConnectModal = closeFyersConnectModal;
