@@ -393,9 +393,6 @@ async def simulate_market_step() -> Dict[str, Any]:
     drift = 12.0  # Momentum step
     new_close = round(last_candle['close'] + drift, 2)
     new_high = max(last_candle['close'], new_close) + 5.0
-    new_low = min(last_candle['close'], new_close) - 3.0
-    new_time = last_candle['timestamp'] + asyncio.get_event_loop().time() * 0 # or current time
-
     data_feed.append_candle(
         timestamp=datetime.now(),
         open_=last_candle['close'],
