@@ -603,10 +603,15 @@ function renderSuggestions(list) {
         const ta = item.technical_analysis || {};
 
         let statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">ACTIVE</span>`;
-        if (item.status === "TRAILING_LOCKED") {
+        if (item.is_top_winner) {
+            statusBadge = `
+                <div class="flex items-center gap-1.5 bg-gradient-to-r from-amber-500/20 via-yellow-500/25 to-amber-500/20 border border-amber-400/60 px-2 py-0.5 rounded-lg shadow-md shadow-amber-500/10">
+                    <img src="/static/trophy_winner.png" alt="Top Winner" class="w-4 h-4 object-contain">
+                    <span class="text-[10px] font-black text-amber-300 uppercase tracking-wider">Top Winner (+${gainPct.toFixed(1)}%)</span>
+                </div>
+            `;
+        } else if (item.status === "TRAILING_LOCKED") {
             statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">⚡ SL LOCKED (Cost+1)</span>`;
-        } else if (item.status === "TARGET_1_REACHED" || item.status === "TARGET_HIT") {
-            statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">🏆 TARGET 1 REACHED</span>`;
         } else if (item.status === "EXECUTED_LIVE") {
             statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">✓ EXECUTED IN BROKER</span>`;
         }

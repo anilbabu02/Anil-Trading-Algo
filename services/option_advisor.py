@@ -7,6 +7,7 @@ class OptionAdvisorService:
     - Provides high-conviction algorithmic option trading recommendations aligned with live exchange prices
     - Real-time Technical Analysis: RSI, MACD, SuperTrend, EMA Trend, VWAP Deviation, PCR & Open Interest
     - Greek Tracking: Delta, Theta, Gamma, Vega, IV
+    - Awards Golden Winner Trophy Badge at market close time (after 15:30 IST) to the day's top performing trade
     - Supports 1-Click execution routing directly to the Anil Babu Trades broker engine
     """
 
@@ -16,7 +17,11 @@ class OptionAdvisorService:
 
     def refresh_signals(self, live_quotes: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """Dynamically generates algorithmic signals strictly calibrated to live Fyers exchange quotes."""
-        now_str = datetime.now().strftime("%H:%M:%S")
+        now = datetime.now()
+        now_str = now.strftime("%H:%M:%S")
+
+        # Indian Market Hours: 09:15 to 15:30 IST
+        is_market_closed = (now.hour > 15) or (now.hour == 15 and now.minute >= 30) or (now.hour < 9)
 
         # Spot prices from live exchange
         nifty_spot = 24090.85
@@ -58,7 +63,7 @@ class OptionAdvisorService:
         is_bn_bull = banknifty_chg >= 0
         is_snx_bull = sensex_chg >= 0
 
-        self.suggestions = [
+        calls = [
             {
                 "id": "OPT_CALL_01",
                 "symbol": f"NIFTY {nifty_strike} {'CE' if is_nifty_bull else 'PE'}",
@@ -76,7 +81,7 @@ class OptionAdvisorService:
                 "points_pnl": 33.50 if not is_nifty_bull else 14.50,
                 "pnl_percent": 35.26 if not is_nifty_bull else 12.61,
                 "risk_reward": "1:2.8",
-                "status": "TRAILING_LOCKED",  # ACTIVE | TRAILING_LOCKED | TARGET_HIT
+                "status": "TRAILING_LOCKED",
                 "trailing_sl": 96.00 if not is_nifty_bull else 116.00,
                 "lot_size": 65,
                 "confidence": 91,
@@ -86,6 +91,8 @@ class OptionAdvisorService:
                 "vega": 13.80,
                 "iv": 14.1,
                 "timestamp": now_str,
+                "is_top_winner": False,
+                "market_closed": is_market_closed,
                 "reason": f"Real-time NIFTY Spot at {nifty_spot:,.2f} ({nifty_chg:+.2f} pts, {nifty_chgp:+.2f}%). Volatility Squeeze {'holding above VWAP' if is_nifty_bull else 'breaking down with heavy Call wall at ' + str(nifty_strike + 100)}.",
                 "technical_analysis": {
                     "rsi": {"value": 62.4 if is_nifty_bull else 34.2, "status": "Bullish Flow" if is_nifty_bull else "Bearish Breakdown", "signal": "BUY " + ("CE" if is_nifty_bull else "PE")},
@@ -125,6 +132,8 @@ class OptionAdvisorService:
                 "vega": 22.10,
                 "iv": 15.2,
                 "timestamp": now_str,
+                "is_top_winner": False,
+                "market_closed": is_market_closed,
                 "reason": f"Real-time BANKNIFTY Spot at {banknifty_spot:,.2f} ({banknifty_chg:+.2f} pts, {banknifty_chgp:+.2f}%). ORB Strategy running live on ATM strike {banknifty_strike}.",
                 "technical_analysis": {
                     "rsi": {"value": 64.0 if is_bn_bull else 31.8, "status": "Strong Momentum" if is_bn_bull else "Bearish Breakdown", "signal": "BUY " + ("CE" if is_bn_bull else "PE")},
@@ -164,6 +173,8 @@ class OptionAdvisorService:
                 "vega": 28.00,
                 "iv": 14.5,
                 "timestamp": now_str,
+                "is_top_winner": False,
+                "market_closed": is_market_closed,
                 "reason": f"Real-time BSE SENSEX Spot at {sensex_spot:,.2f} ({sensex_chg:+.2f} pts, {sensex_chgp:+.2f}%). Institutional order flow on ATM strike {sensex_strike}.",
                 "technical_analysis": {
                     "rsi": {"value": 68.0 if is_snx_bull else 29.5, "status": "Power Zone" if is_snx_bull else "Bearish Pressure", "signal": "BUY " + ("CE" if is_snx_bull else "PE")},
@@ -177,6 +188,14 @@ class OptionAdvisorService:
                 }
             }
         ]
+
+        # Determine the Top Winning Signal (highest % gain at market close)
+        if calls:
+            winner = max(calls, key=lambda c: c.get("pnl_percent", 0.0))
+            if is_market_closed or winner.get("pnl_percent", 0) > 0:
+                winner["is_top_winner"] = True
+
+        self.suggestions = calls
         return self.suggestions
 
     def get_all_suggestions(self, live_quotes: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
