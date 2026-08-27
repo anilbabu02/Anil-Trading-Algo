@@ -268,16 +268,26 @@ class FyersAdapter(BaseBroker):
         except Exception as e:
             return {"s": "error", "message": str(e)}
 
-    def get_market_depth(self, symbol: str) -> Dict[str, Any]:
-        payload = {"symbol": symbol, "ohlcv_flag": "1"}
+    def square_off_position(self, symbol: str, quantity: int, price: float = 0.0) -> Dict[str, Any]:
+        """Closes an active open position with Fyers."""
+        return self.place_order(
+            symbol=symbol,
+            direction="SELL",
+            quantity=quantity,
+            price=price,
+            order_type="MARKET",
+            tag="ANIL_BABU_SQOFF"
+        )
+
+    def get_market_quote(self, symbol: str) -> float:
+        """Fetches current LTP for symbol."""
         try:
-            if self.fyers_model:
-                return self.fyers_model.depth(payload)
-            with httpx.Client() as client:
-                res = client.get(f"{self.base_url}/depth?symbol={symbol}&ohlcv_flag=1", headers=self.auth_headers, timeout=5.0)
-                return res.json()
-        except Exception as e:
-            return {"s": "error", "message": str(e)}
+            res = self.get_quotes([symbol])
+            if res.get("s") == "ok" and "d" in res and len(res["d"]) > 0:
+                return float(res["d"][0].get("v", {}).get("lp", 0.0))
+        except Exception:
+            pass
+        return 0.0
 
     # =========================================================================
     # 5. LIVE WEBSOCKETS (Data & Order Sockets)
