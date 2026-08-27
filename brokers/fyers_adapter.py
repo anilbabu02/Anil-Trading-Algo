@@ -7,6 +7,7 @@ from brokers.base import BaseBroker
 try:
     from fyers_apiv3 import fyersModel
     from fyers_apiv3.FyersWebsocket import data_ws, order_ws
+    from fyers_apiv3.FyersWebsocket.tbt_ws import FyersTbtSocket, SubscriptionModes
     HAS_FYERS_SDK = True
 except ImportError:
     HAS_FYERS_SDK = False
@@ -18,7 +19,7 @@ class FyersAdapter(BaseBroker):
     - Transaction APIs: Tradebook, Orderbook, Positions
     - Order Placement: Single, Basket, Multileg (3L), Smart Orders & Smart Exit Triggers
     - Data APIs: Quotes, Historical Data, Market Depth
-    - WebSockets: FyersDataSocket & FyersOrderSocket
+    - WebSockets: FyersDataSocket, FyersOrderSocket & FyersTbtSocket (Tick-By-Tick Level-2/3 Depth)
     """
 
     def __init__(
@@ -302,3 +303,68 @@ class FyersAdapter(BaseBroker):
             on_message=on_message_callback
         )
         return self.data_socket
+
+    def create_tbt_socket(
+        self,
+        symbols: List[str],
+        on_depth_update_callback: Any,
+        channel_no: str = "1",
+        mode: Any = None
+    ) -> Optional[Any]:
+        """
+        Creates and connects a FyersTbtSocket for ultra-low latency Tick-By-Tick Level-2 Depth streaming.
+        """
+        if not HAS_FYERS_SDK or not self.access_token or not self.app_id:
+            return None
+
+        token_str = f"{self.app_id}:{self.access_token}"
+        sub_mode = mode or SubscriptionModes.DEPTH
+
+        def onopen():
+            self.tbt_socket.subscribe(symbol_tickers=symbols, channelNo=channel_no, mode=sub_mode)
+            self.tbt_socket.switchChannel(resume_channels=[channel_no], pause_channels=[])
+            self.tbt_socket.keep_running()
+
+        self.tbt_socket = FyersTbtSocket(
+            access_token=token_str,
+            write_to_file=False,
+            log_path="",
+            on_open=onopen,
+            on_depth_update=on_depth_update_callback,
+            on_error_message=lambda msg: print("Fyers TBT Error Message:", msg),
+            on_error=lambda err: print("Fyers TBT Socket Error:", err),
+            on_close=lambda cls: print("Fyers TBT Socket Closed:", cls)
+        )
+        return self.tbt_socket
+
+    def create_order_socket(
+        self,
+        on_orders_callback: Any,
+        on_trades_callback: Any,
+        on_positions_callback: Any,
+        on_general_callback: Optional[Any] = None
+    ) -> Optional[Any]:
+        """
+        Creates and connects a FyersOrderSocket for real-time order, trade, and position updates.
+        """
+        if not HAS_FYERS_SDK or not self.access_token or not self.app_id:
+            return None
+
+        token_str = f"{self.app_id}:{self.access_token}"
+
+        def onopen():
+            self.order_socket.subscribe(data_type="OnOrders,OnTrades,OnPositions,OnGeneral")
+            self.order_socket.keep_running()
+
+        self.order_socket = order_ws.FyersOrderSocket(
+            access_token=token_str,
+            write_to_file=False,
+            log_path="",
+            on_connect=onopen,
+            on_orders=on_orders_callback,
+            on_trades=on_trades_callback,
+            on_positions=on_positions_callback,
+            on_general=on_general_callback or (lambda msg: None)
+        )
+        return self.order_socket
+
