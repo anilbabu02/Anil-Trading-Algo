@@ -14,68 +14,68 @@ class NewsService:
             {
                 "id": "NEWS_101",
                 "timestamp": (datetime.now() - timedelta(minutes=4)).strftime("%H:%M:%S"),
-                "category": "INDICES",
+                "category": "DERIVATIVES",
                 "asset": "NIFTY",
-                "headline": "NIFTY Crosses 24,550 on Heavy Call Unwinding; 24,600 Squeeze Imminent",
-                "summary": "Massive short covering seen in 24,500-24,550 CE strikes. Open Interest dropped by 32 lakh shares, giving strong directional breakout momentum.",
-                "sentiment": "BULLISH",
+                "headline": "NIFTY 24,100 PE Volume Surges with 54.7 Lakh OI as Put Buyers Dominate",
+                "summary": "Heavy Call writing detected at 24,200 and 24,300 strikes. PCR dips to 0.59 confirming strong institutional breakdown momentum.",
+                "sentiment": "BEARISH",
                 "impact": "HIGH",
-                "source": "NSE Derivatives Feed"
+                "source": "NSE Derivatives Live Wire"
             },
             {
                 "id": "NEWS_102",
                 "timestamp": (datetime.now() - timedelta(minutes=12)).strftime("%H:%M:%S"),
-                "category": "FII_DII",
-                "asset": "MARKET",
-                "headline": "Institutional Flow: FIIs Turn Net Buyers in Index Futures (+3,450 Contracts)",
-                "summary": "FII Long-Short ratio improved from 51% to 58.4% today. DIIs pumped ₹1,180 Cr cash in bluechip banking and auto names.",
-                "sentiment": "BULLISH",
+                "category": "BANKING",
+                "asset": "BANKNIFTY",
+                "headline": "Bank Nifty Slips -475 Pts Towards 57,500 Support on Private Bank Selling",
+                "summary": "HDFC Bank and ICICI Bank face intraday profit booking. 57,500 PE sees heavy open interest additions as institutions hedge downside risk.",
+                "sentiment": "BEARISH",
                 "impact": "HIGH",
-                "source": "Institutional Flow Wire"
+                "source": "CNBC-TV18 Live Feed"
             },
             {
                 "id": "NEWS_103",
                 "timestamp": (datetime.now() - timedelta(minutes=24)).strftime("%H:%M:%S"),
-                "category": "MACRO",
-                "asset": "GLOBAL",
-                "headline": "Brent Crude Tumbles to $74.20/bbl (-0.8%) on US Inventory Build",
-                "summary": "Lower crude prices ease import inflation for India, boosting Paint, Auto, and Oil Marketing Companies (OMCs).",
-                "sentiment": "BULLISH",
-                "impact": "MEDIUM",
-                "source": "Bloomberg Commodity Desk"
+                "category": "FII_DII",
+                "asset": "MARKET",
+                "headline": "Institutional Flow: FIIs Net Sellers in Index Futures (-₹1,420 Cr)",
+                "summary": "FII Long-Short ratio drops to 42.1%. Domestic institutions provide partial support with ₹890 Cr buying in FMCG and IT defensive stocks.",
+                "sentiment": "BEARISH",
+                "impact": "HIGH",
+                "source": "Institutional Flow Wire"
             },
             {
                 "id": "NEWS_104",
                 "timestamp": (datetime.now() - timedelta(minutes=41)).strftime("%H:%M:%S"),
-                "category": "BANKING",
-                "asset": "BANKNIFTY",
-                "headline": "HDFC Bank & ICICI Bank Lead 350-Point Rally in Bank Nifty",
-                "summary": "Banking index trades above its 20-day EMA and VWAP. PCR for Bank Nifty weekly series rises to 1.18 indicating strong put writing support.",
-                "sentiment": "BULLISH",
-                "impact": "HIGH",
-                "source": "CNBC-TV18 Live Wire"
+                "category": "MACRO",
+                "asset": "GLOBAL",
+                "headline": "Brent Crude Stabilizes at $74.80/bbl; US Dollar Index (DXY) Firms at 104.2",
+                "summary": "Firm dollar index puts mild pressure on emerging market currencies. INR holds steady at 83.92 per USD.",
+                "sentiment": "NEUTRAL",
+                "impact": "MEDIUM",
+                "source": "Bloomberg Commodity Desk"
             },
             {
                 "id": "NEWS_105",
                 "timestamp": (datetime.now() - timedelta(minutes=58)).strftime("%H:%M:%S"),
                 "category": "MACRO",
                 "asset": "RBI",
-                "headline": "RBI Liquidity Infusion: ₹50,000 Cr Injected via Overnight VRR Auction",
-                "summary": "Interbank liquidity deficit eased, stabilizing overnight MIBOR rates and supporting bond yields.",
+                "headline": "RBI Liquidity Update: Banking System Liquidity in ₹45,000 Cr Surplus",
+                "summary": "Overnight call money rates stay anchored near repo rate. Bond yields steady at 6.84%.",
                 "sentiment": "NEUTRAL",
-                "impact": "MEDIUM",
-                "source": "RBI Press Release"
+                "impact": "LOW",
+                "source": "RBI Press Desk"
             },
             {
                 "id": "NEWS_106",
                 "timestamp": (datetime.now() - timedelta(minutes=75)).strftime("%H:%M:%S"),
-                "category": "GLOBAL",
-                "asset": "US_MARKETS",
-                "headline": "US S&P 500 Futures Trade Higher (+0.45%); US 10-Yr Yield Cools to 4.18%",
-                "summary": "US tech momentum remains resilient. GIFT Nifty indicates a gap-up continuation for Indian equity indices.",
+                "category": "IT_SECTOR",
+                "asset": "NIFTY_IT",
+                "headline": "IT Index Shows Relative Strength on US Tech Resiliency (TCS, Infosys +0.4%)",
+                "summary": "Defensive rotation underway as market participants trim high-beta banking and allocate into largecap IT.",
                 "sentiment": "BULLISH",
                 "impact": "MEDIUM",
-                "source": "Reuters Global"
+                "source": "Reuters Market Wire"
             }
         ]
 

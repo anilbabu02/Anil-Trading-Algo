@@ -1591,5 +1591,8 @@ window.switchOptionMode = switchOptionMode;
 window.fetchSpreadSuggestions = fetchSpreadSuggestions;
 window.executeSpreadCall = executeSpreadCall;
 window.placeGttStopLoss = placeGttStopLoss;
+window.fetchNews = fetchNews;
+window.triggerBreakingNews = triggerBreakingNews;
+window.broadcastNewsToTelegram = broadcastNewsToTelegram;
 
 
