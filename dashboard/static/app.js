@@ -988,12 +988,6 @@ async function placeGttStopLoss(symbol, qty, side, slPrice) {
     }
 }
 
-    lucide.createIcons();
-    if (window.Fyers && typeof window.Fyers.init === 'function') {
-        try { window.Fyers.init(); } catch (e) {}
-    }
-}
-
 function filterSuggestions(type) {
     if (type === "ALL") {
         renderSuggestions(allSuggestionsData);
@@ -1608,6 +1602,5 @@ window.switchOptionMode = switchOptionMode;
 window.fetchSpreadSuggestions = fetchSpreadSuggestions;
 window.executeSpreadCall = executeSpreadCall;
 window.placeGttStopLoss = placeGttStopLoss;
-window.toggleAiActionsDropdown = toggleAiActionsDropdown;
 
 
