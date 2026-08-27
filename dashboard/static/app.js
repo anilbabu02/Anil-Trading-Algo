@@ -194,22 +194,23 @@ window.selectInstrument = selectInstrument;
 window.selectTimeframe = selectTimeframe;
 
 function updateFyersLiveHeaderBadge(isLive) {
-    const badge = document.getElementById("fyers-live-header-badge");
-    if (!badge) return;
+    const btn = document.getElementById("connect-fyers-btn");
+    if (!btn) return;
     if (isLive) {
-        badge.className = "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-sm shadow-emerald-500/10";
-        badge.innerHTML = `
+        btn.className = "flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-bold transition cursor-pointer shadow-sm shadow-emerald-500/10";
+        btn.innerHTML = `
             <span class="relative flex h-2 w-2">
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
             <span>Fyers Live Connected</span>
         `;
-        badge.style.display = "flex";
     } else {
-        badge.className = "hidden";
-        badge.style.display = "none";
-        badge.innerHTML = "";
+        btn.className = "flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 border border-blue-500/30 rounded-lg text-xs font-semibold transition cursor-pointer";
+        btn.innerHTML = `
+            <span>⚡</span>
+            <span>Connect Fyers</span>
+        `;
     }
 }
 

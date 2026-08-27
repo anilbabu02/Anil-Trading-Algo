@@ -54,12 +54,10 @@
 
         <!-- Quick Controls -->
         <div class="flex items-center gap-2.5">
-            <!-- Fyers Live Connection Indicator (Green if live, no indication if disconnected) -->
-            <div id="fyers-live-header-badge" class="hidden"></div>
-
-            <button onclick="openFyersConnectModal()" type="button" class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 border border-blue-500/30 rounded-lg text-xs font-semibold transition cursor-pointer">
+            <!-- Single Interactive Connect Fyers Button with Live Green State -->
+            <button onclick="openFyersConnectModal()" id="connect-fyers-btn" type="button" class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 border border-blue-500/30 rounded-lg text-xs font-semibold transition cursor-pointer">
                 <span>⚡</span>
-                Connect Fyers
+                <span id="connect-fyers-btn-text">Connect Fyers</span>
             </button>
             <button onclick="triggerSimulateStep()" class="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs font-medium transition cursor-pointer">
                 <i data-lucide="play-circle" class="w-3.5 h-3.5"></i>
@@ -588,6 +586,6 @@
         </div>
     </div>
 
-    <script src="/static/app.js?v=23.0"></script>
+    <script src="/static/app.js?v=24.0"></script>
 </body>
 </html>
