@@ -652,24 +652,45 @@ function renderSuggestions(list) {
                 </p>
 
                 <!-- Actions -->
-                <div class="flex items-center gap-2 pt-1">
-                    <button onclick="executeSuggestionCall('${item.id}')" type="button" class="flex-1 py-1.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20 active:scale-95 cursor-pointer">
-                        <i data-lucide="zap" class="w-3.5 h-3.5"></i>
-                        Execute 1-Lot
-                    </button>
-                    <button onclick="broadcastSuggestionToTelegram('${item.id}')" type="button" class="py-1.5 px-2.5 bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 rounded-lg text-xs font-medium transition flex items-center gap-1 cursor-pointer">
-                        <i data-lucide="send" class="w-3.5 h-3.5"></i>
-                        Post to Telegram
-                    </button>
-                    <button onclick="copyTelegramCall('${item.symbol}', ${item.entry_price}, ${item.stop_loss}, ${item.target_1})" type="button" class="py-1.5 px-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-medium transition flex items-center gap-1 cursor-pointer">
-                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                    </button>
+                <div class="space-y-2 pt-1">
+                    <div class="flex items-center gap-2">
+                        <button onclick="executeSuggestionCall('${item.id}')" type="button" class="flex-1 py-1.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20 active:scale-95 cursor-pointer">
+                            <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+                            Execute 1-Lot
+                        </button>
+                        <button onclick="broadcastSuggestionToTelegram('${item.id}')" type="button" class="py-1.5 px-2.5 bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 rounded-lg text-xs font-medium transition flex items-center gap-1 cursor-pointer">
+                            <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                            Post to Telegram
+                        </button>
+                        <button onclick="copyTelegramCall('${item.symbol}', ${item.entry_price}, ${item.stop_loss}, ${item.target_1})" type="button" class="py-1.5 px-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-medium transition flex items-center gap-1 cursor-pointer">
+                            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+
+                    <!-- Fyers Connect Native 1-Click Tag -->
+                    <div class="flex items-center justify-between bg-slate-950 p-1.5 rounded-lg border border-blue-900/40 text-[10px]">
+                        <span class="text-blue-300 font-medium flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span> Fyers 1-Click:
+                        </span>
+                        <fyers-button 
+                            data-fyers="XCXXXXXXM-100" 
+                            data-symbol="NSE:${item.symbol.replace(/\s+/g, '')}" 
+                            data-product="INTRADAY" 
+                            data-quantity="${item.lot_size}" 
+                            data-price="${item.entry_price}" 
+                            data-order_type="LIMIT" 
+                            data-transaction_type="${item.action}">
+                        </fyers-button>
+                    </div>
                 </div>
             </div>
         `;
     }).join('');
 
     lucide.createIcons();
+    if (window.Fyers && typeof window.Fyers.init === 'function') {
+        try { window.Fyers.init(); } catch (e) {}
+    }
 }
 
 function filterSuggestions(type) {
