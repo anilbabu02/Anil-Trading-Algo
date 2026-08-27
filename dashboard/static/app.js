@@ -919,8 +919,23 @@ function updatePositionsTable(positions) {
             <td class="p-3 font-mono font-bold ${pos.unrealized_pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
                 ${pos.unrealized_pnl >= 0 ? '+' : ''}₹${pos.unrealized_pnl.toFixed(2)}
             </td>
+            <td class="p-3">
+                <fyers-button 
+                    data-fyers="XCXXXXXXM-100" 
+                    data-symbol="NSE:${pos.symbol.replace(/\s+/g, '')}" 
+                    data-product="INTRADAY" 
+                    data-quantity="${pos.quantity}" 
+                    data-price="${pos.current_price}" 
+                    data-order_type="MARKET" 
+                    data-transaction_type="SELL">
+                </fyers-button>
+            </td>
         </tr>
     `).join('');
+
+    if (window.Fyers && typeof window.Fyers.init === 'function') {
+        try { window.Fyers.init(); } catch (e) {}
+    }
 }
 
 async function fetchTrades() {
