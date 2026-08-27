@@ -793,22 +793,6 @@ function renderSuggestions(list) {
                         <i data-lucide="shield-check" class="w-3 h-3 text-amber-400"></i>
                         Arm Hard Exchange GTT SL (₹${item.stop_loss.toFixed(2)})
                     </button>
-
-                    <!-- Fyers Connect Native 1-Click Tag -->
-                    <div class="flex items-center justify-between bg-slate-950 p-1.5 rounded-lg border border-blue-900/40 text-[10px]">
-                        <span class="text-blue-300 font-medium flex items-center gap-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span> Fyers 1-Click:
-                        </span>
-                        <fyers-button 
-                            data-fyers="XCXXXXXXM-100" 
-                            data-symbol="NSE:${item.symbol.replace(/\s+/g, '')}" 
-                            data-product="INTRADAY" 
-                            data-quantity="${item.lot_size}" 
-                            data-price="${item.entry_price}" 
-                            data-order_type="LIMIT" 
-                            data-transaction_type="${item.action}">
-                        </fyers-button>
-                    </div>
                 </div>
             </div>
         `;
