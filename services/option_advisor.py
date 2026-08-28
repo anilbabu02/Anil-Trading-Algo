@@ -155,6 +155,21 @@ class OptionAdvisorService:
         snx_gain_pct = round(((snx_ltp - snx_entry) / snx_entry) * 100, 2) if snx_entry > 0 else 0.0
         snx_oi = 3850000
 
+        # 1. NIFTY Lot Budget
+        nifty_lot_cost = round(nifty_entry * 65, 2)
+        nifty_lot_cost_ltp = round(nifty_ltp * 65, 2)
+        nifty_budget_pct = round((nifty_lot_cost / 10800.0) * 100, 1)
+
+        # 2. BANKNIFTY Lot Budget
+        bn_lot_cost = round(bn_entry * 30, 2)
+        bn_lot_cost_ltp = round(bn_ltp * 30, 2)
+        bn_budget_pct = round((bn_lot_cost / 10800.0) * 100, 1)
+
+        # 3. SENSEX Lot Budget
+        snx_lot_cost = round(snx_entry * 10, 2)
+        snx_lot_cost_ltp = round(snx_ltp * 10, 2)
+        snx_budget_pct = round((snx_lot_cost / 10800.0) * 100, 1)
+
         calls = [
             {
                 "id": "OPT_CALL_01",
@@ -168,6 +183,10 @@ class OptionAdvisorService:
                 "strategy": "5-Min Volatility Squeeze Breakdown" if nifty_chg < 0 else "5-Min Volatility Squeeze Breakout",
                 "entry_price": nifty_entry,
                 "current_ltp": nifty_ltp,
+                "total_lot_cost": nifty_lot_cost,
+                "lot_cost_ltp": nifty_lot_cost_ltp,
+                "budget_fit_pct": nifty_budget_pct,
+                "is_in_budget": nifty_lot_cost <= 5500.0,
                 "stop_loss": round(nifty_entry * 0.70, 2),
                 "target_1": round(nifty_entry + max(abs(nifty_ltp_chg) * 1.5, 35.0), 2),
                 "target_2": round(nifty_entry + max(abs(nifty_ltp_chg) * 2.2, 55.0), 2),
@@ -187,7 +206,7 @@ class OptionAdvisorService:
                 "timestamp": now_str,
                 "is_top_winner": False,
                 "market_closed": is_market_closed,
-                "reason": f"Real Fyers live contract {nifty_fyers_sym} trading at ₹{nifty_ltp:.2f} ({nifty_gain_pct:+.1f}%). NIFTY Spot at {nifty_spot:,.2f} ({nifty_chg:+.2f} pts).",
+                "reason": f"Real Fyers live contract {nifty_fyers_sym} trading at ₹{nifty_ltp:.2f} ({nifty_gain_pct:+.1f}%). 1-Lot Capital: ₹{nifty_lot_cost:,.2f} ({nifty_budget_pct}% of ₹10,800 cap).",
                 "technical_analysis": {
                     "rsi": {"value": 34.2 if nifty_chg < 0 else 62.4, "status": "Bearish Breakdown" if nifty_chg < 0 else "Bullish Flow", "signal": f"BUY {nifty_opt_type}"},
                     "macd": {"value": "-24.5" if nifty_chg < 0 else "+14.2", "status": "Trend Expansion", "signal": "BUY"},
@@ -211,6 +230,10 @@ class OptionAdvisorService:
                 "strategy": "15-Min ORB + VWAP Breakdown" if banknifty_chg < 0 else "15-Min ORB + VWAP Breakout",
                 "entry_price": bn_entry,
                 "current_ltp": bn_ltp,
+                "total_lot_cost": bn_lot_cost,
+                "lot_cost_ltp": bn_lot_cost_ltp,
+                "budget_fit_pct": bn_budget_pct,
+                "is_in_budget": bn_lot_cost <= 5500.0,
                 "stop_loss": round(bn_entry * 0.80, 2),
                 "target_1": round(bn_entry + max(abs(bn_ltp_chg) * 1.4, 75.0), 2),
                 "target_2": round(bn_entry + max(abs(bn_ltp_chg) * 2.0, 120.0), 2),
@@ -230,7 +253,7 @@ class OptionAdvisorService:
                 "timestamp": now_str,
                 "is_top_winner": False,
                 "market_closed": is_market_closed,
-                "reason": f"Real Fyers live contract {bn_fyers_sym} trading at ₹{bn_ltp:.2f} ({bn_gain_pct:+.1f}%). BANKNIFTY Spot at {banknifty_spot:,.2f} ({banknifty_chg:+.2f} pts).",
+                "reason": f"Real Fyers live contract {bn_fyers_sym} trading at ₹{bn_ltp:.2f} ({bn_gain_pct:+.1f}%). 1-Lot Capital: ₹{bn_lot_cost:,.2f} ({bn_budget_pct}% of ₹10,800 cap).",
                 "technical_analysis": {
                     "rsi": {"value": 31.8 if banknifty_chg < 0 else 64.0, "status": "Strong Momentum", "signal": f"BUY {bn_opt_type}"},
                     "macd": {"value": "-52.0" if banknifty_chg < 0 else "+31.5", "status": "Cross Confirmed", "signal": "BUY"},
@@ -254,6 +277,10 @@ class OptionAdvisorService:
                 "strategy": "Institutional Breakdown Expansion" if sensex_chg < 0 else "Institutional Breakout Expansion",
                 "entry_price": snx_entry,
                 "current_ltp": snx_ltp,
+                "total_lot_cost": snx_lot_cost,
+                "lot_cost_ltp": snx_lot_cost_ltp,
+                "budget_fit_pct": snx_budget_pct,
+                "is_in_budget": snx_lot_cost <= 5500.0,
                 "stop_loss": round(snx_entry * 0.80, 2),
                 "target_1": round(snx_entry + max(abs(snx_ltp_chg) * 1.5, 90.0), 2),
                 "target_2": round(snx_entry + max(abs(snx_ltp_chg) * 2.2, 140.0), 2),
@@ -273,7 +300,7 @@ class OptionAdvisorService:
                 "timestamp": now_str,
                 "is_top_winner": False,
                 "market_closed": is_market_closed,
-                "reason": f"Real BSE SENSEX Spot at {sensex_spot:,.2f} ({sensex_chg:+.2f} pts). Institutional order flow on ATM strike {snx_atm_strike}.",
+                "reason": f"Real BSE SENSEX Spot at {sensex_spot:,.2f} ({sensex_chg:+.2f} pts). 1-Lot Capital: ₹{snx_lot_cost:,.2f} ({snx_budget_pct}% of ₹10,800 cap).",
                 "technical_analysis": {
                     "rsi": {"value": 29.5 if sensex_chg < 0 else 68.0, "status": "Power Zone", "signal": f"BUY {snx_opt_type}"},
                     "macd": {"value": "-68.0" if sensex_chg < 0 else "+45.0", "status": "Accelerating Cross", "signal": "BUY"},

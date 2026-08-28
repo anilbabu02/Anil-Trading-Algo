@@ -813,6 +813,18 @@ function renderSuggestions(list) {
                     </div>
                 </div>
 
+                <!-- Lot Size & Budget Capital Requirement -->
+                <div class="flex items-center justify-between bg-slate-950/90 px-2.5 py-1.5 rounded-lg border border-emerald-900/30 text-[11px] font-mono">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                        <span class="text-slate-300 font-bold">1-Lot Capital:</span>
+                        <strong class="text-emerald-400 font-bold">₹${(item.total_lot_cost || (item.entry_price * item.lot_size)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong>
+                    </div>
+                    <span class="text-[10px] font-semibold text-emerald-300/90 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                        ${item.budget_fit_pct || Math.round(((item.entry_price * item.lot_size) / 10800) * 100)}% of ₹10.8k Budget
+                    </span>
+                </div>
+
                 <!-- Strategy Rationale -->
                 <p class="text-[10px] text-slate-400 italic bg-slate-900/40 p-2 rounded border border-slate-800/60 leading-relaxed">
                     💡 ${item.reason}
@@ -1026,8 +1038,29 @@ async function placeGttStopLoss(symbol, qty, side, slPrice) {
 }
 
 function filterSuggestions(type) {
+    document.querySelectorAll('.filter-pill-btn').forEach(b => {
+        b.classList.remove('bg-slate-800', 'text-white', 'border-emerald-500/40');
+        b.classList.add('bg-slate-900', 'text-slate-400');
+    });
+    const activeBtn = document.getElementById(`filter-btn-${type.toLowerCase().replace(/_/g, '-')}`);
+    if (activeBtn) {
+        activeBtn.classList.remove('bg-slate-900', 'text-slate-400');
+        activeBtn.classList.add('bg-slate-800', 'text-white', 'border-emerald-500/40');
+    }
+
     if (type === "ALL") {
         renderSuggestions(allSuggestionsData);
+    } else if (type === "BUY_ZONE") {
+        const filtered = allSuggestionsData.filter(s => {
+            const isPastTarget = s.current_ltp >= s.target_1;
+            const isExtended = s.current_ltp > (s.entry_price * 1.10);
+            const isStoppedOut = s.current_ltp <= s.stop_loss;
+            return !isPastTarget && !isExtended && !isStoppedOut && s.status !== "EXECUTED_LIVE";
+        });
+        renderSuggestions(filtered);
+    } else if (type === "BUDGET") {
+        const filtered = allSuggestionsData.filter(s => (s.total_lot_cost || (s.entry_price * s.lot_size)) <= 5000.0);
+        renderSuggestions(filtered);
     } else {
         const filtered = allSuggestionsData.filter(s => s.underlying.includes(type) || s.symbol.includes(type));
         renderSuggestions(filtered);

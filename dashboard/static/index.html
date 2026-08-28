@@ -395,10 +395,17 @@
                             <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
                             Refresh Signals
                         </button>
-                        <span class="text-slate-400">Filter:</span>
-                        <button onclick="filterSuggestions('ALL')" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-white font-medium text-[11px] transition">ALL</button>
-                        <button onclick="filterSuggestions('NIFTY')" class="px-2.5 py-1 rounded bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 font-medium text-[11px] transition">NIFTY</button>
-                        <button onclick="filterSuggestions('BANKNIFTY')" class="px-2.5 py-1 rounded bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 font-medium text-[11px] transition">BANK NIFTY</button>
+                        <span class="text-slate-400 font-medium">Filter:</span>
+                        <button id="filter-btn-all" onclick="filterSuggestions('ALL')" class="filter-pill-btn px-2.5 py-1 rounded bg-slate-800 border border-emerald-500/40 text-white font-medium text-[11px] transition">ALL</button>
+                        <button id="filter-btn-buy-zone" onclick="filterSuggestions('BUY_ZONE')" class="filter-pill-btn px-2.5 py-1 rounded bg-slate-900 border border-slate-800 hover:bg-slate-800 text-emerald-400 font-bold text-[11px] transition flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> 🟢 Live Buy Zone
+                        </button>
+                        <button id="filter-btn-budget" onclick="filterSuggestions('BUDGET')" class="filter-pill-btn px-2.5 py-1 rounded bg-slate-900 border border-slate-800 hover:bg-slate-800 text-teal-300 font-bold text-[11px] transition flex items-center gap-1">
+                            💰 In-Budget (&lt;₹5k)
+                        </button>
+                        <button id="filter-btn-nifty" onclick="filterSuggestions('NIFTY')" class="filter-pill-btn px-2.5 py-1 rounded bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 font-medium text-[11px] transition">NIFTY</button>
+                        <button id="filter-btn-banknifty" onclick="filterSuggestions('BANKNIFTY')" class="filter-pill-btn px-2.5 py-1 rounded bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 font-medium text-[11px] transition">BANK NIFTY</button>
+                        <button id="filter-btn-sensex" onclick="filterSuggestions('SENSEX')" class="filter-pill-btn px-2.5 py-1 rounded bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 font-medium text-[11px] transition">SENSEX</button>
                     </div>
                 </div>
 
@@ -604,6 +611,6 @@
         </div>
     </div>
 
-    <script src="/static/app.js?v=32.0"></script>
+    <script src="/static/app.js?v=33.0"></script>
 </body>
 </html>
