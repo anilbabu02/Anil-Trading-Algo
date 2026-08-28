@@ -870,40 +870,42 @@ function renderSuggestions(list) {
 
 // ----------------- POINTER 5: MULTI-LEG DEFINED-RISK SPREADS ----------------- //
 
-let currentOptionMode = "single";
-let allSpreadsData = [];
-
 function switchOptionMode(mode) {
-    currentOptionMode = mode;
     const singleContainer = document.getElementById("suggestions-cards-container");
     const spreadsContainer = document.getElementById("spreads-cards-container");
     const btnSingle = document.getElementById("opt-mode-single");
     const btnSpreads = document.getElementById("opt-mode-spreads");
 
     if (mode === "spreads") {
-        if (singleContainer) singleContainer.classList.add("hidden");
+        if (singleContainer) {
+            singleContainer.classList.add("hidden");
+            singleContainer.classList.remove("flex");
+        }
         if (spreadsContainer) {
             spreadsContainer.classList.remove("hidden");
-            spreadsContainer.classList.add("grid");
+            spreadsContainer.classList.add("flex");
         }
         if (btnSpreads) {
-            btnSpreads.className = "px-2 py-1 rounded text-[11px] font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-500/30 transition";
+            btnSpreads.className = "px-2.5 py-1 rounded-md text-[11px] font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-500/30 transition";
         }
         if (btnSingle) {
-            btnSingle.className = "px-2 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition";
+            btnSingle.className = "px-2.5 py-1 rounded-md text-[11px] font-semibold text-slate-400 hover:text-white transition";
         }
         fetchSpreadSuggestions();
     } else {
         if (spreadsContainer) {
             spreadsContainer.classList.add("hidden");
-            spreadsContainer.classList.remove("grid");
+            spreadsContainer.classList.remove("flex");
         }
-        if (singleContainer) singleContainer.classList.remove("hidden");
+        if (singleContainer) {
+            singleContainer.classList.remove("hidden");
+            singleContainer.classList.add("flex");
+        }
         if (btnSingle) {
-            btnSingle.className = "px-2 py-1 rounded text-[11px] font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-500/30 transition";
+            btnSingle.className = "px-2.5 py-1 rounded-md text-[11px] font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-500/30 transition";
         }
         if (btnSpreads) {
-            btnSpreads.className = "px-2 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition";
+            btnSpreads.className = "px-2.5 py-1 rounded-md text-[11px] font-semibold text-slate-400 hover:text-white transition";
         }
     }
 }
@@ -925,7 +927,7 @@ function renderSpreads(spreads) {
 
     if (!spreads || spreads.length === 0) {
         container.innerHTML = `
-            <div class="col-span-2 text-center py-10 text-slate-500 bg-slate-950/40 rounded-xl border border-slate-800">
+            <div class="w-full text-center py-10 text-slate-500 bg-slate-950/40 rounded-xl border border-slate-800">
                 No active multi-leg spread recommendations right now.
             </div>
         `;
@@ -933,48 +935,52 @@ function renderSpreads(spreads) {
     }
 
     container.innerHTML = spreads.map(item => `
-        <div class="min-w-[340px] md:min-w-[420px] max-w-[480px] flex-1 shrink-0 snap-start bg-slate-900 border border-slate-800 hover:border-emerald-500/40 rounded-xl p-4 shadow-xl space-y-3 transition flex flex-col justify-between">
-            <div class="space-y-2">
-                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+        <div class="min-w-[340px] md:min-w-[420px] max-w-[480px] flex-1 shrink-0 snap-start bg-slate-950/90 border border-slate-800 hover:border-emerald-500/40 rounded-xl p-4 shadow-xl space-y-3 transition flex flex-col justify-between group">
+            <div class="space-y-2.5">
+                <div class="flex items-start justify-between border-b border-slate-800 pb-2.5">
                     <div>
-                        <h4 class="font-extrabold text-sm text-white">${item.title}</h4>
-                        <span class="text-[10px] text-slate-400">${item.underlying} • ${item.market_view}</span>
+                        <h4 class="font-bold text-sm text-white tracking-wide">${item.title}</h4>
+                        <span class="text-[11px] text-slate-400 font-mono">${item.underlying} • ${item.market_view}</span>
                     </div>
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 whitespace-nowrap">
                         ${item.margin_benefit_pct}
                     </span>
                 </div>
 
-                <!-- Multi-Leg Breakdown -->
-                <div class="space-y-1.5 bg-slate-950 p-2.5 rounded-lg border border-slate-800/80 text-xs">
-                    <div class="text-[10px] font-bold text-slate-400 mb-1">CONSTRUCTED BASKET LEGS:</div>
+                <!-- Multi-Leg Breakdown Side by Side -->
+                <div class="space-y-1.5 bg-slate-900/90 p-2.5 rounded-lg border border-slate-800 text-xs">
+                    <div class="text-[10px] font-bold text-slate-400 mb-1 flex items-center justify-between">
+                        <span>CONSTRUCTED BASKET LEGS:</span>
+                        <span class="text-slate-500 font-mono text-[9px]">2-Leg Spread</span>
+                    </div>
                     ${item.legs.map(l => `
-                        <div class="flex justify-between items-center py-0.5 border-b border-slate-900 last:border-none">
-                            <span class="font-mono ${l.action === 'BUY' ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}">
-                                ${l.action} ${l.symbol}
+                        <div class="flex justify-between items-center py-1 border-b border-slate-800/60 last:border-none">
+                            <span class="font-mono text-xs ${l.action === 'BUY' ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'} flex items-center gap-1.5">
+                                <span class="px-1.5 py-0.2 rounded text-[9px] font-bold ${l.action === 'BUY' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}">${l.action}</span>
+                                ${l.symbol}
                             </span>
-                            <span class="text-slate-300 font-mono">Premium: ₹${l.premium.toFixed(2)}</span>
+                            <span class="text-slate-300 font-mono text-xs">₹${l.premium.toFixed(2)}</span>
                         </div>
                     `).join('')}
                 </div>
 
-                <!-- Payoff & Margin Grid -->
-                <div class="grid grid-cols-2 gap-2 text-[11px] font-mono bg-slate-950/70 p-2.5 rounded border border-slate-800">
-                    <div>
+                <!-- Payoff & Margin Grid Side by Side -->
+                <div class="grid grid-cols-2 gap-2 text-xs font-mono bg-slate-900/70 p-2.5 rounded-lg border border-slate-800">
+                    <div class="bg-slate-950/60 p-2 rounded border border-slate-800/60">
                         <span class="text-slate-400 block text-[10px]">Max Profit:</span>
-                        <strong class="text-emerald-400">+₹${item.max_profit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong>
+                        <strong class="text-emerald-400 text-xs font-bold">+₹${item.max_profit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong>
                     </div>
-                    <div>
+                    <div class="bg-slate-950/60 p-2 rounded border border-slate-800/60">
                         <span class="text-slate-400 block text-[10px]">Max Capped Risk:</span>
-                        <strong class="text-rose-400">-₹${item.max_risk.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong>
+                        <strong class="text-rose-400 text-xs font-bold">-₹${item.max_risk.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</strong>
                     </div>
-                    <div>
+                    <div class="bg-slate-950/60 p-2 rounded border border-slate-800/60">
                         <span class="text-slate-400 block text-[10px]">Breakeven Spot:</span>
-                        <strong class="text-slate-200">${item.breakeven.toFixed(2)}</strong>
+                        <strong class="text-slate-200 text-xs">${item.breakeven.toFixed(2)}</strong>
                     </div>
-                    <div>
+                    <div class="bg-slate-950/60 p-2 rounded border border-slate-800/60">
                         <span class="text-slate-400 block text-[10px]">Risk:Reward:</span>
-                        <strong class="text-teal-300">${item.risk_reward}</strong>
+                        <strong class="text-teal-300 text-xs font-bold">${item.risk_reward}</strong>
                     </div>
                 </div>
 
@@ -984,7 +990,7 @@ function renderSpreads(spreads) {
             </div>
 
             <!-- 1-Click Multi-Leg Order Execution -->
-            <button onclick="executeSpreadCall('${item.id}')" type="button" class="w-full py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg text-xs font-bold shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95">
+            <button onclick="executeSpreadCall('${item.id}')" type="button" class="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg text-xs font-bold shadow-lg shadow-emerald-600/20 transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95">
                 <i data-lucide="layers" class="w-3.5 h-3.5"></i>
                 Execute Defined-Risk Spread (Fyers Basket)
             </button>
