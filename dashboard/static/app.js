@@ -769,33 +769,25 @@ function renderSuggestions(list) {
                     </span>
                 </button>
 
-                <!-- Targets & Stop Loss Grid with Proximity Bar Graph -->
-                <div class="space-y-1.5 text-[11px] font-mono bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80">
+                <!-- Targets & Stop Loss Grid with Single-Line Proximity Bar Graph -->
+                <div class="space-y-1.5 text-[11px] font-mono bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
                     <div class="flex justify-between items-center">
                         <span class="text-slate-400">🛑 Hard Stop Loss:</span>
                         <span class="text-rose-400 font-bold">₹${item.stop_loss.toFixed(2)}</span>
                     </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-slate-400 flex items-center gap-1">🎯 Target 1:</span>
-                        <div class="flex items-center gap-1.5">
-                            <span class="text-emerald-400 font-bold">₹${item.target_1.toFixed(2)} (${item.risk_reward} R:R)</span>
-                            ${isTarget1Hit ? `<span class="px-1.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-slate-950 font-black text-[9px] shadow-md shadow-amber-500/20 flex items-center gap-0.5">🥇 GOLD HIT!</span>` : ''}
-                        </div>
-                    </div>
 
-                    <!-- Target 1 Distance Proximity Bar Graph -->
-                    <div class="space-y-1 bg-slate-900/90 p-1.5 rounded-md border border-slate-800/60">
-                        <div class="flex justify-between items-center text-[10px] font-sans">
-                            <span class="text-slate-400 font-medium flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full ${isTarget1Hit ? 'bg-amber-400' : 'bg-cyan-400'}"></span>
-                                Target 1 Proximity:
-                            </span>
-                            <span class="font-mono font-bold ${isTarget1Hit ? 'text-amber-300' : 'text-emerald-400'}">
-                                ${isTarget1Hit ? '🎯 Target 1 Hit (100%)' : `${targetProgressPct.toFixed(1)}% (${ptsRemainingToT1.toFixed(1)} pts away)`}
-                            </span>
+                    <!-- Single-Line Target 1 with Integrated Proximity Bar & Gold Badge -->
+                    <div class="flex justify-between items-center gap-2">
+                        <span class="text-slate-400 shrink-0">🎯 Target 1:</span>
+                        <div class="flex-1 bg-slate-900/90 px-1.5 py-0.5 rounded border border-slate-800/80 flex items-center gap-1.5 min-w-0" title="${isTarget1Hit ? 'Target 1 Achieved (100%)' : `${targetProgressPct.toFixed(1)}% (${ptsRemainingToT1.toFixed(1)} pts to Target 1)`}">
+                            <div class="flex-1 bg-slate-950 rounded-full h-1.5 overflow-hidden border border-slate-800/80">
+                                <div class="h-full rounded-full transition-all duration-500 ${isTarget1Hit ? 'bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 shadow-sm shadow-amber-400' : 'bg-gradient-to-r from-cyan-500 via-teal-400 to-emerald-400'}" style="width: ${Math.max(targetProgressPct, 4)}%"></div>
+                            </div>
+                            <span class="text-[9px] font-bold shrink-0 ${isTarget1Hit ? 'text-amber-300' : 'text-emerald-400'}">${targetProgressPct.toFixed(0)}%</span>
                         </div>
-                        <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800/80 p-0.5">
-                            <div class="h-full rounded-full transition-all duration-500 ${isTarget1Hit ? 'bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 shadow-sm shadow-amber-400' : 'bg-gradient-to-r from-cyan-500 via-teal-400 to-emerald-400'}" style="width: ${Math.max(targetProgressPct, 4)}%"></div>
+                        <div class="flex items-center gap-1 shrink-0">
+                            <span class="text-emerald-400 font-bold">₹${item.target_1.toFixed(2)} (${item.risk_reward} R:R)</span>
+                            ${isTarget1Hit ? `<span class="px-1.5 py-0.2 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-slate-950 font-black text-[9px] shadow-sm flex items-center">🥇 GOLD</span>` : ''}
                         </div>
                     </div>
 
