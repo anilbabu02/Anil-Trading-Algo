@@ -832,7 +832,7 @@ function renderSuggestions(list) {
                             ${disableReason}
                         </button>
                         `}
-                        <button onclick="broadcastSuggestionToTelegram('${item.id}')" type="button" class="py-1.5 px-2.5 bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 rounded-lg text-xs font-medium transition flex items-center gap-1 cursor-pointer">
+                        <button onclick="broadcastSuggestionToTelegram('${item.id}', this)" type="button" class="py-1.5 px-2.5 bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 rounded-lg text-xs font-medium transition flex items-center gap-1 cursor-pointer">
                             <i data-lucide="send" class="w-3.5 h-3.5"></i>
                             Post to Telegram
                         </button>
@@ -1077,8 +1077,13 @@ async function executeSuggestionCall(id) {
     }
 }
 
-async function broadcastSuggestionToTelegram(id) {
+async function broadcastSuggestionToTelegram(id, btnElement) {
     try {
+        if (btnElement) {
+            btnElement.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Sending...`;
+            btnElement.disabled = true;
+            if (window.lucide) lucide.createIcons();
+        }
         const res = await fetch("/api/telegram/broadcast-suggestion", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -1086,12 +1091,33 @@ async function broadcastSuggestionToTelegram(id) {
         });
         const data = await res.json();
         if (data.status === "SUCCESS") {
+            if (btnElement) {
+                btnElement.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i> Sent to Telegram!`;
+                btnElement.classList.add("bg-emerald-600/30", "text-emerald-300", "border-emerald-500/50");
+                if (window.lucide) lucide.createIcons();
+                setTimeout(() => {
+                    btnElement.innerHTML = `<i data-lucide="send" class="w-3.5 h-3.5"></i> Post to Telegram`;
+                    btnElement.classList.remove("bg-emerald-600/30", "text-emerald-300", "border-emerald-500/50");
+                    btnElement.disabled = false;
+                    if (window.lucide) lucide.createIcons();
+                }, 4000);
+            }
             alert(`📢 ${data.message}\nPosted via @anil_konda_bot to Telegram!`);
         } else {
-            alert(`⚠️ Telegram notice: ${data.message}\nEnsure the bot is in your Telegram group or channel.`);
+            if (btnElement) {
+                btnElement.innerHTML = `<i data-lucide="send" class="w-3.5 h-3.5"></i> Post to Telegram`;
+                btnElement.disabled = false;
+                if (window.lucide) lucide.createIcons();
+            }
+            alert(`⚠️ Telegram notice: ${data.message || data.detail}`);
         }
     } catch (e) {
         console.error("Broadcast Suggestion Error:", e);
+        if (btnElement) {
+            btnElement.innerHTML = `<i data-lucide="send" class="w-3.5 h-3.5"></i> Post to Telegram`;
+            btnElement.disabled = false;
+            if (window.lucide) lucide.createIcons();
+        }
         alert("Broadcast Error: " + e.message);
     }
 }

@@ -128,7 +128,10 @@ class TelegramNotifier:
 
     # ------------------ DEDICATED OPTION RECOMMENDATION BROADCAST ------------------ #
     async def broadcast_option_recommendation(self, item: Dict[str, Any], chat_id: Optional[str] = None) -> tuple[bool, str]:
-        target_chat = chat_id or self.desk1_chat_id
+        # Multi-recipient broadcast list (Delivers to all active desk subscribers)
+        candidate_chats = [chat_id, self.desk1_chat_id, self.desk2_chat_id, "1867588787", "7181036522"]
+        valid_chats = list(dict.fromkeys([str(c).strip() for c in candidate_chats if c and not str(c).startswith("-5")]))
+
         is_ce = item.get("option_type") == "CE"
         emoji = "🟢" if is_ce else "🔴"
         action = item.get("action", "BUY")
@@ -153,7 +156,18 @@ class TelegramNotifier:
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
             f"🤖 *Dispatched via*: `@anil_konda_bot` | ⏰ `{datetime.now().strftime('%H:%M:%S')} IST`"
         )
-        return await self.send_message(target_chat, text)
+        
+        success_count = 0
+        last_detail = "No chats configured"
+        for cid in valid_chats:
+            ok, detail = await self.send_message(cid, text)
+            if ok:
+                success_count += 1
+            last_detail = detail
+            
+        if success_count > 0:
+            return True, f"Delivered to {success_count} Telegram chat(s) via @anil_konda_bot"
+        return False, last_detail
 
     # ------------------ DEDICATED TRADE NEWS BROADCAST ------------------ #
     async def broadcast_news_bulletin(self, item: Dict[str, Any], chat_id: Optional[str] = None) -> bool:
