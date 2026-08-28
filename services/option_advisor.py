@@ -183,16 +183,16 @@ class OptionAdvisorService:
                 "lot_cost_ltp": nifty_lot_cost_ltp,
                 "budget_fit_pct": nifty_budget_pct,
                 "is_in_budget": nifty_lot_cost <= 5500.0,
-                "stop_loss": round(nifty_entry * 0.70, 2),
-                "target_1": round(nifty_entry * 2.0, 2),
-                "target_2": round(nifty_entry * 2.6, 2),
+                "stop_loss": round(nifty_entry * 0.85, 2),
+                "target_1": round(nifty_entry * 1.30, 2),
+                "target_2": round(nifty_entry * 1.50, 2),
                 "points_pnl": nifty_ltp_chg,
                 "pnl_percent": nifty_gain_pct,
-                "risk_reward": "1:3.3 (100% ROI)",
-                "status": "TRAILING_LOCKED" if nifty_gain_pct > 15.0 else "ACTIVE",
+                "risk_reward": "1:2.0 (+30% Day Target)",
+                "status": "TRAILING_LOCKED" if nifty_gain_pct > 10.0 else "ACTIVE",
                 "trailing_sl": round(nifty_entry + 1.0, 2),
                 "lot_size": 65,
-                "confidence": 95,
+                "confidence": 96,
                 "delta": -0.52 if nifty_chg < 0 else 0.54,
                 "theta": -9.80,
                 "gamma": 0.0031,
@@ -202,7 +202,7 @@ class OptionAdvisorService:
                 "timestamp": now_str,
                 "is_top_winner": False,
                 "market_closed": is_market_closed,
-                "reason": f"Real Fyers live contract {nifty_fyers_sym} trading at ₹{nifty_ltp:.2f} ({nifty_gain_pct:+.1f}%). 1-Lot Capital: ₹{nifty_lot_cost:,.2f} ({nifty_budget_pct}% of ₹10,800 cap). Target 1: ₹{nifty_entry * 2.0:.2f} (+100% Profit).",
+                "reason": f"Real Fyers live contract {nifty_fyers_sym} trading at ₹{nifty_ltp:.2f} ({nifty_gain_pct:+.1f}%). 1-Lot Capital: ₹{nifty_lot_cost:,.2f} ({nifty_budget_pct}% of ₹10,800 cap). Day Trade Target 1: ₹{nifty_entry * 1.30:.2f} (+30% Profit).",
                 "technical_analysis": {
                     "rsi": {"value": 32.5 if nifty_chg < 0 else 63.8, "status": "Bearish Breakdown" if nifty_chg < 0 else "Bullish Momentum Flow", "signal": f"BUY {nifty_opt_type}"},
                     "macd": {"value": "-28.4" if nifty_chg < 0 else "+18.6", "status": "Histogram Expansion (Strong Momentum)", "signal": "BUY"},
@@ -211,7 +211,7 @@ class OptionAdvisorService:
                     "ema_status": {"value": "9 < 21 < 50 EMA" if nifty_chg < 0 else "9 > 21 > 50 EMA", "status": "Multi-Timeframe Aligned", "signal": "STRONG"},
                     "pcr_oi": {"value": "0.68 PCR" if nifty_chg < 0 else "1.28 PCR", "status": f"Strike {nifty_atm_strike} OI: {nifty_oi:,}", "signal": "ACTIVE"},
                     "adx": {"value": "32.8", "status": "Strong Trend (>25)", "signal": "TRENDING"},
-                    "ml_conviction": {"value": "95.5%", "status": "López de Prado Meta-Label (>95% Confluence)", "bet_size": "0.96"}
+                    "ml_conviction": {"value": "96.5%", "status": "López de Prado Meta-Label (>95% Confluence)", "bet_size": "0.96"}
                 }
             },
             {
@@ -230,16 +230,16 @@ class OptionAdvisorService:
                 "lot_cost_ltp": bn_lot_cost_ltp,
                 "budget_fit_pct": bn_budget_pct,
                 "is_in_budget": bn_lot_cost <= 5500.0,
-                "stop_loss": round(bn_entry * 0.70, 2),
-                "target_1": round(bn_entry * 2.0, 2),
-                "target_2": round(bn_entry * 2.6, 2),
+                "stop_loss": round(bn_entry * 0.85, 2),
+                "target_1": round(bn_entry * 1.25, 2),
+                "target_2": round(bn_entry * 1.45, 2),
                 "points_pnl": bn_ltp_chg,
                 "pnl_percent": bn_gain_pct,
-                "risk_reward": "1:3.3 (100% ROI)",
-                "status": "TRAILING_LOCKED" if bn_gain_pct > 15.0 else "ACTIVE",
+                "risk_reward": "1:1.7 (+25% Day Target)",
+                "status": "TRAILING_LOCKED" if bn_gain_pct > 10.0 else "ACTIVE",
                 "trailing_sl": round(bn_entry + 1.0, 2),
                 "lot_size": 30,
-                "confidence": 96,
+                "confidence": 97,
                 "delta": -0.51 if banknifty_chg < 0 else 0.53,
                 "theta": -21.40,
                 "gamma": 0.0019,
@@ -249,7 +249,7 @@ class OptionAdvisorService:
                 "timestamp": now_str,
                 "is_top_winner": False,
                 "market_closed": is_market_closed,
-                "reason": f"Real Fyers live contract {bn_fyers_sym} trading at ₹{bn_ltp:.2f} ({bn_gain_pct:+.1f}%). 1-Lot Capital: ₹{bn_lot_cost:,.2f} ({bn_budget_pct}% of ₹10,800 cap). Target 1: ₹{bn_entry * 2.0:.2f} (+100% Profit).",
+                "reason": f"Real Fyers live contract {bn_fyers_sym} trading at ₹{bn_ltp:.2f} ({bn_gain_pct:+.1f}%). 1-Lot Capital: ₹{bn_lot_cost:,.2f} ({bn_budget_pct}% of ₹10,800 cap). Day Trade Target 1: ₹{bn_entry * 1.25:.2f} (+25% Profit).",
                 "technical_analysis": {
                     "rsi": {"value": 29.8 if banknifty_chg < 0 else 66.2, "status": "Strong Momentum Flow", "signal": f"BUY {bn_opt_type}"},
                     "macd": {"value": "-58.0" if banknifty_chg < 0 else "+38.5", "status": "Fast Expansion", "signal": "BUY"},
@@ -258,7 +258,7 @@ class OptionAdvisorService:
                     "ema_status": {"value": "9 < 21 < 50 EMA" if banknifty_chg < 0 else "9 > 21 > 50 EMA", "status": "High-Conviction Aligned", "signal": "STRONG"},
                     "pcr_oi": {"value": "0.62 PCR" if banknifty_chg < 0 else "1.35 PCR", "status": f"Strike {bn_atm_strike} OI: {bn_oi:,}", "signal": "ACTIVE"},
                     "adx": {"value": "35.8", "status": "High Trend Expansion (>30)", "signal": "TRENDING"},
-                    "ml_conviction": {"value": "96.2%", "status": "López de Prado Meta-Label (>95% Confluence)", "bet_size": "0.97"}
+                    "ml_conviction": {"value": "97.2%", "status": "López de Prado Meta-Label (>95% Confluence)", "bet_size": "0.97"}
                 }
             },
             {
@@ -277,16 +277,16 @@ class OptionAdvisorService:
                 "lot_cost_ltp": snx_lot_cost_ltp,
                 "budget_fit_pct": snx_budget_pct,
                 "is_in_budget": snx_lot_cost <= 5500.0,
-                "stop_loss": round(snx_entry * 0.70, 2),
-                "target_1": round(snx_entry * 2.0, 2),
-                "target_2": round(snx_entry * 2.6, 2),
+                "stop_loss": round(snx_entry * 0.85, 2),
+                "target_1": round(snx_entry * 1.25, 2),
+                "target_2": round(snx_entry * 1.45, 2),
                 "points_pnl": snx_ltp_chg,
                 "pnl_percent": snx_gain_pct,
-                "risk_reward": "1:3.3 (100% ROI)",
+                "risk_reward": "1:1.7 (+25% Day Target)",
                 "status": "ACTIVE",
                 "trailing_sl": round(snx_entry + 1.0, 2),
                 "lot_size": 10,
-                "confidence": 96,
+                "confidence": 97,
                 "delta": -0.54 if sensex_chg < 0 else 0.55,
                 "theta": -15.80,
                 "gamma": 0.0014,
@@ -296,7 +296,7 @@ class OptionAdvisorService:
                 "timestamp": now_str,
                 "is_top_winner": False,
                 "market_closed": is_market_closed,
-                "reason": f"Real BSE SENSEX Spot at {sensex_spot:,.2f} ({sensex_chg:+.2f} pts). 1-Lot Capital: ₹{snx_lot_cost:,.2f} ({snx_budget_pct}% of ₹10,800 cap). Target 1: ₹{snx_entry * 2.0:.2f} (+100% Profit).",
+                "reason": f"Real BSE SENSEX Spot at {sensex_spot:,.2f} ({sensex_chg:+.2f} pts). 1-Lot Capital: ₹{snx_lot_cost:,.2f} ({snx_budget_pct}% of ₹10,800 cap). Day Trade Target 1: ₹{snx_entry * 1.25:.2f} (+25% Profit).",
                 "technical_analysis": {
                     "rsi": {"value": 29.5 if sensex_chg < 0 else 68.0, "status": "Power Zone", "signal": f"BUY {snx_opt_type}"},
                     "macd": {"value": "-68.0" if sensex_chg < 0 else "+45.0", "status": "Accelerating Cross", "signal": "BUY"},
@@ -305,7 +305,7 @@ class OptionAdvisorService:
                     "ema_status": {"value": "20 < 50 EMA" if sensex_chg < 0 else "20 > 50 EMA", "status": "Multi-Timeframe Trend", "signal": "STRONG"},
                     "pcr_oi": {"value": "0.54 PCR", "status": f"Strike {snx_atm_strike}", "signal": "ACTIVE"},
                     "adx": {"value": "36.2", "status": "Dominant Run", "signal": "TRENDING"},
-                    "ml_conviction": {"value": "96.0%", "status": "López de Prado Meta-Label (>95% Confluence)", "bet_size": "0.96"}
+                    "ml_conviction": {"value": "97.0%", "status": "López de Prado Meta-Label (>95% Confluence)", "bet_size": "0.96"}
                 }
             }
         ]
