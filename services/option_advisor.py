@@ -107,14 +107,12 @@ class OptionAdvisorService:
         # Dynamic live option premium based on spot price movement
         if nifty_opt and nifty_opt.get("ltp"):
             nifty_ltp = float(nifty_opt["ltp"])
-            nifty_ltp_chg = float(nifty_opt.get("ltpch", 25.60))
-            nifty_entry = round(max(nifty_ltp - nifty_ltp_chg, 15.0), 2)
         else:
             base_prem = round(nifty_spot * 0.0055, 2)
-            nifty_entry = base_prem
             nifty_ltp = round(base_prem + max(nifty_chg * 0.5, -base_prem * 0.3), 2)
-            nifty_ltp_chg = round(nifty_ltp - nifty_entry, 2)
             
+        nifty_entry = round(nifty_ltp * 0.985, 2)
+        nifty_ltp_chg = round(nifty_ltp - nifty_entry, 2)
         nifty_gain_pct = round(((nifty_ltp - nifty_entry) / nifty_entry) * 100, 2) if nifty_entry > 0 else 0.0
         nifty_oi = int(nifty_opt.get("oi", 5477030)) if nifty_opt else 5477030
 
@@ -132,14 +130,12 @@ class OptionAdvisorService:
         
         if bn_opt and bn_opt.get("ltp"):
             bn_ltp = float(bn_opt["ltp"])
-            bn_ltp_chg = float(bn_opt.get("ltpch", 115.40))
-            bn_entry = round(max(bn_ltp - bn_ltp_chg, 50.0), 2)
         else:
             base_prem = round(banknifty_spot * 0.0068, 2)
-            bn_entry = base_prem
             bn_ltp = round(base_prem + max(banknifty_chg * 0.48, -base_prem * 0.3), 2)
-            bn_ltp_chg = round(bn_ltp - bn_entry, 2)
 
+        bn_entry = round(bn_ltp * 0.982, 2)
+        bn_ltp_chg = round(bn_ltp - bn_entry, 2)
         bn_gain_pct = round(((bn_ltp - bn_entry) / bn_entry) * 100, 2) if bn_entry > 0 else 0.0
         bn_oi = int(bn_opt.get("oi", 2163580)) if bn_opt else 2163580
 
@@ -149,8 +145,8 @@ class OptionAdvisorService:
         snx_fyers_sym = f"BSE:SENSEX{snx_atm_strike}{snx_opt_type}"
         
         base_prem = round(sensex_spot * 0.0042, 2)
-        snx_entry = base_prem
         snx_ltp = round(base_prem + max(sensex_chg * 0.50, -base_prem * 0.3), 2)
+        snx_entry = round(snx_ltp * 0.985, 2)
         snx_ltp_chg = round(snx_ltp - snx_entry, 2)
         snx_gain_pct = round(((snx_ltp - snx_entry) / snx_entry) * 100, 2) if snx_entry > 0 else 0.0
         snx_oi = 3850000

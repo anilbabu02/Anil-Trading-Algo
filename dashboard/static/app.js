@@ -777,7 +777,7 @@ function renderSuggestions(list) {
                         <span class="text-teal-300 font-bold">₹${item.target_2.toFixed(2)}</span>
                     </div>
                     <div class="flex justify-between border-t border-slate-800/80 pt-1 text-[10px] text-slate-500">
-                        <span>$\Delta$: <strong class="text-slate-300">${item.delta}</strong> | $\Theta$: <strong class="text-slate-300">${item.theta}</strong> | IV: <strong class="text-slate-300">${item.iv}%</strong></span>
+                        <span>&Delta;: <strong class="text-slate-300">${item.delta}</strong> | &Theta;: <strong class="text-slate-300">${item.theta}</strong> | IV: <strong class="text-slate-300">${item.iv}%</strong></span>
                         <span>Lot: <strong class="text-slate-300">${item.lot_size} Qty</strong></span>
                     </div>
                 </div>
