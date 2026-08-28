@@ -73,66 +73,66 @@
     <!-- Main Container -->
     <main class="flex-1 p-5 max-w-7xl w-full mx-auto space-y-5">
 
-        <!-- Top Metric KPI Cards -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
-            <!-- Starting Capital -->
-            <div class="bg-slate-900/60 border border-slate-800/80 p-3.5 rounded-xl">
-                <div class="text-[11px] text-slate-400 font-medium flex justify-between">
+        <!-- Unified Single-Window Executive Stats Cockpit -->
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 shadow-xl backdrop-blur flex flex-wrap items-center justify-between gap-y-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-800/80">
+            <!-- 1. Base Capital -->
+            <div class="flex-1 min-w-[130px] px-3 first:pl-1">
+                <div class="text-[10px] text-slate-400 font-medium flex items-center justify-between">
                     <span>Base Capital</span>
                     <i data-lucide="wallet" class="w-3.5 h-3.5 text-slate-500"></i>
                 </div>
-                <div class="text-lg font-bold text-slate-100 mt-1">₹10,800.00</div>
-                <div class="text-[10px] text-slate-500 mt-0.5">Strict 1 Lot Rule</div>
+                <div class="text-sm sm:text-base font-bold text-slate-100 mt-0.5 font-mono">₹10,800.00</div>
+                <div class="text-[9px] text-slate-500">Strict 1-Lot Rule</div>
             </div>
 
-            <!-- Compounded Capital -->
-            <div class="bg-slate-900/60 border border-slate-800/80 p-3.5 rounded-xl">
-                <div class="text-[11px] text-slate-400 font-medium flex justify-between">
+            <!-- 2. Compounded Capital -->
+            <div class="flex-1 min-w-[130px] px-3">
+                <div class="text-[10px] text-slate-400 font-medium flex items-center justify-between">
                     <span>Compounded</span>
                     <i data-lucide="trending-up" class="w-3.5 h-3.5 text-emerald-400"></i>
                 </div>
-                <div id="compounded-cap" class="text-lg font-bold text-emerald-400 mt-1">₹8,37,624.26</div>
-                <div class="text-[10px] text-emerald-500/80 mt-0.5">+7,655% (5-Yr)</div>
+                <div id="compounded-cap" class="text-sm sm:text-base font-bold text-emerald-400 mt-0.5 font-mono">₹8,37,624.26</div>
+                <div class="text-[9px] text-emerald-500/80 font-mono">+7,655% (5-Yr)</div>
             </div>
 
-            <!-- Today's Realized P&L -->
-            <div class="bg-slate-900/60 border border-slate-800/80 p-3.5 rounded-xl">
-                <div class="text-[11px] text-slate-400 font-medium flex justify-between">
+            <!-- 3. Today's Realized P&L -->
+            <div class="flex-1 min-w-[130px] px-3">
+                <div class="text-[10px] text-slate-400 font-medium flex items-center justify-between">
                     <span>Today's Realized</span>
                     <i data-lucide="circle-dollar-sign" class="w-3.5 h-3.5 text-teal-400"></i>
                 </div>
-                <div id="today-pnl" class="text-lg font-bold text-slate-100 mt-1">+₹0.00</div>
-                <div class="text-[10px] text-slate-500 mt-0.5">Net after taxes</div>
+                <div id="today-pnl" class="text-sm sm:text-base font-bold text-slate-100 mt-0.5 font-mono">+₹0.00</div>
+                <div class="text-[9px] text-slate-500">Net after taxes</div>
             </div>
 
-            <!-- Win Rate -->
-            <div class="bg-slate-900/60 border border-slate-800/80 p-3.5 rounded-xl">
-                <div class="text-[11px] text-slate-400 font-medium flex justify-between">
+            <!-- 4. Verified Win Rate -->
+            <div class="flex-1 min-w-[130px] px-3">
+                <div class="text-[10px] text-slate-400 font-medium flex items-center justify-between">
                     <span>Verified Win Rate</span>
                     <i data-lucide="award" class="w-3.5 h-3.5 text-amber-400"></i>
                 </div>
-                <div class="text-lg font-bold text-amber-400 mt-1">64.6%</div>
-                <div class="text-[10px] text-slate-500 mt-0.5">1,885 Trades</div>
+                <div class="text-sm sm:text-base font-bold text-amber-400 mt-0.5 font-mono">64.6%</div>
+                <div class="text-[9px] text-slate-500 font-mono">1,885 Trades</div>
             </div>
 
-            <!-- Daily Trades Guardrail -->
-            <div class="bg-slate-900/60 border border-slate-800/80 p-3.5 rounded-xl">
-                <div class="text-[11px] text-slate-400 font-medium flex justify-between">
+            <!-- 5. Daily Trades -->
+            <div class="flex-1 min-w-[130px] px-3">
+                <div class="text-[10px] text-slate-400 font-medium flex items-center justify-between">
                     <span>Daily Trades</span>
                     <i data-lucide="activity" class="w-3.5 h-3.5 text-indigo-400"></i>
                 </div>
-                <div id="daily-trades" class="text-lg font-bold text-indigo-300 mt-1">0 / 2</div>
-                <div class="text-[10px] text-slate-500 mt-0.5">Max 2 Daily</div>
+                <div id="daily-trades" class="text-sm sm:text-base font-bold text-indigo-300 mt-0.5 font-mono">0 / 2</div>
+                <div class="text-[9px] text-slate-500 font-mono">Max 2 Daily</div>
             </div>
 
-            <!-- Circuit Breaker Status -->
-            <div class="bg-slate-900/60 border border-slate-800/80 p-3.5 rounded-xl">
-                <div class="text-[11px] text-slate-400 font-medium flex justify-between">
+            <!-- 6. Circuit Breaker -->
+            <div class="flex-1 min-w-[130px] px-3 last:pr-1">
+                <div class="text-[10px] text-slate-400 font-medium flex items-center justify-between">
                     <span>Circuit Breaker</span>
                     <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
                 </div>
-                <div id="circuit-breaker-status" class="text-lg font-bold text-emerald-400 mt-1">ACTIVE (OK)</div>
-                <div class="text-[10px] text-slate-500 mt-0.5">-₹1,000 Hard Stop</div>
+                <div id="circuit-breaker-status" class="text-sm sm:text-base font-bold text-emerald-400 mt-0.5 font-mono">ACTIVE (OK)</div>
+                <div class="text-[9px] text-slate-500 font-mono">-₹1,000 Hard Stop</div>
             </div>
         </div>
 
@@ -643,6 +643,6 @@
         </div>
     </div>
 
-    <script src="/static/app.js?v=41.0"></script>
+    <script src="/static/app.js?v=42.0"></script>
 </body>
 </html>
