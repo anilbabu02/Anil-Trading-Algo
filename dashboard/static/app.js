@@ -683,11 +683,11 @@ function renderSuggestions(list) {
 
         let statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">ACTIVE</span>`;
         if (isTopWinner) {
-            statusBadge = `<span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-gradient-to-r from-amber-500/20 via-yellow-500/30 to-amber-500/20 text-amber-300 border border-amber-400/60 shadow-md shadow-amber-500/10 flex items-center gap-1">🏆 Golden Winner Trophy Badge</span>`;
+            statusBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-black bg-gradient-to-r from-amber-500/20 via-yellow-500/30 to-amber-500/20 text-amber-300 border border-amber-400/60 shadow-sm flex items-center gap-1" title="Top Performing Trade (Golden Winner)">🏆 Top Pick</span>`;
         } else if (item.status === "TRAILING_LOCKED") {
-            statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">⚡ SL LOCKED (Cost+1)</span>`;
+            statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">⚡ LOCKED</span>`;
         } else if (item.status === "EXECUTED_LIVE") {
-            statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">✓ EXECUTED IN BROKER</span>`;
+            statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">✓ EXECUTED</span>`;
         }
 
         // Determine if trade is in optimal buy/profit zone & calculate target proximity
@@ -720,6 +720,18 @@ function renderSuggestions(list) {
             disableReason = "🛑 Below Stop Loss";
         }
 
+        // Single unified Action & Buy Zone Badge
+        const unifiedBuyBadge = isExecutable ? `
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${isCE ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40' : 'bg-rose-500/20 text-rose-400 border border-rose-500/40'} flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full ${isCE ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400 animate-pulse'}"></span>
+                ${item.action} ${item.option_type}
+            </span>
+        ` : `
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700/60">
+                ${item.action} ${item.option_type}
+            </span>
+        `;
+
         return `
             <div class="bg-slate-950/90 border ${isExecutable ? 'border-emerald-500/40 shadow-emerald-500/5' : 'border-slate-800'} hover:border-cyan-500/40 rounded-xl p-4 flex flex-col justify-between space-y-3 transition-all duration-200 shadow-xl group">
                 <!-- Top Header -->
@@ -727,8 +739,7 @@ function renderSuggestions(list) {
                     <div>
                         <div class="flex items-center gap-2">
                             <span class="text-sm font-black text-white tracking-wide">${item.symbol}</span>
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold ${isCE ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}">${item.action} ${item.option_type}</span>
-                            ${isExecutable ? `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">🟢 BUY ZONE</span>` : ''}
+                            ${unifiedBuyBadge}
                         </div>
                         <p class="text-[11px] text-slate-400 mt-0.5 font-mono">${item.expiry} • Strike ${item.strike}</p>
                     </div>
