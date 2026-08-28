@@ -690,14 +690,38 @@ function renderSuggestions(list) {
             statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">✓ EXECUTED IN BROKER</span>`;
         }
 
+        // Determine if trade is in optimal buy/profit zone
+        const isPastTarget = item.current_ltp >= item.target_1;
+        const isExtended = item.current_ltp > (item.entry_price * 1.10);
+        const isStoppedOut = item.current_ltp <= item.stop_loss;
+        const isAlreadyExecuted = item.status === "EXECUTED_LIVE";
+        
+        let isExecutable = true;
+        let disableReason = "";
+
+        if (isAlreadyExecuted) {
+            isExecutable = false;
+            disableReason = "✓ Position Active";
+        } else if (isPastTarget) {
+            isExecutable = false;
+            disableReason = "🎯 Target 1 Reached";
+        } else if (isExtended) {
+            isExecutable = false;
+            disableReason = "⚠️ Price Extended (Wait Pullback)";
+        } else if (isStoppedOut) {
+            isExecutable = false;
+            disableReason = "🛑 Below Stop Loss";
+        }
+
         return `
-            <div class="bg-slate-950/90 border border-slate-800 hover:border-cyan-500/40 rounded-xl p-4 flex flex-col justify-between space-y-3 transition-all duration-200 shadow-xl group">
+            <div class="bg-slate-950/90 border ${isExecutable ? 'border-emerald-500/40 shadow-emerald-500/5' : 'border-slate-800'} hover:border-cyan-500/40 rounded-xl p-4 flex flex-col justify-between space-y-3 transition-all duration-200 shadow-xl group">
                 <!-- Top Header -->
                 <div class="flex items-start justify-between border-b border-slate-800/80 pb-2.5">
                     <div>
                         <div class="flex items-center gap-2">
                             <span class="text-sm font-black text-white tracking-wide">${item.symbol}</span>
                             <span class="px-2 py-0.5 rounded text-[10px] font-bold ${isCE ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'}">${item.action} ${item.option_type}</span>
+                            ${isExecutable ? `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">🟢 BUY ZONE</span>` : ''}
                         </div>
                         <p class="text-[11px] text-slate-400 mt-0.5 font-mono">${item.expiry} • Strike ${item.strike}</p>
                     </div>
@@ -715,15 +739,15 @@ function renderSuggestions(list) {
                             <span class="text-slate-500 text-[10px] block">Current LTP:</span>
                             <div class="font-bold text-white text-sm flex items-center justify-end gap-1">
                                 ₹${item.current_ltp.toFixed(2)}
-                                <span class="${isProfit ? 'text-emerald-400' : 'text-rose-400'} text-[11px] font-semibold">
+                                <span class="text-xs ${isProfit ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}">
                                     (${isProfit ? '+' : ''}${pointsGain.toFixed(1)} pts | ${isProfit ? '+' : ''}${gainPct.toFixed(1)}%)
                                 </span>
                             </div>
                         </div>
                     </div>
-                    <!-- Live Target Progress -->
+                    <!-- Visual P&L Progress Bar -->
                     <div class="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden border border-slate-800">
-                        <div class="bg-gradient-to-r from-cyan-500 to-emerald-400 h-1.5 rounded-full transition-all duration-500" style="width: ${Math.min(Math.max((pointsGain / (item.target_1 - item.entry_price)) * 100, 15), 100)}%"></div>
+                        <div class="h-full rounded-full transition-all duration-500 ${isProfit ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-rose-500'}" style="width: ${Math.min(Math.max(gainPct + 50, 5), 100)}%"></div>
                     </div>
                 </div>
 
@@ -797,10 +821,17 @@ function renderSuggestions(list) {
                 <!-- Actions -->
                 <div class="space-y-2 pt-1">
                     <div class="flex items-center gap-2">
+                        ${isExecutable ? `
                         <button onclick="executeSuggestionCall('${item.id}')" type="button" class="flex-1 py-1.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-600/20 active:scale-95 cursor-pointer">
                             <i data-lucide="zap" class="w-3.5 h-3.5"></i>
-                            Execute 1-Lot
+                            Execute 1-Lot (In Buy Zone)
                         </button>
+                        ` : `
+                        <button disabled type="button" class="flex-1 py-1.5 px-3 bg-slate-800/80 text-slate-400 border border-slate-700/60 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 cursor-not-allowed opacity-80 select-none" title="${disableReason}">
+                            <i data-lucide="lock" class="w-3.5 h-3.5 text-slate-400"></i>
+                            ${disableReason}
+                        </button>
+                        `}
                         <button onclick="broadcastSuggestionToTelegram('${item.id}')" type="button" class="py-1.5 px-2.5 bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 rounded-lg text-xs font-medium transition flex items-center gap-1 cursor-pointer">
                             <i data-lucide="send" class="w-3.5 h-3.5"></i>
                             Post to Telegram
