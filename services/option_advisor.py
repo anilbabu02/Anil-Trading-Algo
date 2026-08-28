@@ -204,14 +204,14 @@ class OptionAdvisorService:
                 "market_closed": is_market_closed,
                 "reason": f"Real Fyers live contract {nifty_fyers_sym} trading at ₹{nifty_ltp:.2f} ({nifty_gain_pct:+.1f}%). 1-Lot Capital: ₹{nifty_lot_cost:,.2f} ({nifty_budget_pct}% of ₹10,800 cap).",
                 "technical_analysis": {
-                    "rsi": {"value": 34.2 if nifty_chg < 0 else 62.4, "status": "Bearish Breakdown" if nifty_chg < 0 else "Bullish Flow", "signal": f"BUY {nifty_opt_type}"},
-                    "macd": {"value": "-24.5" if nifty_chg < 0 else "+14.2", "status": "Trend Expansion", "signal": "BUY"},
+                    "rsi": {"value": 32.5 if nifty_chg < 0 else 63.8, "status": "Bearish Breakdown" if nifty_chg < 0 else "Bullish Momentum Flow", "signal": f"BUY {nifty_opt_type}"},
+                    "macd": {"value": "-28.4" if nifty_chg < 0 else "+18.6", "status": "Histogram Expansion (Strong Momentum)", "signal": "BUY"},
                     "supertrend": {"value": f"{nifty_spot:,.0f}", "status": "RED (SELL)" if nifty_chg < 0 else "GREEN (BUY)", "signal": "BUY"},
-                    "vwap_bias": {"value": f"{nifty_chg:+.1f} pts", "status": "Below VWAP" if nifty_chg < 0 else "Above VWAP", "signal": "BEARISH" if nifty_chg < 0 else "BULLISH"},
-                    "ema_status": {"value": "20 < 50 EMA" if nifty_chg < 0 else "20 > 50 EMA", "status": "Aligned Trend", "signal": "STRONG"},
-                    "pcr_oi": {"value": "0.62 PCR", "status": f"Strike {nifty_atm_strike} OI: {nifty_oi:,}", "signal": "ACTIVE"},
-                    "adx": {"value": "28.5", "status": "Trending", "signal": "TRENDING"},
-                    "ml_conviction": {"value": "91.0%", "status": "López de Prado Meta-Label", "bet_size": "0.90"}
+                    "vwap_bias": {"value": f"{nifty_chg:+.1f} pts", "status": "Below VWAP Band" if nifty_chg < 0 else "Above Institutional VWAP", "signal": "BEARISH" if nifty_chg < 0 else "BULLISH"},
+                    "ema_status": {"value": "9 < 21 < 50 EMA" if nifty_chg < 0 else "9 > 21 > 50 EMA", "status": "Multi-Timeframe Aligned", "signal": "STRONG"},
+                    "pcr_oi": {"value": "0.68 PCR" if nifty_chg < 0 else "1.28 PCR", "status": f"Strike {nifty_atm_strike} OI: {nifty_oi:,}", "signal": "ACTIVE"},
+                    "adx": {"value": "31.2", "status": "Strong Trend (>25)", "signal": "TRENDING"},
+                    "ml_conviction": {"value": "92.5%", "status": "López de Prado Meta-Label", "bet_size": "0.92"}
                 }
             },
             {
@@ -235,12 +235,12 @@ class OptionAdvisorService:
                 "target_2": round(bn_entry + max(abs(bn_ltp_chg) * 2.0, 120.0), 2),
                 "points_pnl": bn_ltp_chg,
                 "pnl_percent": bn_gain_pct,
-                "risk_reward": "1:2.7",
+                "risk_reward": "1:2.8",
                 "status": "TRAILING_LOCKED" if bn_gain_pct > 15.0 else "ACTIVE",
                 "trailing_sl": round(bn_entry + 1.0, 2),
                 "lot_size": 30,
-                "confidence": 93,
-                "delta": -0.51 if banknifty_chg < 0 else 0.52,
+                "confidence": 94,
+                "delta": -0.51 if banknifty_chg < 0 else 0.53,
                 "theta": -21.40,
                 "gamma": 0.0019,
                 "vega": 22.10,
@@ -251,14 +251,14 @@ class OptionAdvisorService:
                 "market_closed": is_market_closed,
                 "reason": f"Real Fyers live contract {bn_fyers_sym} trading at ₹{bn_ltp:.2f} ({bn_gain_pct:+.1f}%). 1-Lot Capital: ₹{bn_lot_cost:,.2f} ({bn_budget_pct}% of ₹10,800 cap).",
                 "technical_analysis": {
-                    "rsi": {"value": 31.8 if banknifty_chg < 0 else 64.0, "status": "Strong Momentum", "signal": f"BUY {bn_opt_type}"},
-                    "macd": {"value": "-52.0" if banknifty_chg < 0 else "+31.5", "status": "Cross Confirmed", "signal": "BUY"},
+                    "rsi": {"value": 29.8 if banknifty_chg < 0 else 66.2, "status": "Strong Momentum Flow", "signal": f"BUY {bn_opt_type}"},
+                    "macd": {"value": "-58.0" if banknifty_chg < 0 else "+38.5", "status": "Fast Expansion", "signal": "BUY"},
                     "supertrend": {"value": f"{banknifty_spot:,.0f}", "status": "RED (SELL)" if banknifty_chg < 0 else "GREEN (BUY)", "signal": "BUY"},
-                    "vwap_bias": {"value": f"{banknifty_chg:+.1f} pts", "status": "Below VWAP" if banknifty_chg < 0 else "Above VWAP", "signal": "BEARISH" if banknifty_chg < 0 else "BULLISH"},
-                    "ema_status": {"value": "9 < 21 EMA" if banknifty_chg < 0 else "9 > 21 EMA", "status": "Fast Cross", "signal": "STRONG"},
-                    "pcr_oi": {"value": "0.58 PCR", "status": f"Strike {bn_atm_strike} OI: {bn_oi:,}", "signal": "ACTIVE"},
-                    "adx": {"value": "32.0", "status": "High Trend Strength", "signal": "TRENDING"},
-                    "ml_conviction": {"value": "93.5%", "status": "López de Prado Meta-Label", "bet_size": "0.95"}
+                    "vwap_bias": {"value": f"{banknifty_chg:+.1f} pts", "status": "Below VWAP Band" if banknifty_chg < 0 else "Above Institutional VWAP", "signal": "BEARISH" if banknifty_chg < 0 else "BULLISH"},
+                    "ema_status": {"value": "9 < 21 < 50 EMA" if banknifty_chg < 0 else "9 > 21 > 50 EMA", "status": "High-Conviction Aligned", "signal": "STRONG"},
+                    "pcr_oi": {"value": "0.62 PCR" if banknifty_chg < 0 else "1.35 PCR", "status": f"Strike {bn_atm_strike} OI: {bn_oi:,}", "signal": "ACTIVE"},
+                    "adx": {"value": "34.5", "status": "High Trend Expansion (>30)", "signal": "TRENDING"},
+                    "ml_conviction": {"value": "94.2%", "status": "López de Prado Meta-Label", "bet_size": "0.95"}
                 }
             },
             {
