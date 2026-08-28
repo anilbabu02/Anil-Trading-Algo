@@ -690,8 +690,15 @@ function renderSuggestions(list) {
             statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">✓ EXECUTED IN BROKER</span>`;
         }
 
-        // Determine if trade is in optimal buy/profit zone
-        const isPastTarget = item.current_ltp >= item.target_1;
+        // Determine if trade is in optimal buy/profit zone & calculate target proximity
+        const totalDistanceToT1 = item.target_1 - item.entry_price;
+        const currentDistance = item.current_ltp - item.entry_price;
+        let targetProgressPct = totalDistanceToT1 > 0 ? (currentDistance / totalDistanceToT1) * 100 : 0;
+        targetProgressPct = Math.max(0, Math.min(targetProgressPct, 100));
+        const isTarget1Hit = item.current_ltp >= item.target_1;
+        const ptsRemainingToT1 = Math.max(0, item.target_1 - item.current_ltp);
+
+        const isPastTarget = isTarget1Hit;
         const isExtended = item.current_ltp > (item.entry_price * 1.10);
         const isStoppedOut = item.current_ltp <= item.stop_loss;
         const isAlreadyExecuted = item.status === "EXECUTED_LIVE";
@@ -762,17 +769,37 @@ function renderSuggestions(list) {
                     </span>
                 </button>
 
-                <!-- Targets & Stop Loss Grid -->
-                <div class="space-y-1 text-[11px] font-mono bg-slate-950/60 p-2 rounded border border-slate-800/80">
-                    <div class="flex justify-between">
+                <!-- Targets & Stop Loss Grid with Proximity Bar Graph -->
+                <div class="space-y-1.5 text-[11px] font-mono bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80">
+                    <div class="flex justify-between items-center">
                         <span class="text-slate-400">🛑 Hard Stop Loss:</span>
                         <span class="text-rose-400 font-bold">₹${item.stop_loss.toFixed(2)}</span>
                     </div>
-                    <div class="flex justify-between">
-                        <span class="text-slate-400">🎯 Target 1:</span>
-                        <span class="text-emerald-400 font-bold">₹${item.target_1.toFixed(2)} (${item.risk_reward} R:R)</span>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-400 flex items-center gap-1">🎯 Target 1:</span>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-emerald-400 font-bold">₹${item.target_1.toFixed(2)} (${item.risk_reward} R:R)</span>
+                            ${isTarget1Hit ? `<span class="px-1.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-slate-950 font-black text-[9px] shadow-md shadow-amber-500/20 flex items-center gap-0.5">🥇 GOLD HIT!</span>` : ''}
+                        </div>
                     </div>
-                    <div class="flex justify-between">
+
+                    <!-- Target 1 Distance Proximity Bar Graph -->
+                    <div class="space-y-1 bg-slate-900/90 p-1.5 rounded-md border border-slate-800/60">
+                        <div class="flex justify-between items-center text-[10px] font-sans">
+                            <span class="text-slate-400 font-medium flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full ${isTarget1Hit ? 'bg-amber-400' : 'bg-cyan-400'}"></span>
+                                Target 1 Proximity:
+                            </span>
+                            <span class="font-mono font-bold ${isTarget1Hit ? 'text-amber-300' : 'text-emerald-400'}">
+                                ${isTarget1Hit ? '🎯 Target 1 Hit (100%)' : `${targetProgressPct.toFixed(1)}% (${ptsRemainingToT1.toFixed(1)} pts away)`}
+                            </span>
+                        </div>
+                        <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800/80 p-0.5">
+                            <div class="h-full rounded-full transition-all duration-500 ${isTarget1Hit ? 'bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 shadow-sm shadow-amber-400' : 'bg-gradient-to-r from-cyan-500 via-teal-400 to-emerald-400'}" style="width: ${Math.max(targetProgressPct, 4)}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center">
                         <span class="text-slate-400">🚀 Target 2:</span>
                         <span class="text-teal-300 font-bold">₹${item.target_2.toFixed(2)}</span>
                     </div>
