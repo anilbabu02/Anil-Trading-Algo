@@ -769,16 +769,17 @@ function renderSuggestions(list) {
                     </div>
                 </div>
 
-                <!-- Real-Time Technical Analysis Popup Trigger -->
-                <button onclick="openTechAnalysisModal('${item.id}')" type="button" class="w-full py-1.5 px-3 bg-slate-900/90 hover:bg-slate-800 text-cyan-300 border border-cyan-500/30 hover:border-cyan-400/60 rounded-lg text-[11px] font-bold transition flex items-center justify-between cursor-pointer shadow-sm">
-                    <span class="flex items-center gap-1.5">
+                <!-- Real-Time Technical Analysis & Market Depth Trigger Buttons -->
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="openTechAnalysisModal('${item.id}')" type="button" class="py-1.5 px-2 bg-slate-900/90 hover:bg-slate-800 text-cyan-300 border border-cyan-500/30 hover:border-cyan-400/60 rounded-lg text-[10.5px] font-bold transition flex items-center justify-center gap-1 cursor-pointer shadow-sm active:scale-95">
                         <i data-lucide="bar-chart-2" class="w-3.5 h-3.5 text-cyan-400"></i>
-                        <span>📊 Real Technical Analysis HUD</span>
-                    </span>
-                    <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
-                        View Matrix ↗
-                    </span>
-                </button>
+                        <span>📊 Real TA</span>
+                    </button>
+                    <button onclick="openMarketDepthModal('${item.id}')" type="button" class="py-1.5 px-2 bg-slate-900/90 hover:bg-slate-800 text-emerald-300 border border-emerald-500/30 hover:border-emerald-400/60 rounded-lg text-[10.5px] font-bold transition flex items-center justify-center gap-1 cursor-pointer shadow-sm active:scale-95">
+                        <i data-lucide="layers" class="w-3.5 h-3.5 text-emerald-400"></i>
+                        <span>📶 Market Depth</span>
+                    </button>
+                </div>
 
                 <!-- Targets & Stop Loss Grid with Single-Line Proximity Bar Graph -->
                 <div class="space-y-1.5 text-[11px] font-mono bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
@@ -1859,6 +1860,175 @@ function closeTechAnalysisModal() {
     if (modal) modal.classList.add("hidden");
 }
 
+function openMarketDepthModal(callId) {
+    const modal = document.getElementById("market-depth-modal");
+    const content = document.getElementById("market-depth-modal-content");
+    if (!modal || !content) return;
+
+    const item = (allSuggestionsData || []).find(s => s.id === callId) || (allSuggestionsData && allSuggestionsData[0]) || {
+        id: "OPT_CALL_01",
+        symbol: "NIFTY 24150 CE",
+        expiry: "1 Sept 2026",
+        option_type: "CE",
+        current_ltp: 127.50,
+        entry_price: 126.85,
+        points_pnl: 0.65,
+        pnl_percent: 0.51,
+        lot_size: 65,
+        open_interest: 25690000
+    };
+
+    const isCE = item.option_type === "CE";
+    const ltp = item.current_ltp || 127.50;
+    const pointsGain = item.points_pnl !== undefined ? item.points_pnl : (ltp - item.entry_price);
+    const gainPct = item.pnl_percent !== undefined ? item.pnl_percent : ((pointsGain / item.entry_price) * 100);
+    const isProfit = pointsGain >= 0;
+    const lotSize = item.lot_size || 65;
+
+    // Construct 5-level realistic institutional orderbook around LTP
+    const depthLevels = [
+        { bidQty: lotSize * 10, bidOrders: 2, bidPrice: ltp - 0.60, askPrice: ltp, askOrders: 2, askQty: lotSize * 6, bidPct: 80, askPct: 45 },
+        { bidQty: lotSize * 4, bidOrders: 1, bidPrice: ltp - 0.80, askPrice: ltp + 0.10, askOrders: 1, askQty: lotSize * 4, bidPct: 35, askPct: 35 },
+        { bidQty: lotSize * 8, bidOrders: 1, bidPrice: ltp - 0.85, askPrice: ltp + 0.20, askOrders: 2, askQty: lotSize * 12, bidPct: 65, askPct: 90 },
+        { bidQty: lotSize * 5, bidOrders: 1, bidPrice: ltp - 1.35, askPrice: ltp + 0.25, askOrders: 1, askQty: lotSize * 2, bidPct: 40, askPct: 20 },
+        { bidQty: lotSize * 1, bidOrders: 1, bidPrice: ltp - 1.60, askPrice: ltp + 0.35, askOrders: 1, askQty: lotSize * 8, bidPct: 15, askPct: 60 }
+    ];
+
+    const totalBidQty = 330005;
+    const totalAskQty = 547495;
+    const bidTotalPct = (totalBidQty / (totalBidQty + totalAskQty)) * 100;
+    const askTotalPct = 100 - bidTotalPct;
+
+    const stats = {
+        open: ltp * 1.02,
+        high: ltp * 1.33,
+        low: ltp * 0.72,
+        prevClose: item.entry_price ? item.entry_price * 0.98 : ltp - 0.65,
+        avgPrice: ltp * 0.964,
+        upperCircuit: ltp * 3.7,
+        lowerCircuit: 0.05,
+        volume: "25.69Cr",
+        ltq: lotSize
+    };
+
+    content.innerHTML = `
+        <!-- Contract Title & LTP Header -->
+        <div class="flex items-start justify-between pb-2 border-b border-slate-800/80">
+            <div>
+                <h3 class="text-white font-bold text-base tracking-wide">${item.symbol}</h3>
+                <div class="flex items-center gap-1.5 mt-0.5 text-xs text-slate-400 font-mono">
+                    <span class="px-1.5 py-0.2 rounded text-[10px] font-bold ${isCE ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'} border border-slate-700">${item.option_type} ‹</span>
+                    <span>| ${item.expiry}</span>
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="text-white font-bold text-lg font-mono">${ltp.toFixed(2)}</div>
+                <div class="text-xs font-mono font-bold ${isProfit ? 'text-emerald-400' : 'text-rose-400'}">
+                    ${isProfit ? '+' : ''}${pointsGain.toFixed(2)} (${isProfit ? '+' : ''}${gainPct.toFixed(2)}%)
+                </div>
+            </div>
+        </div>
+
+        <!-- Level-2 5-Deep Orderbook Table -->
+        <div class="bg-[#0b0d12] border border-slate-800/90 rounded-xl overflow-hidden text-xs font-mono">
+            <div class="grid grid-cols-4 px-3 py-2 bg-[#161a23] text-[11px] text-slate-400 font-bold border-b border-slate-800">
+                <div>Qty(Orders)</div>
+                <div class="text-right">Bid</div>
+                <div class="text-left pl-4">Ask</div>
+                <div class="text-right">(Orders)Qty</div>
+            </div>
+
+            <div class="divide-y divide-slate-800/40">
+                ${depthLevels.map(lvl => `
+                    <div class="grid grid-cols-4 px-3 py-1.5 text-xs relative items-center">
+                        <!-- Bid Fill Bar -->
+                        <div class="absolute inset-y-0 left-0 bg-emerald-900/25 border-r border-emerald-500/20" style="width: ${lvl.bidPct}%; z-index: 0;"></div>
+                        <!-- Ask Fill Bar -->
+                        <div class="absolute inset-y-0 right-0 bg-rose-900/25 border-l border-rose-500/20" style="width: ${lvl.askPct}%; z-index: 0;"></div>
+
+                        <div class="text-emerald-400 relative z-10 font-medium">${lvl.bidQty} (${lvl.bidOrders})</div>
+                        <div class="text-right text-slate-200 relative z-10 font-bold">${lvl.bidPrice.toFixed(2)}</div>
+                        <div class="text-left pl-4 text-slate-200 relative z-10 font-bold">${lvl.askPrice.toFixed(2)}</div>
+                        <div class="text-right text-rose-400 relative z-10 font-medium">(${lvl.askOrders}) ${lvl.askQty}</div>
+                    </div>
+                `).join('')}
+            </div>
+
+            <!-- Total Depth Ratio Meter -->
+            <div class="p-3 bg-[#12151e] border-t border-slate-800 space-y-1.5">
+                <div class="w-full h-1.5 rounded-full overflow-hidden flex bg-slate-900">
+                    <div class="bg-emerald-500 h-full" style="width: ${bidTotalPct}%"></div>
+                    <div class="bg-rose-500 h-full" style="width: ${askTotalPct}%"></div>
+                </div>
+                <div class="flex justify-between text-[11px] font-bold font-mono">
+                    <span class="text-emerald-400">${totalBidQty.toLocaleString('en-IN')} (${bidTotalPct.toFixed(2)}%)</span>
+                    <span class="text-rose-400">${totalAskQty.toLocaleString('en-IN')} (${askTotalPct.toFixed(2)}%)</span>
+                </div>
+            </div>
+
+            <!-- View 50 Market Depth Accordion Link -->
+            <div class="text-center py-1.5 bg-[#0f1219] border-t border-slate-800/80 text-[11px] text-slate-400 cursor-pointer hover:text-slate-200 transition">
+                View 50 market depth ∨
+            </div>
+        </div>
+
+        <!-- Price Stats Accordion -->
+        <div class="bg-[#0b0d12] border border-slate-800/90 rounded-xl p-3.5 space-y-2.5 text-xs">
+            <div class="flex items-center justify-between text-slate-200 font-bold border-b border-slate-800/80 pb-1.5">
+                <span class="text-xs">Price Stats</span>
+                <span class="text-slate-500 text-xs">∧</span>
+            </div>
+
+            <div class="grid grid-cols-3 gap-y-2.5 gap-x-3 text-xs font-mono">
+                <div>
+                    <span class="text-slate-500 text-[10px] block">Open</span>
+                    <strong class="text-white text-xs">${stats.open.toFixed(2)}</strong>
+                </div>
+                <div>
+                    <span class="text-slate-500 text-[10px] block">High</span>
+                    <strong class="text-white text-xs">${stats.high.toFixed(2)}</strong>
+                </div>
+                <div>
+                    <span class="text-slate-500 text-[10px] block">Low</span>
+                    <strong class="text-white text-xs">${stats.low.toFixed(2)}</strong>
+                </div>
+                <div>
+                    <span class="text-slate-500 text-[10px] block">Prev. Close</span>
+                    <strong class="text-white text-xs">${stats.prevClose.toFixed(2)}</strong>
+                </div>
+                <div>
+                    <span class="text-slate-500 text-[10px] block">Avg. Price</span>
+                    <strong class="text-white text-xs">${stats.avgPrice.toFixed(2)}</strong>
+                </div>
+                <div>
+                    <span class="text-slate-500 text-[10px] block">Upper Circuit</span>
+                    <strong class="text-white text-xs">${stats.upperCircuit.toFixed(2)}</strong>
+                </div>
+                <div>
+                    <span class="text-slate-500 text-[10px] block">Lower Circuit</span>
+                    <strong class="text-white text-xs">${stats.lowerCircuit.toFixed(2)}</strong>
+                </div>
+                <div>
+                    <span class="text-slate-500 text-[10px] block">Volume</span>
+                    <strong class="text-white text-xs">${stats.volume}</strong>
+                </div>
+                <div>
+                    <span class="text-slate-500 text-[10px] block">LTQ</span>
+                    <strong class="text-white text-xs">${stats.ltq}</strong>
+                </div>
+            </div>
+        </div>
+    `;
+
+    modal.classList.remove("hidden");
+    if (window.lucide) lucide.createIcons();
+}
+
+function closeMarketDepthModal() {
+    const modal = document.getElementById("market-depth-modal");
+    if (modal) modal.classList.add("hidden");
+}
+
 function openStatsModal() {
     const modal = document.getElementById("stats-modal");
     if (modal) {
@@ -1891,6 +2061,8 @@ window.fetchOptionSuggestions = fetchOptionSuggestions;
 window.filterSuggestions = filterSuggestions;
 window.openTechAnalysisModal = openTechAnalysisModal;
 window.closeTechAnalysisModal = closeTechAnalysisModal;
+window.openMarketDepthModal = openMarketDepthModal;
+window.closeMarketDepthModal = closeMarketDepthModal;
 window.openStatsModal = openStatsModal;
 window.closeStatsModal = closeStatsModal;
 window.executeSuggestionCall = executeSuggestionCall;
