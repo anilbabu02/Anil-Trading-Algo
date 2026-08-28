@@ -1034,6 +1034,13 @@ function filterSuggestions(type) {
     if (activeBtn) {
         activeBtn.classList.remove('bg-slate-900', 'text-slate-400');
         activeBtn.classList.add('bg-slate-800', 'text-white', 'border-emerald-500/40');
+        const select = document.getElementById("index-filter-select");
+        if (select && (type === "BUY_ZONE" || type === "BUDGET")) select.value = "ALL";
+    } else {
+        const select = document.getElementById("index-filter-select");
+        if (select && ["ALL", "NIFTY", "BANKNIFTY", "SENSEX"].includes(type)) {
+            select.value = type;
+        }
     }
 
     if (type === "ALL") {

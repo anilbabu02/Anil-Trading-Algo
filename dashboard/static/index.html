@@ -370,42 +370,46 @@
 
             <!-- Tab 1: Option Suggestions -->
             <div id="tab-suggestions" class="p-4 space-y-3">
-                <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-950 p-3 rounded-lg border border-slate-800">
-                    <div class="flex items-center gap-2">
+                <div class="flex flex-wrap items-center justify-between gap-3 bg-slate-950 p-3 rounded-xl border border-slate-800">
+                    <div class="flex items-center gap-2.5">
                         <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
                             <i data-lucide="zap" class="w-4 h-4"></i>
                         </div>
                         <div>
-                            <h3 class="font-bold text-xs text-white">Algorithmic Option Recommendation Desk</h3>
-                            <p class="text-[11px] text-slate-400">High-conviction quant signals & SEBI multi-leg defined-risk spreads with 1-Click Fyers execution.</p>
+                            <h3 class="font-bold text-xs text-white">Algorithmic Option Desk</h3>
+                            <p class="text-[11px] text-slate-400">High-conviction quant signals with 1-Click Fyers execution.</p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-2 text-xs">
+                    <div class="flex flex-wrap items-center gap-2 text-xs">
                         <!-- Strategy Mode Switcher -->
-                        <div class="flex items-center bg-slate-900 border border-slate-800 p-0.5 rounded-lg mr-2">
-                            <button onclick="switchOptionMode('single')" id="opt-mode-single" type="button" class="px-2 py-1 rounded text-[11px] font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-500/30 transition">
-                                ⚡ Naked Options
+                        <div class="flex items-center bg-slate-900 border border-slate-800 p-0.5 rounded-lg">
+                            <button onclick="switchOptionMode('single')" id="opt-mode-single" type="button" class="px-2.5 py-1 rounded-md text-[11px] font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-500/30 transition">
+                                ⚡ Single Options
                             </button>
-                            <button onclick="switchOptionMode('spreads')" id="opt-mode-spreads" type="button" class="px-2 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition">
-                                🛡️ Hedged Spreads (~70% Margin)
+                            <button onclick="switchOptionMode('spreads')" id="opt-mode-spreads" type="button" class="px-2.5 py-1 rounded-md text-[11px] font-semibold text-slate-400 hover:text-white transition">
+                                🛡️ Hedged Spreads
                             </button>
                         </div>
 
-                        <button onclick="fetchOptionSuggestions(true)" type="button" class="flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/30 text-[11px] font-semibold transition cursor-pointer">
+                        <!-- Essential Filter Tabs -->
+                        <div class="flex items-center bg-slate-900 border border-slate-800 p-0.5 rounded-lg">
+                            <button id="filter-btn-all" onclick="filterSuggestions('ALL')" class="filter-pill-btn px-2.5 py-1 rounded-md text-[11px] font-bold text-white bg-slate-800 transition">All</button>
+                            <button id="filter-btn-buy-zone" onclick="filterSuggestions('BUY_ZONE')" class="filter-pill-btn px-2.5 py-1 rounded-md text-[11px] font-semibold text-emerald-400 hover:bg-slate-800 transition">🟢 Buy Zone</button>
+                            <button id="filter-btn-budget" onclick="filterSuggestions('BUDGET')" class="filter-pill-btn px-2.5 py-1 rounded-md text-[11px] font-semibold text-teal-300 hover:bg-slate-800 transition">💰 &lt;₹5k</button>
+                        </div>
+
+                        <!-- Index Filter Selector -->
+                        <select id="index-filter-select" onchange="filterSuggestions(this.value)" class="bg-slate-900 text-slate-300 border border-slate-800 text-[11px] rounded-lg px-2.5 py-1 font-mono focus:outline-none focus:border-cyan-500 cursor-pointer">
+                            <option value="ALL">All Indices</option>
+                            <option value="NIFTY">NIFTY 50</option>
+                            <option value="BANKNIFTY">BANK NIFTY</option>
+                            <option value="SENSEX">SENSEX</option>
+                        </select>
+
+                        <!-- Refresh Button -->
+                        <button onclick="fetchOptionSuggestions(true)" type="button" title="Refresh Live Signals" class="p-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/30 transition cursor-pointer flex items-center justify-center">
                             <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
-                            Refresh Signals
                         </button>
-                        <span class="text-slate-400 font-medium">Filter:</span>
-                        <button id="filter-btn-all" onclick="filterSuggestions('ALL')" class="filter-pill-btn px-2.5 py-1 rounded bg-slate-800 border border-emerald-500/40 text-white font-medium text-[11px] transition">ALL</button>
-                        <button id="filter-btn-buy-zone" onclick="filterSuggestions('BUY_ZONE')" class="filter-pill-btn px-2.5 py-1 rounded bg-slate-900 border border-slate-800 hover:bg-slate-800 text-emerald-400 font-bold text-[11px] transition flex items-center gap-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> 🟢 Live Buy Zone
-                        </button>
-                        <button id="filter-btn-budget" onclick="filterSuggestions('BUDGET')" class="filter-pill-btn px-2.5 py-1 rounded bg-slate-900 border border-slate-800 hover:bg-slate-800 text-teal-300 font-bold text-[11px] transition flex items-center gap-1">
-                            💰 In-Budget (&lt;₹5k)
-                        </button>
-                        <button id="filter-btn-nifty" onclick="filterSuggestions('NIFTY')" class="filter-pill-btn px-2.5 py-1 rounded bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 font-medium text-[11px] transition">NIFTY</button>
-                        <button id="filter-btn-banknifty" onclick="filterSuggestions('BANKNIFTY')" class="filter-pill-btn px-2.5 py-1 rounded bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 font-medium text-[11px] transition">BANK NIFTY</button>
-                        <button id="filter-btn-sensex" onclick="filterSuggestions('SENSEX')" class="filter-pill-btn px-2.5 py-1 rounded bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 font-medium text-[11px] transition">SENSEX</button>
                     </div>
                 </div>
 
@@ -639,6 +643,6 @@
         </div>
     </div>
 
-    <script src="/static/app.js?v=39.0"></script>
+    <script src="/static/app.js?v=40.0"></script>
 </body>
 </html>
