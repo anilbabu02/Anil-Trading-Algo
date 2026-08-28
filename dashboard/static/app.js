@@ -637,7 +637,7 @@ async function fetchOptionSuggestions(showFeedback = false) {
         const data = await res.json();
         if (data && Array.isArray(data)) {
             allSuggestionsData = data;
-            renderSuggestions(data);
+            applyCurrentSuggestionFilter();
             if (showFeedback) {
                 const btn = document.querySelector('button[onclick*="fetchOptionSuggestions"]');
                 if (btn) {
@@ -1042,27 +1042,17 @@ async function placeGttStopLoss(symbol, qty, side, slPrice) {
     }
 }
 
-function filterSuggestions(type) {
-    document.querySelectorAll('.filter-pill-btn').forEach(b => {
-        b.classList.remove('bg-slate-800', 'text-white', 'border-emerald-500/40');
-        b.classList.add('bg-slate-900', 'text-slate-400');
-    });
-    const activeBtn = document.getElementById(`filter-btn-${type.toLowerCase().replace(/_/g, '-')}`);
-    if (activeBtn) {
-        activeBtn.classList.remove('bg-slate-900', 'text-slate-400');
-        activeBtn.classList.add('bg-slate-800', 'text-white', 'border-emerald-500/40');
-        const select = document.getElementById("index-filter-select");
-        if (select && (type === "BUY_ZONE" || type === "BUDGET")) select.value = "ALL";
-    } else {
-        const select = document.getElementById("index-filter-select");
-        if (select && ["ALL", "NIFTY", "BANKNIFTY", "SENSEX"].includes(type)) {
-            select.value = type;
-        }
+let currentSuggestionFilter = "ALL";
+
+function applyCurrentSuggestionFilter() {
+    if (!allSuggestionsData || allSuggestionsData.length === 0) {
+        renderSuggestions([]);
+        return;
     }
 
-    if (type === "ALL") {
+    if (currentSuggestionFilter === "ALL") {
         renderSuggestions(allSuggestionsData);
-    } else if (type === "BUY_ZONE") {
+    } else if (currentSuggestionFilter === "BUY_ZONE") {
         const filtered = allSuggestionsData.filter(s => {
             const isPastTarget = s.current_ltp >= s.target_1;
             const isExtended = s.current_ltp > (s.entry_price * 1.10);
@@ -1070,13 +1060,43 @@ function filterSuggestions(type) {
             return !isPastTarget && !isExtended && !isStoppedOut && s.status !== "EXECUTED_LIVE";
         });
         renderSuggestions(filtered);
-    } else if (type === "BUDGET") {
-        const filtered = allSuggestionsData.filter(s => (s.total_lot_cost || (s.entry_price * s.lot_size)) <= 5000.0);
+    } else if (currentSuggestionFilter === "BUDGET") {
+        // Displays calls within capital budget (< ₹6.5k, e.g. NIFTY and SENSEX)
+        const filtered = allSuggestionsData.filter(s => (s.total_lot_cost || (s.entry_price * s.lot_size)) <= 6500.0);
         renderSuggestions(filtered);
     } else {
-        const filtered = allSuggestionsData.filter(s => s.underlying.includes(type) || s.symbol.includes(type));
+        const filtered = allSuggestionsData.filter(s => {
+            const sym = (s.symbol || "").toUpperCase();
+            const und = (s.underlying || "").toUpperCase();
+            const target = currentSuggestionFilter.toUpperCase();
+            return sym.includes(target) || und.includes(target);
+        });
         renderSuggestions(filtered);
     }
+}
+
+function filterSuggestions(type) {
+    currentSuggestionFilter = type || "ALL";
+
+    document.querySelectorAll('.filter-pill-btn').forEach(b => {
+        b.classList.remove('bg-slate-800', 'text-white', 'border-emerald-500/40');
+        b.classList.add('bg-slate-900', 'text-slate-400');
+    });
+
+    const activeBtn = document.getElementById(`filter-btn-${currentSuggestionFilter.toLowerCase().replace(/_/g, '-')}`);
+    if (activeBtn) {
+        activeBtn.classList.remove('bg-slate-900', 'text-slate-400');
+        activeBtn.classList.add('bg-slate-800', 'text-white', 'border-emerald-500/40');
+        const select = document.getElementById("index-filter-select");
+        if (select && (currentSuggestionFilter === "BUY_ZONE" || currentSuggestionFilter === "BUDGET")) select.value = "ALL";
+    } else {
+        const select = document.getElementById("index-filter-select");
+        if (select && ["ALL", "NIFTY", "BANKNIFTY", "SENSEX"].includes(currentSuggestionFilter)) {
+            select.value = currentSuggestionFilter;
+        }
+    }
+
+    applyCurrentSuggestionFilter();
 }
 
 async function executeSuggestionCall(id) {
