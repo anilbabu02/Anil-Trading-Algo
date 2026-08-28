@@ -628,16 +628,33 @@ function handleWsMessage(msg) {
 
 // ----------------- OPTION SUGGESTION CALLS ----------------- //
 
-async function fetchOptionSuggestions() {
+async function fetchOptionSuggestions(showFeedback = false) {
+    const refreshBtnIcon = document.querySelector('button[onclick*="fetchOptionSuggestions"] i');
+    if (refreshBtnIcon) refreshBtnIcon.classList.add('animate-spin');
+
     try {
         const res = await fetch(`/api/option-suggestions?t=${Date.now()}`);
         const data = await res.json();
         if (data && Array.isArray(data)) {
             allSuggestionsData = data;
             renderSuggestions(data);
+            if (showFeedback) {
+                const btn = document.querySelector('button[onclick*="fetchOptionSuggestions"]');
+                if (btn) {
+                    const origText = btn.innerHTML;
+                    btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i> Refreshed!`;
+                    lucide.createIcons();
+                    setTimeout(() => {
+                        btn.innerHTML = origText;
+                        lucide.createIcons();
+                    }, 1500);
+                }
+            }
         }
     } catch (e) {
         console.error("Fetch Suggestions Error:", e);
+    } finally {
+        if (refreshBtnIcon) refreshBtnIcon.classList.remove('animate-spin');
     }
 }
 
@@ -1594,5 +1611,7 @@ window.placeGttStopLoss = placeGttStopLoss;
 window.fetchNews = fetchNews;
 window.triggerBreakingNews = triggerBreakingNews;
 window.broadcastNewsToTelegram = broadcastNewsToTelegram;
+window.fetchOptionSuggestions = fetchOptionSuggestions;
+window.filterSuggestions = filterSuggestions;
 
 
