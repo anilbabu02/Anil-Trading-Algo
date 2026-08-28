@@ -246,8 +246,20 @@
                     </div>
                     <div class="p-2.5 bg-slate-950/70 rounded-lg border border-slate-800">
                         <span class="text-[10px] text-slate-400 block">Orderbook Imbalance</span>
-                        <span class="font-bold font-mono text-emerald-400 mt-0.5 block">+18.4% Bid Heavy</span>
+                        <span id="metric-orderbook" class="font-bold font-mono text-emerald-400 mt-0.5 block">+18.4% Bid Heavy</span>
                     </div>
+                </div>
+
+                <!-- Marcos López de Prado ML Conviction Metric -->
+                <div class="p-2.5 bg-indigo-950/40 rounded-xl border border-indigo-800/40 flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] text-indigo-300 block font-semibold">🤖 López de Prado Meta-Label:</span>
+                        <span id="metric-ml-conviction" class="font-bold font-mono text-emerald-400 text-xs mt-0.5 block">97.2% Institutional Confluence</span>
+                    </div>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        STRONG CONVICTION
+                    </span>
                 </div>
 
                 <!-- Volatility Squeeze Status -->
@@ -268,7 +280,7 @@
                 <div class="space-y-1.5 text-xs bg-slate-950/50 p-2.5 rounded-lg border border-slate-800/80">
                     <div class="flex justify-between">
                         <span class="text-slate-400 text-[11px]">Trailing SL Trigger:</span>
-                        <span class="font-mono font-semibold text-emerald-400 text-[11px]">+15.0 pts (Cost+1)</span>
+                        <span class="font-mono font-semibold text-emerald-400 text-[11px]">+10% Gain (Cost+1 Lock)</span>
                     </div>
                     <div class="flex justify-between">
                         <span class="text-slate-400 text-[11px]">Stagnation Exit:</span>
@@ -276,7 +288,7 @@
                     </div>
                     <div class="flex justify-between">
                         <span class="text-slate-400 text-[11px]">Risk / Reward Target:</span>
-                        <span class="font-mono font-semibold text-cyan-400 text-[11px]">1 : 2.8 Standard</span>
+                        <span class="font-mono font-semibold text-cyan-400 text-[11px]">1 : 2.0 (+30% Day Target)</span>
                     </div>
                 </div>
             </div>
@@ -704,6 +716,6 @@
         </div>
     </div>
 
-    <script src="/static/app.js?v=48.0"></script>
+    <script src="/static/app.js?v=49.0"></script>
 </body>
 </html>

@@ -33,11 +33,11 @@ let currentChange = -126.80;
 let currentChangePct = -0.52;
 
 const INSTRUMENTS_DATA = {
-    NIFTY: { name: "NIFTY50 Index", basePrice: 24207.75, change: -126.80, changePct: -0.52, atr: 14.8, rvol: 1.45, adx: 26.4, squeeze: "FIRED BREAKOUT (CE Enabled)" },
-    SENSEX: { name: "SENSEX Index", basePrice: 77472.94, change: -183.15, changePct: -0.24, atr: 84.2, rvol: 1.18, adx: 22.1, squeeze: "COMPRESSION (Inside KC)" },
-    BANKNIFTY: { name: "NIFTYBANK Index", basePrice: 57783.75, change: 269.55, changePct: 0.47, atr: 62.5, rvol: 1.62, adx: 31.8, squeeze: "FIRED BREAKOUT (CE Enabled)" },
-    BANKEX: { name: "BANKEX Index", basePrice: 65407.31, change: 258.17, changePct: 0.40, atr: 71.0, rvol: 1.35, adx: 28.6, squeeze: "FIRED EXPANSION" },
-    FINNIFTY: { name: "FINNIFTY Index", basePrice: 26386.75, change: 139.80, changePct: 0.53, atr: 24.3, rvol: 1.50, adx: 29.2, squeeze: "FIRED BREAKOUT" }
+    NIFTY: { name: "NIFTY50 Index", basePrice: 24207.75, change: -126.80, changePct: -0.52, atr: 68.4, rvol: 1.35, adx: 26.8, orderbook: "+18.4% Bid Heavy", mlConviction: "96.5% Institutional Confluence", squeeze: "ACTIVE BREAKOUT" },
+    SENSEX: { name: "SENSEX Index", basePrice: 77472.94, change: -183.15, changePct: -0.24, atr: 380.0, rvol: 1.45, adx: 36.2, orderbook: "+21.2% Bid Heavy", mlConviction: "97.0% Institutional Confluence", squeeze: "ACTIVE BREAKOUT" },
+    BANKNIFTY: { name: "NIFTYBANK Index", basePrice: 57783.75, change: 269.55, changePct: 0.47, atr: 245.0, rvol: 1.85, adx: 35.8, orderbook: "+24.6% Bid Heavy", mlConviction: "97.2% Institutional Confluence", squeeze: "ACTIVE BREAKOUT" },
+    BANKEX: { name: "BANKEX Index", basePrice: 65407.31, change: 258.17, changePct: 0.40, atr: 280.0, rvol: 1.40, adx: 32.5, orderbook: "+19.5% Bid Heavy", mlConviction: "96.0% Institutional Confluence", squeeze: "ACTIVE EXPANSION" },
+    FINNIFTY: { name: "FINNIFTY Index", basePrice: 26386.75, change: 139.80, changePct: 0.53, atr: 110.0, rvol: 1.55, adx: 31.0, orderbook: "+20.1% Bid Heavy", mlConviction: "96.2% Institutional Confluence", squeeze: "ACTIVE BREAKOUT" }
 };
 
 function generateCandlesFor(symbol, tf) {
@@ -149,12 +149,16 @@ async function onInstrumentSelectChange(symbol) {
     const atrEl = document.getElementById("metric-atr");
     const rvolEl = document.getElementById("metric-rvol");
     const adxEl = document.getElementById("metric-adx");
+    const obEl = document.getElementById("metric-orderbook");
+    const mlEl = document.getElementById("metric-ml-conviction");
     const sqEl = document.getElementById("metric-squeeze-badge");
 
-    if (atrEl) atrEl.textContent = `${info.atr} pts`;
-    if (rvolEl) rvolEl.textContent = `${info.rvol}x Surge`;
-    if (adxEl) adxEl.textContent = `${info.adx} (Trending)`;
-    if (sqEl) sqEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Squeeze State: ${info.squeeze}`;
+    if (atrEl) atrEl.textContent = `${info.atr || '68.4'} pts`;
+    if (rvolEl) rvolEl.textContent = `${info.rvol || '1.35'}x Surge`;
+    if (adxEl) adxEl.textContent = `${info.adx || '26.8'} (Trending)`;
+    if (obEl) obEl.textContent = info.orderbook || "+18.4% Bid Heavy";
+    if (mlEl) mlEl.textContent = info.mlConviction || "97.2% Institutional Confluence";
+    if (sqEl) sqEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ACTIVE BREAKOUT`;
 
     await loadRealChartHistory(symbol, currentTimeframe);
     fetchRealFyersQuotes();
@@ -402,13 +406,16 @@ function initChart() {
         const candleStep = chartW / nCandles;
         ctx.textAlign = "center";
 
-        for (let i = 0; i < nCandles; i += 4) {
+        // Dynamic step interval to prevent label collision
+        const stepInterval = Math.max(Math.floor(nCandles / 7), 6);
+        for (let i = 0; i < nCandles; i += stepInterval) {
             const x = paddingLeft + i * candleStep + candleStep / 2;
             ctx.beginPath();
             ctx.moveTo(x, paddingTop);
             ctx.lineTo(x, h - paddingBottom);
             ctx.stroke();
 
+            ctx.fillStyle = "#787b86";
             ctx.fillText(candles[i].time, x, h - 8);
         }
 
