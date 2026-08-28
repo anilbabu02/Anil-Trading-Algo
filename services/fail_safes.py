@@ -70,7 +70,7 @@ class SystemFailsafesAndOps:
         if not self.watchdog_active:
             self.watchdog_active = True
             self._watchdog_task = asyncio.create_task(self._watchdog_loop(on_feed_drop_callback))
-            print("[FAILSAPES] 🛡 Heartbeat & Watchdog Monitor Active (5s Timeout).")
+            print("[FAILSAFES] 🛡 Heartbeat & Watchdog Monitor Active (5s Timeout).")
 
     def stop_watchdog(self):
         self.watchdog_active = False

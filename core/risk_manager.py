@@ -20,6 +20,17 @@ class RiskManager:
         self.current_capital: float = settings.STARTING_CAPITAL
         self.circuit_breaker_tripped: bool = False
         self.circuit_breaker_reason: str = ""
+        self.get_current_capital()
+
+    def get_current_capital(self) -> float:
+        """Dynamically computes active capital from starting capital and realized ledger PnL."""
+        try:
+            trades = self.db.get_all_trades(limit=500)
+            realized_pnl = sum(t.get("net_pnl", 0.0) for t in trades)
+            self.current_capital = round(settings.STARTING_CAPITAL + realized_pnl, 2)
+        except Exception:
+            self.current_capital = settings.STARTING_CAPITAL
+        return self.current_capital
 
     def evaluate_new_trade_permission(
         self,
@@ -30,6 +41,9 @@ class RiskManager:
         """
         Evaluates whether a new trade signal is allowed to execute under institutional risk rules.
         """
+        # Refresh current capital
+        self.get_current_capital()
+
         # 1. Check Circuit Breaker Status
         if self.circuit_breaker_tripped:
             return False, f"CIRCUIT_BREAKER_ACTIVE: {self.circuit_breaker_reason}"
@@ -66,10 +80,12 @@ class RiskManager:
             if signal.atr > 85.0:
                 return False, f"VOLATILITY_TOO_HIGH: ATR {signal.atr:.1f} pts exceeds 85.0 pt maximum (Abnormal Tail Risk)"
 
-        # 4. Time Window Discovery Filter (Avoid 09:15 - 09:30 AM opening discovery)
+        # 4. Time Window Discovery & Cutoff Filter
         trade_time = signal.timestamp.time() if hasattr(signal, 'timestamp') and signal.timestamp else datetime.now().time()
         if trade_time < datetime.strptime("09:30:00", "%H:%M:%S").time():
-            return False, f"TIME_WINDOW_BLOCKED: Opening 15-min discovery period (09:15-09:30 AM). Trades resume at 09:30 AM."
+            return False, "TIME_WINDOW_BLOCKED: Opening 15-min discovery period (09:15-09:30 AM). Trades resume at 09:30 AM."
+        if trade_time >= datetime.strptime("15:15:00", "%H:%M:%S").time():
+            return False, "TIME_WINDOW_BLOCKED: Intraday square-off cutoff (after 03:15 PM). No new positions permitted."
 
         return True, "APPROVED"
 
@@ -78,13 +94,13 @@ class RiskManager:
         entry_price: float,
         stop_loss_price: float,
         account_capital: Optional[float] = None,
-        risk_pct: float = 0.01  # Risk exactly 1% of equity per trade
+        risk_pct: float = 0.02
     ) -> int:
         """
-        Calculates position size using the institutional volatility-adjusted formula:
+        Calculates position size using the volatility-adjusted formula:
         Position Size = (Account Capital * Risk %) / (Entry Price - Stop Loss Price)
         """
-        capital = account_capital or self.current_capital
+        capital = account_capital or self.get_current_capital()
         risk_amount = capital * risk_pct
         stop_distance = abs(entry_price - stop_loss_price)
 
@@ -92,14 +108,9 @@ class RiskManager:
             return settings.NIFTY_LOT_SIZE
 
         raw_shares = risk_amount / stop_distance
-        
-        # Round to nearest lot size
         lot_size = settings.NIFTY_LOT_SIZE
         calculated_lots = max(1, round(raw_shares / lot_size))
-        
-        # Cap at maximum allowed allocation
-        final_qty = min(calculated_lots * lot_size, settings.NIFTY_LOT_SIZE * settings.POSITION_SIZE_LOTS)
-        return final_qty
+        return calculated_lots * lot_size
 
     def get_lot_size(self, symbol: str) -> int:
         sym_upper = symbol.upper()

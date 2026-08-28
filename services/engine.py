@@ -12,6 +12,7 @@ from brokers.base import BaseBroker
 from brokers.paper_broker import PaperBroker
 from brokers.fyers_adapter import FyersAdapter
 from services.telegram_service import TelegramNotifier
+from services.fail_safes import ExecutionMicrostructureGuard
 from strategies.volatility_squeeze import VolatilitySqueezeStrategy
 from strategies.orb_vwap_sniper import ORBVWAPSniperStrategy
 from strategies.cash_mean_reversion import CashMeanReversionStrategy
@@ -32,6 +33,7 @@ class QuantExecutionEngine:
         self.db = DatabaseLedger(settings.DATABASE_PATH)
         self.risk_manager = RiskManager(self.db)
         self.telegram = TelegramNotifier()
+        self.guard = ExecutionMicrostructureGuard()
         self.broker = broker or (PaperBroker(self.db) if mode == "paper" else FyersAdapter())
         self.broker.connect()
 
@@ -154,13 +156,15 @@ class QuantExecutionEngine:
                 self.db.log_event("TRADE_REJECTED", f"Risk manager rejected signal: {risk_reason}")
                 return {"action": "TRADE_REJECTED", "reason": risk_reason}
 
-            # 5. Execute Order Entry
+            # 5. Execute Order Entry with Exchange/Broker-Side Stop Loss
             qty = self.risk_manager.get_lot_size(signal.symbol)
             order_res = self.broker.place_order(
                 symbol=signal.symbol,
                 direction="BUY",
                 quantity=qty,
                 price=signal.entry_price,
+                stop_loss=signal.stop_loss,
+                take_profit=signal.target,
                 order_type="MARKET"
             )
 
