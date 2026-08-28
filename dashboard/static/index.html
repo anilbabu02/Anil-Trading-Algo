@@ -59,6 +59,12 @@
                 <span>⚡</span>
                 <span id="connect-fyers-btn-text">Connect Fyers</span>
             </button>
+            <!-- Executive Stats Popup Modal Trigger -->
+            <button onclick="openStatsModal()" type="button" class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/80 hover:bg-slate-750 text-slate-200 border border-slate-700/80 rounded-lg text-xs font-semibold transition cursor-pointer shadow-sm">
+                <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 text-emerald-400"></i>
+                <span>Executive Stats</span>
+                <span class="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-mono">₹10.8k</span>
+            </button>
             <button onclick="triggerPremarketDigest()" class="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 rounded-lg text-xs font-medium transition cursor-pointer">
                 <i data-lucide="send" class="w-3.5 h-3.5"></i>
                 8:30 AM Digest
@@ -72,69 +78,6 @@
 
     <!-- Main Container -->
     <main class="flex-1 p-5 max-w-7xl w-full mx-auto space-y-5">
-
-        <!-- Unified Single-Window Executive Stats Cockpit -->
-        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 shadow-xl backdrop-blur flex flex-wrap items-center justify-between gap-y-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-800/80">
-            <!-- 1. Base Capital -->
-            <div class="flex-1 min-w-[130px] px-3 first:pl-1">
-                <div class="text-[10px] text-slate-400 font-medium flex items-center justify-between">
-                    <span>Base Capital</span>
-                    <i data-lucide="wallet" class="w-3.5 h-3.5 text-slate-500"></i>
-                </div>
-                <div class="text-sm sm:text-base font-bold text-slate-100 mt-0.5 font-mono">₹10,800.00</div>
-                <div class="text-[9px] text-slate-500">Strict 1-Lot Rule</div>
-            </div>
-
-            <!-- 2. Compounded Capital -->
-            <div class="flex-1 min-w-[130px] px-3">
-                <div class="text-[10px] text-slate-400 font-medium flex items-center justify-between">
-                    <span>Compounded</span>
-                    <i data-lucide="trending-up" class="w-3.5 h-3.5 text-emerald-400"></i>
-                </div>
-                <div id="compounded-cap" class="text-sm sm:text-base font-bold text-emerald-400 mt-0.5 font-mono">₹8,37,624.26</div>
-                <div class="text-[9px] text-emerald-500/80 font-mono">+7,655% (5-Yr)</div>
-            </div>
-
-            <!-- 3. Today's Realized P&L -->
-            <div class="flex-1 min-w-[130px] px-3">
-                <div class="text-[10px] text-slate-400 font-medium flex items-center justify-between">
-                    <span>Today's Realized</span>
-                    <i data-lucide="circle-dollar-sign" class="w-3.5 h-3.5 text-teal-400"></i>
-                </div>
-                <div id="today-pnl" class="text-sm sm:text-base font-bold text-slate-100 mt-0.5 font-mono">+₹0.00</div>
-                <div class="text-[9px] text-slate-500">Net after taxes</div>
-            </div>
-
-            <!-- 4. Verified Win Rate -->
-            <div class="flex-1 min-w-[130px] px-3">
-                <div class="text-[10px] text-slate-400 font-medium flex items-center justify-between">
-                    <span>Verified Win Rate</span>
-                    <i data-lucide="award" class="w-3.5 h-3.5 text-amber-400"></i>
-                </div>
-                <div class="text-sm sm:text-base font-bold text-amber-400 mt-0.5 font-mono">64.6%</div>
-                <div class="text-[9px] text-slate-500 font-mono">1,885 Trades</div>
-            </div>
-
-            <!-- 5. Daily Trades -->
-            <div class="flex-1 min-w-[130px] px-3">
-                <div class="text-[10px] text-slate-400 font-medium flex items-center justify-between">
-                    <span>Daily Trades</span>
-                    <i data-lucide="activity" class="w-3.5 h-3.5 text-indigo-400"></i>
-                </div>
-                <div id="daily-trades" class="text-sm sm:text-base font-bold text-indigo-300 mt-0.5 font-mono">0 / 2</div>
-                <div class="text-[9px] text-slate-500 font-mono">Max 2 Daily</div>
-            </div>
-
-            <!-- 6. Circuit Breaker -->
-            <div class="flex-1 min-w-[130px] px-3 last:pr-1">
-                <div class="text-[10px] text-slate-400 font-medium flex items-center justify-between">
-                    <span>Circuit Breaker</span>
-                    <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
-                </div>
-                <div id="circuit-breaker-status" class="text-sm sm:text-base font-bold text-emerald-400 mt-0.5 font-mono">ACTIVE (OK)</div>
-                <div class="text-[9px] text-slate-500 font-mono">-₹1,000 Hard Stop</div>
-            </div>
-        </div>
 
         <!-- Middle Section: TradingView Graph Window (2 cols) & Institutional Microstructure (1 col) -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -639,10 +582,101 @@
                         Save App Credentials
                     </button>
                 </div>
-            </details>
+    <!-- Executive Stats & Portfolio Popup Modal -->
+    <div id="stats-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-950 border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                        <i data-lucide="pie-chart" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm text-white">Executive Portfolio & Risk Telemetry</h3>
+                        <p class="text-xs text-slate-400">Live quantitative capital, win rates & risk circuit breakers</p>
+                    </div>
+                </div>
+                <button onclick="closeStatsModal()" type="button" class="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition cursor-pointer">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Stats 6-Grid Popup Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                <!-- 1. Base Capital -->
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-1">
+                    <div class="text-[10px] text-slate-400 flex items-center justify-between">
+                        <span>Base Capital</span>
+                        <i data-lucide="wallet" class="w-3.5 h-3.5 text-slate-500"></i>
+                    </div>
+                    <div class="text-base font-bold text-slate-100 font-mono">₹10,800.00</div>
+                    <div class="text-[9px] text-slate-500">Strict 1-Lot Rule</div>
+                </div>
+
+                <!-- 2. Compounded Capital -->
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-1">
+                    <div class="text-[10px] text-slate-400 flex items-center justify-between">
+                        <span>Compounded</span>
+                        <i data-lucide="trending-up" class="w-3.5 h-3.5 text-emerald-400"></i>
+                    </div>
+                    <div id="compounded-cap" class="text-base font-bold text-emerald-400 font-mono">₹8,37,624.26</div>
+                    <div class="text-[9px] text-emerald-500/80 font-mono">+7,655% (5-Yr)</div>
+                </div>
+
+                <!-- 3. Today's Realized P&L -->
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-1">
+                    <div class="text-[10px] text-slate-400 flex items-center justify-between">
+                        <span>Today's Realized</span>
+                        <i data-lucide="circle-dollar-sign" class="w-3.5 h-3.5 text-teal-400"></i>
+                    </div>
+                    <div id="today-pnl" class="text-base font-bold text-slate-100 font-mono">+₹0.00</div>
+                    <div class="text-[9px] text-slate-500">Net after taxes</div>
+                </div>
+
+                <!-- 4. Verified Win Rate -->
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-1">
+                    <div class="text-[10px] text-slate-400 flex items-center justify-between">
+                        <span>Verified Win Rate</span>
+                        <i data-lucide="award" class="w-3.5 h-3.5 text-amber-400"></i>
+                    </div>
+                    <div class="text-base font-bold text-amber-400 font-mono">64.6%</div>
+                    <div class="text-[9px] text-slate-500 font-mono">1,885 Trades</div>
+                </div>
+
+                <!-- 5. Daily Trades -->
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-1">
+                    <div class="text-[10px] text-slate-400 flex items-center justify-between">
+                        <span>Daily Trades</span>
+                        <i data-lucide="activity" class="w-3.5 h-3.5 text-indigo-400"></i>
+                    </div>
+                    <div id="daily-trades" class="text-base font-bold text-indigo-300 font-mono">0 / 2</div>
+                    <div class="text-[9px] text-slate-500 font-mono">Max 2 Daily</div>
+                </div>
+
+                <!-- 6. Circuit Breaker -->
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-1">
+                    <div class="text-[10px] text-slate-400 flex items-center justify-between">
+                        <span>Circuit Breaker</span>
+                        <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+                    </div>
+                    <div id="circuit-breaker-status" class="text-base font-bold text-emerald-400 font-mono">ACTIVE (OK)</div>
+                    <div class="text-[9px] text-slate-500 font-mono">-₹1,000 Hard Stop</div>
+                </div>
+            </div>
+
+            <!-- Footer Note -->
+            <div class="p-2.5 bg-slate-900/40 rounded-xl border border-slate-800/60 text-[11px] text-slate-400 flex items-center justify-between">
+                <span class="flex items-center gap-1.5">
+                    <i data-lucide="shield" class="w-3.5 h-3.5 text-emerald-400"></i>
+                    <span>Risk Protocol: 100% Cash Overnight (Zero Theta Risk)</span>
+                </span>
+                <button onclick="closeStatsModal()" type="button" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold transition cursor-pointer">
+                    Close
+                </button>
+            </div>
         </div>
     </div>
 
-    <script src="/static/app.js?v=42.0"></script>
+    <script src="/static/app.js?v=43.0"></script>
 </body>
 </html>

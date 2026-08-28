@@ -1833,6 +1833,19 @@ function closeTechAnalysisModal() {
     if (modal) modal.classList.add("hidden");
 }
 
+function openStatsModal() {
+    const modal = document.getElementById("stats-modal");
+    if (modal) {
+        modal.classList.remove("hidden");
+        if (window.lucide) lucide.createIcons();
+    }
+}
+
+function closeStatsModal() {
+    const modal = document.getElementById("stats-modal");
+    if (modal) modal.classList.add("hidden");
+}
+
 window.openFyersConnectModal = openFyersConnectModal;
 window.closeFyersConnectModal = closeFyersConnectModal;
 window.checkFyersAccountStatus = checkFyersAccountStatus;
@@ -1852,6 +1865,8 @@ window.fetchOptionSuggestions = fetchOptionSuggestions;
 window.filterSuggestions = filterSuggestions;
 window.openTechAnalysisModal = openTechAnalysisModal;
 window.closeTechAnalysisModal = closeTechAnalysisModal;
+window.openStatsModal = openStatsModal;
+window.closeStatsModal = closeStatsModal;
 window.executeSuggestionCall = executeSuggestionCall;
 window.broadcastSuggestionToTelegram = broadcastSuggestionToTelegram;
 window.copyTelegramCall = copyTelegramCall;
