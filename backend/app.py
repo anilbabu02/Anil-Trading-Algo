@@ -50,10 +50,10 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS middleware for local frontend or external UI
+# CORS middleware restricted to local host
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://127.0.0.1:8000", "http://localhost:8000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -753,8 +753,11 @@ def exchange_fyers_auth_code(req: FyersExchangeReq) -> Dict[str, Any]:
     import httpx
     
     auth_code = req.auth_code.strip()
-    client_id = settings.FYERS_APP_ID or "B1WDODIF33-200"
-    secret_key = settings.FYERS_SECRET_KEY or "oj0saUpiJIuTiafE"
+    client_id = settings.FYERS_APP_ID
+    secret_key = settings.FYERS_SECRET_KEY
+
+    if not client_id or not secret_key:
+        return {"status": "ERROR", "message": "FYERS_APP_ID or FYERS_SECRET_KEY is not configured in settings/.env"}
 
     app_id_hash = hashlib.sha256(f"{client_id}:{secret_key}".encode("utf-8")).hexdigest()
     payload = {

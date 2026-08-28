@@ -57,6 +57,7 @@ class Position(BaseModel):
     direction: SignalDirection
     quantity: int
     entry_price: float
+    underlying_entry_price: float = 0.0
     current_price: float
     stop_loss: float
     original_stop_loss: float

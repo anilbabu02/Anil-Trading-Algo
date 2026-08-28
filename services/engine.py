@@ -7,6 +7,7 @@ from config.settings import settings
 from core.models import Signal, Position, TradeRecord, MarketRegime, StrategyType, SignalDirection, SystemStatus
 from core.risk_manager import RiskManager
 from core.database import DatabaseLedger
+from core.tax_calculator import IndianTaxCalculator
 from brokers.base import BaseBroker
 from brokers.paper_broker import PaperBroker
 from brokers.fyers_adapter import FyersAdapter
@@ -79,13 +80,23 @@ class QuantExecutionEngine:
 
         # 2. Monitor & Update Active Position (if any)
         if self.active_position is not None:
-            # Estimate current option price based on underlying move if not provided
+            # Check real broker quote first if available
             if simulated_option_ltp is not None:
                 current_opt_price = simulated_option_ltp
             else:
-                # Option delta approx 0.50
-                price_delta = (index_close - self.active_position.entry_price) if "CE" in self.active_position.symbol else (self.active_position.entry_price - index_close)
-                current_opt_price = max(round(self.active_position.entry_price + (price_delta * 0.5), 2), 5.0)
+                real_quote = None
+                try:
+                    real_quote = self.broker.get_market_quote(self.active_position.symbol)
+                except Exception:
+                    real_quote = None
+
+                if real_quote and real_quote > 0:
+                    current_opt_price = real_quote
+                else:
+                    # Realistic Delta approximation based on underlying index move from position entry
+                    base_underlying = self.active_position.underlying_entry_price if self.active_position.underlying_entry_price > 0 else index_close
+                    spot_delta = (index_close - base_underlying) if "CE" in self.active_position.symbol else (base_underlying - index_close)
+                    current_opt_price = max(round(self.active_position.entry_price + (spot_delta * 0.50), 2), 0.05)
 
             # Evaluate Risk & Trailing Rules
             exit_reason, new_sl = self.risk_manager.update_position_risk(
@@ -163,6 +174,7 @@ class QuantExecutionEngine:
                 direction=signal.direction,
                 quantity=qty,
                 entry_price=fill_price,
+                underlying_entry_price=signal.index_price or index_close,
                 current_price=fill_price,
                 stop_loss=signal.stop_loss,
                 original_stop_loss=signal.stop_loss,
@@ -186,6 +198,17 @@ class QuantExecutionEngine:
         else:
             # Live broker square off
             self.broker.square_off_position(self.active_position.symbol, self.active_position.quantity, exit_price)
+            
+            # Accurate Indian Tax & Charges Calculation
+            calc = IndianTaxCalculator.calculate_option_trade_costs(
+                buy_price=self.active_position.entry_price,
+                sell_price=exit_price,
+                quantity=self.active_position.quantity
+            )
+            charges = calc.total_tax_and_charges
+            gross_pnl = round((exit_price - self.active_position.entry_price) * self.active_position.quantity, 2)
+            net_pnl = round(gross_pnl - charges, 2)
+
             trade_record = TradeRecord(
                 id=self.active_position.id,
                 symbol=self.active_position.symbol,
@@ -197,9 +220,9 @@ class QuantExecutionEngine:
                 entry_price=self.active_position.entry_price,
                 exit_price=exit_price,
                 exit_reason=exit_reason,
-                gross_pnl=round((exit_price - self.active_position.entry_price) * self.active_position.quantity, 2),
-                charges=45.0,
-                net_pnl=round(((exit_price - self.active_position.entry_price) * self.active_position.quantity) - 45.0, 2),
+                gross_pnl=gross_pnl,
+                charges=charges,
+                net_pnl=net_pnl,
                 duration_minutes=max(round((exit_time - self.active_position.entry_time).total_seconds() / 60.0, 1), 1.0),
                 broker="LIVE_FYERS"
             )

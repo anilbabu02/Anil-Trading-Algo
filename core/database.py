@@ -99,6 +99,15 @@ class DatabaseLedger:
             rows = cursor.fetchall()
             return [dict(row) for row in rows]
 
+    def get_trades_by_date(self, date_str: str) -> List[Dict[str, Any]]:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT * FROM trades WHERE substr(exit_time, 1, 10) = ? ORDER BY exit_time ASC
+            """, (date_str,))
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
+
     def get_today_stats(self, target_date: Optional[date] = None) -> Dict[str, Any]:
         d_str = (target_date or date.today()).isoformat()
         with self._get_connection() as conn:

@@ -28,9 +28,20 @@ class ORBVWAPSniperStrategy(BaseStrategy):
         df_copy['vwap'] = self.calculate_vwap(df_copy)
         current_vwap = df_copy['vwap'].iloc[-1]
 
-        # Extract opening 15-minute range (first 3 candles of 5-min timeframe)
-        # 9:15-9:20, 9:20-9:25, 9:25-9:30
-        orb_candles = df.iloc[:3] if len(df) >= 3 else df
+        # Extract opening 15-minute range (09:15 to 09:30)
+        if 'timestamp' in df.columns and len(df) > 0:
+            try:
+                today = pd.to_datetime(df['timestamp'].iloc[-1]).date()
+                day_df = df[pd.to_datetime(df['timestamp']).dt.date == today]
+                orb_mask = (pd.to_datetime(day_df['timestamp']).dt.time >= time(9, 15)) & (pd.to_datetime(day_df['timestamp']).dt.time <= time(9, 30))
+                orb_candles = day_df[orb_mask]
+                if orb_candles.empty:
+                    orb_candles = day_df.iloc[:3] if len(day_df) >= 3 else day_df
+            except Exception:
+                orb_candles = df.iloc[:3] if len(df) >= 3 else df
+        else:
+            orb_candles = df.iloc[:3] if len(df) >= 3 else df
+
         orb_high = orb_candles['high'].max()
         orb_low = orb_candles['low'].min()
         orb_range = orb_high - orb_low
@@ -46,7 +57,8 @@ class ORBVWAPSniperStrategy(BaseStrategy):
         current_low = current_candle['low']
         timestamp = current_candle['timestamp'] if 'timestamp' in current_candle else datetime.now()
 
-        option_entry_price = 115.0
+        # Dynamic realistic ATM option premium estimation (approx 0.55% of underlying spot)
+        option_entry_price = max(round(current_close * 0.0055, 2), 40.0)
         option_sl_pts = settings.ORB_HARD_SL_PTS  # 10-12 pts
         option_target_pts = settings.ORB_TARGET_PTS  # 25-30 pts
 

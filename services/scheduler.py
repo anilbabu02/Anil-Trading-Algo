@@ -4,6 +4,9 @@ import zoneinfo
 from typing import Optional
 from services.telegram_service import TelegramNotifier
 
+from core.database import DatabaseLedger
+from config.settings import settings
+
 try:
     IST = zoneinfo.ZoneInfo("Asia/Kolkata")
 except Exception:
@@ -12,12 +15,13 @@ except Exception:
 class AutomatedSchedulerService:
     """
     Automated Daily Market Broadcast Scheduler:
-    - 08:30 AM IST: Pre-Market Institutional Macro & Flow Digest Broadcast via @anil_konda_bot
-    - 03:30 PM IST: End-of-Day Institutional P&L and Risk Summary Broadcast
+    - 08:30 AM IST: Pre-Market Institutional Macro & Flow Digest Broadcast
+    - 03:30 PM IST: End-of-Day Verified P&L and Risk Summary Broadcast
     """
 
-    def __init__(self, telegram_notifier: Optional[TelegramNotifier] = None):
+    def __init__(self, telegram_notifier: Optional[TelegramNotifier] = None, db: Optional[DatabaseLedger] = None):
         self.notifier = telegram_notifier or TelegramNotifier()
+        self.db = db or DatabaseLedger(settings.DATABASE_PATH)
         self.is_running = False
         self._task: Optional[asyncio.Task] = None
 
@@ -53,17 +57,44 @@ class AutomatedSchedulerService:
                 # Sleep until target time
                 await asyncio.sleep(next_sleep)
 
-                if is_morning:
-                    print("\n[SCHEDULER 08:30 AM] 🚀 Triggering Daily 08:30 AM Pre-Market Macro Digest to Telegram...")
-                    await self.notifier.broadcast_macro_premarket_digest()
-                    print("[SCHEDULER 08:30 AM] ✅ Successfully dispatched 08:30 AM digest via @anil_konda_bot.")
-                else:
-                    print("\n[SCHEDULER 03:30 PM] 📊 Triggering Daily 03:30 PM End-of-Day Summary to Telegram...")
-                    await self.notifier.broadcast_daily_summary(
-                        stats={"trade_count": 2, "win_count": 2, "gross_pnl": 3450.0, "total_charges": 145.20, "net_pnl": 3304.80},
-                        current_capital=14104.80
-                    )
-                    print("[SCHEDULER 03:30 PM] ✅ Successfully dispatched 03:30 PM summary via @anil_konda_bot.")
+                now = datetime.now(IST) if IST else datetime.now()
+                # Only broadcast on weekdays (Monday=0 to Friday=4)
+                if now.weekday() < 5:
+                    if is_morning:
+                        print("\n[SCHEDULER 08:30 AM] 🚀 Triggering Daily 08:30 AM Pre-Market Macro Digest to Telegram...")
+                        await self.notifier.broadcast_macro_premarket_digest()
+                        print("[SCHEDULER 08:30 AM] ✅ Successfully dispatched 08:30 AM digest.")
+                    else:
+                        print("\n[SCHEDULER 03:30 PM] 📊 Triggering Verified End-of-Day Summary to Telegram...")
+                        # Query real database ledger
+                        today_str = now.strftime("%Y-%m-%d")
+                        trades = []
+                        if self.db:
+                            try:
+                                trades = self.db.get_trades_by_date(today_str)
+                            except Exception:
+                                trades = []
+
+                        trade_count = len(trades)
+                        win_count = sum(1 for t in trades if getattr(t, 'net_pnl', 0) > 0)
+                        gross_pnl = sum(getattr(t, 'gross_pnl', 0.0) for t in trades)
+                        total_charges = sum(getattr(t, 'charges', 0.0) for t in trades)
+                        net_pnl = sum(getattr(t, 'net_pnl', 0.0) for t in trades)
+                        current_capital = round(settings.STARTING_CAPITAL + net_pnl, 2)
+
+                        stats = {
+                            "trade_count": trade_count,
+                            "win_count": win_count,
+                            "gross_pnl": round(gross_pnl, 2),
+                            "total_charges": round(total_charges, 2),
+                            "net_pnl": round(net_pnl, 2)
+                        }
+
+                        await self.notifier.broadcast_daily_summary(
+                            stats=stats,
+                            current_capital=current_capital
+                        )
+                        print("[SCHEDULER 03:30 PM] ✅ Successfully dispatched verified daily summary.")
 
                 # Small delay to prevent immediate re-trigger in same minute
                 await asyncio.sleep(65)

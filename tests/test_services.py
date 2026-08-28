@@ -1,4 +1,5 @@
 import pytest
+from datetime import datetime
 from services.news_service import NewsService
 from services.option_advisor import OptionAdvisorService
 from services.scheduler import AutomatedSchedulerService
@@ -56,3 +57,45 @@ def test_microstructure_guard():
     # Pegged limit price
     pegged_buy = guard.calculate_pegged_limit_price(bid=100.0, ask=102.0, direction="BUY")
     assert pegged_buy == 100.50
+
+def test_quant_engine_position_marking():
+    import asyncio
+    import pandas as pd
+    from services.engine import QuantExecutionEngine
+    from core.models import Position, StrategyType, SignalDirection
+    
+    async def _runner():
+        engine = QuantExecutionEngine(mode="paper")
+        
+        # Set active position with entry at 120 and underlying at 24500
+        engine.active_position = Position(
+            id="POS_UNIT_TEST",
+            symbol="NIFTY_24500_CE",
+            strategy=StrategyType.SQUEEZE_BREAKOUT,
+            direction=SignalDirection.BUY_CE,
+            quantity=65,
+            entry_price=120.0,
+            underlying_entry_price=24500.0,
+            current_price=120.0,
+            stop_loss=105.0,
+            original_stop_loss=105.0,
+            target=160.0
+        )
+        
+        # Candle with small spot move of +10 pts (from 24500 to 24510)
+        df = pd.DataFrame([{
+            "open": 24505.0,
+            "high": 24515.0,
+            "low": 24500.0,
+            "close": 24510.0,
+            "volume": 10000,
+            "timestamp": datetime(2026, 8, 28, 10, 30)
+        }] * 25)
+        
+        res = await engine.process_market_update(df, symbol="NIFTY")
+        assert res is not None
+        # Position should still be held with realistic option price (~125.0), not phantom ~12,310.0
+        assert engine.active_position is not None
+        assert engine.active_position.current_price < 150.0
+
+    asyncio.run(_runner())

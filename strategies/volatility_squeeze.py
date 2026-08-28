@@ -63,8 +63,8 @@ class VolatilitySqueezeStrategy(BaseStrategy):
         option_sl_pts = max(round(current_atr * 0.5 * 1.5, 1), 12.0)
         option_target_pts = max(round(current_atr * 0.5 * 3.5, 1), 35.0)
         
-        # Estimate synthetic option entry price (typical ATM premium ~ 110-140)
-        option_entry_price = 120.0
+        # Dynamic realistic ATM option premium estimation (approx 0.55% of underlying spot)
+        option_entry_price = max(round(current_close * 0.0055, 2), 40.0)
 
         # Bullish Squeeze Breakout -> Buy ATM CE
         if was_in_squeeze and is_breakout and (current_close > bb_upper.iloc[-1]) and (rvol >= settings.SQUEEZE_RVOL_THRESHOLD):

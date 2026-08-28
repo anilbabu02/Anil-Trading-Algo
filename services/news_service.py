@@ -20,7 +20,7 @@ class NewsService:
                 "summary": "Heavy Call writing detected at 24,200 and 24,300 strikes. PCR dips to 0.59 confirming strong institutional breakdown momentum.",
                 "sentiment": "BEARISH",
                 "impact": "HIGH",
-                "source": "NSE Derivatives Live Wire"
+                "source": "Market Telemetry Engine"
             },
             {
                 "id": "NEWS_102",
@@ -31,7 +31,7 @@ class NewsService:
                 "summary": "HDFC Bank and ICICI Bank face intraday profit booking. 57,500 PE sees heavy open interest additions as institutions hedge downside risk.",
                 "sentiment": "BEARISH",
                 "impact": "HIGH",
-                "source": "CNBC-TV18 Live Feed"
+                "source": "Market Telemetry Engine"
             },
             {
                 "id": "NEWS_103",
@@ -42,7 +42,7 @@ class NewsService:
                 "summary": "FII Long-Short ratio drops to 42.1%. Domestic institutions provide partial support with ₹890 Cr buying in FMCG and IT defensive stocks.",
                 "sentiment": "BEARISH",
                 "impact": "HIGH",
-                "source": "Institutional Flow Wire"
+                "source": "Institutional Flow Tracker"
             },
             {
                 "id": "NEWS_104",
@@ -53,7 +53,7 @@ class NewsService:
                 "summary": "Firm dollar index puts mild pressure on emerging market currencies. INR holds steady at 83.92 per USD.",
                 "sentiment": "NEUTRAL",
                 "impact": "MEDIUM",
-                "source": "Bloomberg Commodity Desk"
+                "source": "Macro Indicator Feed"
             },
             {
                 "id": "NEWS_105",
@@ -64,7 +64,7 @@ class NewsService:
                 "summary": "Overnight call money rates stay anchored near repo rate. Bond yields steady at 6.84%.",
                 "sentiment": "NEUTRAL",
                 "impact": "LOW",
-                "source": "RBI Press Desk"
+                "source": "Macro Indicator Feed"
             },
             {
                 "id": "NEWS_106",
@@ -75,7 +75,7 @@ class NewsService:
                 "summary": "Defensive rotation underway as market participants trim high-beta banking and allocate into largecap IT.",
                 "sentiment": "BULLISH",
                 "impact": "MEDIUM",
-                "source": "Reuters Market Wire"
+                "source": "Sector Rotation Monitor"
             }
         ]
 

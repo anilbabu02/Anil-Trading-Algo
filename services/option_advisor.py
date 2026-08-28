@@ -111,9 +111,9 @@ class OptionAdvisorService:
             base_prem = round(nifty_spot * 0.0055, 2)
             nifty_ltp = round(base_prem + max(nifty_chg * 0.5, -base_prem * 0.3), 2)
             
-        nifty_entry = round(nifty_ltp * 0.985, 2)
-        nifty_ltp_chg = round(nifty_ltp - nifty_entry, 2)
-        nifty_gain_pct = round(((nifty_ltp - nifty_entry) / nifty_entry) * 100, 2) if nifty_entry > 0 else 0.0
+        nifty_entry = nifty_ltp
+        nifty_ltp_chg = 0.0
+        nifty_gain_pct = 0.0
         nifty_oi = int(nifty_opt.get("oi", 5477030)) if nifty_opt else 5477030
 
         # 2. BANKNIFTY ATM Signal
@@ -134,9 +134,9 @@ class OptionAdvisorService:
             base_prem = round(banknifty_spot * 0.0068, 2)
             bn_ltp = round(base_prem + max(banknifty_chg * 0.48, -base_prem * 0.3), 2)
 
-        bn_entry = round(bn_ltp * 0.982, 2)
-        bn_ltp_chg = round(bn_ltp - bn_entry, 2)
-        bn_gain_pct = round(((bn_ltp - bn_entry) / bn_entry) * 100, 2) if bn_entry > 0 else 0.0
+        bn_entry = bn_ltp
+        bn_ltp_chg = 0.0
+        bn_gain_pct = 0.0
         bn_oi = int(bn_opt.get("oi", 2163580)) if bn_opt else 2163580
 
         # 3. SENSEX ATM Signal
@@ -146,9 +146,9 @@ class OptionAdvisorService:
         
         base_prem = round(sensex_spot * 0.0042, 2)
         snx_ltp = round(base_prem + max(sensex_chg * 0.50, -base_prem * 0.3), 2)
-        snx_entry = round(snx_ltp * 0.985, 2)
-        snx_ltp_chg = round(snx_ltp - snx_entry, 2)
-        snx_gain_pct = round(((snx_ltp - snx_entry) / snx_entry) * 100, 2) if snx_entry > 0 else 0.0
+        snx_entry = snx_ltp
+        snx_ltp_chg = 0.0
+        snx_gain_pct = 0.0
         snx_oi = 3850000
 
         # 1. NIFTY Lot Budget

@@ -54,10 +54,10 @@ class Settings(BaseSettings):
     RSI_OVERSOLD: float = 30.0
     RSI_OVERBOUGHT: float = 70.0
 
-    # Telegram Bot Desks (@anil_konda_bot)
-    TELEGRAM_BOT_TOKEN: str = "8770074328:AAEgsklpSfclcJWhuXhtQRqH9TioOeCz0X4"
-    TELEGRAM_DESK_1_CHAT_ID: str = "7181036522"  # AB_Trades (VIP Signals - Sahitya/Anil)
-    TELEGRAM_DESK_2_CHAT_ID: str = "1867588787"  # AB_Market_Analysis (Macro Desk)
+    # Telegram Bot Desks
+    TELEGRAM_BOT_TOKEN: str = Field(default="", description="Telegram Bot Token")
+    TELEGRAM_DESK_1_CHAT_ID: str = Field(default="", description="Desk 1 Chat ID")
+    TELEGRAM_DESK_2_CHAT_ID: str = Field(default="", description="Desk 2 Chat ID")
 
     # Broker Credentials: Fyers API v3
     FYERS_APP_ID: str = ""
@@ -83,7 +83,7 @@ class Settings(BaseSettings):
     ANGEL_ONE_TOTP_KEY: str = ""
 
     # Server & Storage Paths
-    SERVER_HOST: str = "0.0.0.0"
+    SERVER_HOST: str = "127.0.0.1"
     SERVER_PORT: int = 8000
     DATABASE_PATH: str = str(BASE_DIR / "data" / "ledger.db")
     AUDIT_LOG_CSV: str = str(BASE_DIR / "logs" / "paper_trading_results.csv")
