@@ -356,13 +356,13 @@
                     </div>
                 </div>
 
-                <!-- 1. Single-Leg Suggestion Cards Container -->
-                <div id="suggestions-cards-container" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- 1. Single-Leg Suggestion Cards Container with Horizontal Bottom Scrollbar -->
+                <div id="suggestions-cards-container" class="signals-scroll-row flex flex-nowrap overflow-x-auto pb-4 gap-4 scroll-smooth snap-x">
                     <!-- Populated dynamically via JS -->
                 </div>
 
-                <!-- 2. Multi-Leg Hedged Spreads Container -->
-                <div id="spreads-cards-container" class="hidden grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- 2. Multi-Leg Hedged Spreads Container with Horizontal Bottom Scrollbar -->
+                <div id="spreads-cards-container" class="signals-scroll-row hidden flex-nowrap overflow-x-auto pb-4 gap-4 scroll-smooth snap-x">
                     <!-- Populated dynamically via JS -->
                 </div>
             </div>
@@ -681,6 +681,6 @@
         </div>
     </div>
 
-    <script src="/static/app.js?v=44.0"></script>
+    <script src="/static/app.js?v=45.0"></script>
 </body>
 </html>

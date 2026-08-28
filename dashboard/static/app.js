@@ -733,7 +733,7 @@ function renderSuggestions(list) {
         `;
 
         return `
-            <div class="bg-slate-950/90 border ${isExecutable ? 'border-emerald-500/40 shadow-emerald-500/5' : 'border-slate-800'} hover:border-cyan-500/40 rounded-xl p-4 flex flex-col justify-between space-y-3 transition-all duration-200 shadow-xl group">
+            <div class="min-w-[330px] md:min-w-[360px] max-w-[420px] flex-1 shrink-0 snap-start bg-slate-950/90 border ${isExecutable ? 'border-emerald-500/40 shadow-emerald-500/5' : 'border-slate-800'} hover:border-cyan-500/40 rounded-xl p-4 flex flex-col justify-between space-y-3 transition-all duration-200 shadow-xl group">
                 <!-- Top Header -->
                 <div class="flex items-start justify-between border-b border-slate-800/80 pb-2.5">
                     <div>
@@ -933,7 +933,7 @@ function renderSpreads(spreads) {
     }
 
     container.innerHTML = spreads.map(item => `
-        <div class="bg-slate-900 border border-slate-800 hover:border-emerald-500/40 rounded-xl p-4 shadow-xl space-y-3 transition flex flex-col justify-between">
+        <div class="min-w-[340px] md:min-w-[420px] max-w-[480px] flex-1 shrink-0 snap-start bg-slate-900 border border-slate-800 hover:border-emerald-500/40 rounded-xl p-4 shadow-xl space-y-3 transition flex flex-col justify-between">
             <div class="space-y-2">
                 <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                     <div>
