@@ -1808,5 +1808,8 @@ window.fetchOptionSuggestions = fetchOptionSuggestions;
 window.filterSuggestions = filterSuggestions;
 window.openTechAnalysisModal = openTechAnalysisModal;
 window.closeTechAnalysisModal = closeTechAnalysisModal;
+window.executeSuggestionCall = executeSuggestionCall;
+window.broadcastSuggestionToTelegram = broadcastSuggestionToTelegram;
+window.copyTelegramCall = copyTelegramCall;
 
 

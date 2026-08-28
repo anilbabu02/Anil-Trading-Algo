@@ -564,10 +564,12 @@ async def broadcast_suggestion_to_telegram(req: BroadcastSuggestionReq) -> Dict[
     if not item:
         raise HTTPException(status_code=404, detail="Option suggestion not found.")
 
-    success = await telegram_bot.broadcast_option_recommendation(item, chat_id=req.chat_id)
+    res = await telegram_bot.broadcast_option_recommendation(item, chat_id=req.chat_id)
+    success = res[0] if isinstance(res, tuple) else bool(res)
+    detail = res[1] if isinstance(res, tuple) and len(res) > 1 else ("Dispatched to Telegram" if success else "Failed to send to Telegram")
     return {
         "status": "SUCCESS" if success else "FAILED",
-        "message": f"VIP Signal '{item['symbol']}' broadcasted to Telegram." if success else "Failed to broadcast signal to Telegram."
+        "message": f"VIP Signal '{item['symbol']}' broadcasted to Telegram!" if success else f"Telegram notice: {detail}"
     }
 
 @app.get("/api/scheduler/status")

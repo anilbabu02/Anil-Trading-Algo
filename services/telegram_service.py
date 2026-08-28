@@ -127,11 +127,12 @@ class TelegramNotifier:
         await self.send_message(self.desk1_chat_id, text)
 
     # ------------------ DEDICATED OPTION RECOMMENDATION BROADCAST ------------------ #
-    async def broadcast_option_recommendation(self, item: Dict[str, Any], chat_id: Optional[str] = None) -> bool:
+    async def broadcast_option_recommendation(self, item: Dict[str, Any], chat_id: Optional[str] = None) -> tuple[bool, str]:
         target_chat = chat_id or self.desk1_chat_id
         is_ce = item.get("option_type") == "CE"
         emoji = "🟢" if is_ce else "🔴"
         action = item.get("action", "BUY")
+        reason_clean = str(item.get("reason", "Institutional momentum & VWAP breakout")).replace("_", "-").replace("*", "")
 
         text = (
             f"⚡ *ANIL BABU TRADES — VIP OPTION CALL* ⚡\n"
@@ -147,7 +148,7 @@ class TelegramNotifier:
             f"📦 *Position Size*: `{item.get('lot_size', 65)} Qty (1 Lot Strict)`\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
             f"📊 *Greeks*: Delta `{item.get('delta', 0.54)}` | Theta `{item.get('theta', -12.0)}`\n"
-            f"💡 *Rationale*: _{item.get('reason', 'Institutional momentum & VWAP breakout')}_\n"
+            f"💡 *Rationale*: {reason_clean}\n"
             f"🛡 *Trailing Rule*: Move SL to Cost (+1 pt) at +15 pts profit\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
             f"🤖 *Dispatched via*: `@anil_konda_bot` | ⏰ `{datetime.now().strftime('%H:%M:%S')} IST`"
