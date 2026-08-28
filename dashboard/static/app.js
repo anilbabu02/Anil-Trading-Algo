@@ -1043,14 +1043,16 @@ async function executeSuggestionCall(id) {
         });
         const data = await res.json();
         if (data.status === "SUCCESS") {
-            alert(`⚡ ${data.message}\nOrder placed with broker engine.`);
+            const orderId = data.order?.order_id || 'FILLED';
+            alert(`⚡ ${data.message}\n\nBroker Order ID: ${orderId}\nOrder successfully routed to Fyers.`);
             fetchOptionSuggestions();
             fetchStatus();
         } else {
-            alert(`Error: ${data.detail || "Could not execute order."}`);
+            alert(`⚠️ Fyers Execution Notice:\n\n${data.message || data.detail || "Could not execute order in Fyers."}`);
         }
     } catch (e) {
         console.error("Execute Call Error:", e);
+        alert("Execution Error: " + e.message);
     }
 }
 

@@ -253,10 +253,16 @@ async def execute_option_suggestion(req: ExecuteSuggestionRequest) -> Dict[str, 
     if not match:
         raise HTTPException(status_code=404, detail="Option suggestion call not found.")
 
-    # Route execution to broker via engine
+    # Format official valid Fyers exchange symbol
+    fyers_sym = match.get("fyers_symbol")
+    if not fyers_sym or ":" not in fyers_sym:
+        clean_sym = match["symbol"].replace(" ", "")
+        prefix = "BSE:" if "SENSEX" in clean_sym or "BANKEX" in clean_sym else "NSE:"
+        fyers_sym = f"{prefix}{clean_sym}"
+
     qty = match.get("lot_size", 65)
     order_res = engine.broker.place_order(
-        symbol=match["symbol"].replace(" ", "_"),
+        symbol=fyers_sym,
         direction=match.get("action", "BUY"),
         quantity=qty,
         price=match.get("current_ltp", 120.0),
@@ -264,13 +270,25 @@ async def execute_option_suggestion(req: ExecuteSuggestionRequest) -> Dict[str, 
         tag="ANIL_BABU_SUGGESTION"
     )
 
+    raw_res = order_res.get("raw_response", {})
+    if order_res.get("status") in ["REJECTED", "ERROR"]:
+        err_msg = raw_res.get("message") or order_res.get("error") or "Broker order rejected."
+        if "token" in err_msg.lower() or "unauthorized" in err_msg.lower() or raw_res.get("code") == -8:
+            err_msg = "Your daily Fyers token has expired. Please click '⚡ Connect Fyers' at the top to generate today's active token."
+        return {
+            "status": "FAILED",
+            "message": f"{err_msg}",
+            "order": order_res,
+            "suggestion": match
+        }
+
     match["status"] = "EXECUTED_LIVE"
-    db.log_event("OPTION_SUGGESTION_EXECUTED", f"Executed {match['symbol']} ({qty} Qty) based on quant recommendation.", match)
+    db.log_event("OPTION_SUGGESTION_EXECUTED", f"Executed {match['symbol']} ({qty} Qty) on Fyers.", match)
     await ws_broadcaster({"type": "SUGGESTION_EXECUTED", "data": match})
 
     return {
         "status": "SUCCESS",
-        "message": f"Successfully executed quant recommendation: {match['symbol']}",
+        "message": f"Successfully placed order for {match['symbol']} in Fyers!",
         "order": order_res,
         "suggestion": match
     }
