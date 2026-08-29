@@ -190,6 +190,52 @@ def get_live_quotes() -> Dict[str, Any]:
 
     return {"status": "SUCCESS", "is_live": bool(data_map), "quotes": data_map}
 
+@app.get("/api/market-depth")
+def get_market_depth(symbol: str = "NSE:NIFTY50-INDEX", ltp: Optional[float] = None) -> Dict[str, Any]:
+    """
+    Fetches real Level-2 5-level Bid/Ask Market Depth from Fyers API or live broker quote.
+    """
+    clean_sym = symbol.strip()
+    if not clean_sym.startswith("NSE:") and not clean_sym.startswith("BSE:"):
+        clean_sym = f"NSE:{clean_sym}"
+
+    depth_data = None
+    is_live = False
+    try:
+        if hasattr(engine.broker, "get_quotes"):
+            res = engine.broker.get_quotes([clean_sym])
+            if res.get("s") == "ok" and res.get("d") and len(res["d"]) > 0:
+                v = res["d"][0].get("v", {})
+                bids = v.get("bids") or []
+                asks = v.get("asks") or []
+                if bids and asks:
+                    is_live = True
+                    depth_data = {
+                        "symbol": clean_sym,
+                        "ltp": float(v.get("lp", ltp or 0.0)),
+                        "bids": bids,
+                        "asks": asks,
+                        "total_buy_qty": int(v.get("totalbuyqty", 0)),
+                        "total_sell_qty": int(v.get("totalsellqty", 0)),
+                        "volume": v.get("volume", 0),
+                        "high": float(v.get("high_price", 0.0)),
+                        "low": float(v.get("low_price", 0.0)),
+                        "open": float(v.get("open_price", 0.0)),
+                        "prev_close": float(v.get("prev_close_price", 0.0)),
+                        "upper_circuit": float(v.get("upper_ckt", 0.0)),
+                        "lower_circuit": float(v.get("lower_ckt", 0.0)),
+                        "feed_type": "REAL_EXCHANGE_LIVE"
+                    }
+    except Exception as e:
+        print("Market depth API error:", e)
+
+    return {
+        "status": "SUCCESS",
+        "is_exchange_live": is_live,
+        "symbol": clean_sym,
+        "data": depth_data
+    }
+
 @app.get("/api/chart-history")
 def get_chart_history(symbol: str = "NIFTY", resolution: str = "5") -> Dict[str, Any]:
     """
