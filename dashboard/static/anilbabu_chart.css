@@ -1,0 +1,72 @@
+  /* ---- theme tokens: change these 8 lines to restyle the whole chart ---- */
+  .abt-chart {
+    --bg:        #0e1117;
+    --panel:     #151a23;
+    --border:    #232a36;
+    --text:      #d5dae3;
+    --muted:     #7d879c;
+    --up:        #26a69a;
+    --down:      #ef5350;
+    --accent:    #3b82f6;
+    --grid:      #1c2230;
+  }
+
+  .abt-chart {
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font: 13px/1.4 ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ---- toolbar ---- */
+  .abt-bar {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 10px 12px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+  }
+  .abt-group { display: flex; gap: 2px; background: var(--bg); padding: 2px; border-radius: 6px; }
+  .abt-group button {
+    background: transparent; border: 0; color: var(--muted);
+    padding: 5px 10px; border-radius: 4px; cursor: pointer;
+    font: inherit; font-weight: 500; letter-spacing: .02em;
+  }
+  .abt-group button:hover { color: var(--text); }
+  .abt-group button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+
+  .abt-spacer { flex: 1 1 auto; }
+  .abt-toggle { display: flex; align-items: center; gap: 6px; color: var(--muted); cursor: pointer; user-select: none; }
+  .abt-toggle input { accent-color: var(--accent); }
+
+  /* ---- chart body + floating OHLC legend ---- */
+  .abt-body { position: relative; }
+  .abt-canvas { height: 460px; width: 100%; }
+  @media (max-width: 640px) { .abt-canvas { height: 340px; } }
+
+  .abt-legend {
+    position: absolute; top: 10px; left: 12px; z-index: 3;
+    pointer-events: none;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 1px 3px rgba(0,0,0,.6);
+  }
+  .abt-legend .sym { font-size: 14px; font-weight: 600; letter-spacing: .03em; }
+  .abt-legend .ohlc { margin-top: 3px; color: var(--muted); }
+  .abt-legend .ohlc b { font-weight: 600; }
+  .abt-legend .ohlc .v { font-weight: 600; }
+  .abt-legend .ema { margin-top: 3px; font-size: 12px; }
+
+  /* ---- signal strip ---- */
+  .abt-signal {
+    display: flex; gap: 18px; flex-wrap: wrap;
+    padding: 9px 12px;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+  }
+  .abt-signal .k { color: var(--muted); margin-right: 5px; font-size: 12px; }
+  .abt-signal .v { font-weight: 600; }
+  .abt-status { color: var(--muted); font-size: 12px; }

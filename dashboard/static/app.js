@@ -1017,19 +1017,18 @@ async function fetchRealFyersQuotes() {
                 if (domSell) domSell.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 if (domBuy) domBuy.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 
-                // Live tick update on Native Canvas Chart
-                if (candles && candles.length > 0) {
-                    const lastCandle = candles[candles.length - 1];
-                    lastCandle.c = currentLTP;
-                    if (currentLTP > lastCandle.h) lastCandle.h = currentLTP;
-                    if (currentLTP < lastCandle.l) lastCandle.l = currentLTP;
-                    updateProHudFromLatest();
-                    requestChartFrame();
+                // Forward real live tick to ANIL BABU TRADES Pro Chart
+                if (window.abtChart && typeof window.abtChart.onTick === 'function') {
+                    window.abtChart.onTick({
+                        time: Math.floor(Date.now() / 1000),
+                        price: currentLTP,
+                        volume: 1500
+                    });
                 }
 
                 const bottomStatus = document.getElementById("chart-bottom-status");
                 if (bottomStatus) {
-                    bottomStatus.textContent = `100% Real-Time NSE Stream · ${currentProTvSymbol || currentInstrument}: ₹${currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2 })} (${changeStr})`;
+                    bottomStatus.textContent = `100% Real-Time NSE Stream · ${currentInstrument}: ₹${currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2 })} (${changeStr})`;
                 }
                 return;
             }
@@ -1043,9 +1042,6 @@ async function fetchRealFyersQuotes() {
 }
 
 function initLivePriceTicker() {
-    setChartEngine('native');
-    initNativeProChart();
-    selectProChartSymbol('NIFTY', 'NSE:NIFTY');
     fetchRealFyersQuotes();
     fetchOptionSuggestions();
     updateOptionDeskPcrBadge("ALL");

@@ -10,10 +10,10 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Official NSE & TradingView Charting SDK + Lightweight Charts -->
-    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-    <script src="https://unpkg.com/lightweight-charts@4.2.1/dist/lightweight-charts.standalone.production.js"></script>
+    <!-- Self-Contained Lightweight Charts v5.2.1 Engine (Zero External CDN Latency) -->
+    <script src="/static/lightweight-charts.standalone.js"></script>
     <script src="https://api-connect-docs.fyers.in/fyers-lib.js"></script>
+    <link rel="stylesheet" href="/static/anilbabu_chart.css">
     <link rel="stylesheet" href="/static/style.css?v=7.0">
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-emerald-500 selection:text-white">
@@ -91,140 +91,43 @@
         <!-- Middle Section: TradingView Graph Window (2 cols) & Institutional Microstructure (1 col) -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
             
-            <!-- Left: TradingView Graph Window (2 Cols) matching screenshot -->
-            <div class="lg:col-span-2 bg-[#131722] border border-[#1e222d] rounded-xl flex flex-col shadow-2xl overflow-hidden">
-                
-                <!-- 1. Top Control Bar: Engine Switcher, Quick Symbols, Timeframes, Indicators -->
-                <div class="bg-[#131722] border-b border-[#1e222d] px-3 py-2 flex flex-wrap items-center justify-between gap-2 select-none text-xs text-slate-300">
-                    <div class="flex flex-wrap items-center gap-1.5">
-                        <!-- Mode Switcher: Native High-FPS vs TradingView Cloud -->
-                        <div class="flex items-center bg-[#0d1017] border border-[#2a2e39] p-0.5 rounded-lg">
-                            <button onclick="setChartEngine('native')" id="engine-btn-native" class="px-2.5 py-1 rounded text-[11px] font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-500/30 transition cursor-pointer flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                                ⚡ Pro Canvas
-                            </button>
-                            <button onclick="setChartEngine('tv')" id="engine-btn-tv" class="px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer flex items-center gap-1">
-                                🌐 TV Cloud
-                            </button>
+            <!-- Left: ANIL BABU TRADES Official Pro Chart (2 Cols) -->
+            <div class="lg:col-span-2 flex flex-col">
+                <div class="abt-chart w-full shadow-2xl" id="abtChart" style="min-height: 590px; height: 100%;">
+                    <div class="abt-bar">
+                        <div class="abt-group" data-role="symbols">
+                            <button data-symbol="NSE:NIFTY50-INDEX"   aria-pressed="true">NIFTY</button>
+                            <button data-symbol="NSE:NIFTYBANK-INDEX" aria-pressed="false">BANKNIFTY</button>
+                            <button data-symbol="BSE:SENSEX-INDEX"    aria-pressed="false">SENSEX</button>
+                            <button data-symbol="NSE:FINNIFTY-INDEX"  aria-pressed="false">FINNIFTY</button>
+                            <button data-symbol="NSE:RELIANCE-EQ"     aria-pressed="false">RELIANCE</button>
+                            <button data-symbol="NSE:HDFCBANK-EQ"     aria-pressed="false">HDFC</button>
+                            <button data-symbol="NSE:TCS-EQ"          aria-pressed="false">TCS</button>
+                            <button data-symbol="NSE:INFY-EQ"         aria-pressed="false">INFY</button>
+                            <button data-symbol="NSE:SBIN-EQ"         aria-pressed="false">SBIN</button>
                         </div>
 
-                        <!-- Quick Indian Index/Stock Switcher -->
-                        <div class="flex items-center bg-[#1e222d] border border-[#2a2e39] p-0.5 rounded-lg gap-0.5 overflow-x-auto max-w-[420px] scrollbar-none">
-                            <button onclick="selectProChartSymbol('NIFTY', 'NSE:NIFTY')" data-chart-symbol="NIFTY" class="pro-sym-btn px-2 py-0.5 rounded text-[11px] font-bold text-cyan-300 bg-cyan-500/20 border border-cyan-500/30 transition cursor-pointer">NIFTY</button>
-                            <button onclick="selectProChartSymbol('BANKNIFTY', 'NSE:BANKNIFTY')" data-chart-symbol="BANKNIFTY" class="pro-sym-btn px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">BANKNIFTY</button>
-                            <button onclick="selectProChartSymbol('SENSEX', 'BSE:SENSEX')" data-chart-symbol="SENSEX" class="pro-sym-btn px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">SENSEX</button>
-                            <button onclick="selectProChartSymbol('FINNIFTY', 'NSE:FINNIFTY')" data-chart-symbol="FINNIFTY" class="pro-sym-btn px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">FINNIFTY</button>
-                            <button onclick="selectProChartSymbol('RELIANCE', 'NSE:RELIANCE')" data-chart-symbol="RELIANCE" class="pro-sym-btn px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">RELIANCE</button>
-                            <button onclick="selectProChartSymbol('HDFCBANK', 'NSE:HDFCBANK')" data-chart-symbol="HDFCBANK" class="pro-sym-btn px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">HDFC</button>
-                            <button onclick="selectProChartSymbol('TCS', 'NSE:TCS')" data-chart-symbol="TCS" class="pro-sym-btn px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">TCS</button>
-                            <button onclick="selectProChartSymbol('INFY', 'NSE:INFY')" data-chart-symbol="INFY" class="pro-sym-btn px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">INFY</button>
-                            <button onclick="selectProChartSymbol('SBIN', 'NSE:SBIN')" data-chart-symbol="SBIN" class="pro-sym-btn px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">SBIN</button>
+                        <div class="abt-group" data-role="resolutions">
+                            <button data-res="1"  aria-pressed="false">1m</button>
+                            <button data-res="5"  aria-pressed="true">5m</button>
+                            <button data-res="15" aria-pressed="false">15m</button>
+                            <button data-res="60" aria-pressed="false">1H</button>
+                            <button data-res="D"  aria-pressed="false">1D</button>
                         </div>
 
-                        <!-- Timeframe Selector -->
-                        <div id="pro-tf-container" class="flex items-center bg-[#1e222d] border border-[#2a2e39] p-0.5 rounded-lg gap-0.5">
-                            <button onclick="setProTimeframe('1m')" id="ptf-1m" class="pro-tf-btn px-2 py-0.5 rounded text-[11px] font-bold text-blue-400 bg-blue-500/20 border border-blue-500/30 transition cursor-pointer">1m</button>
-                            <button onclick="setProTimeframe('3m')" id="ptf-3m" class="pro-tf-btn px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">3m</button>
-                            <button onclick="setProTimeframe('5m')" id="ptf-5m" class="pro-tf-btn px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">5m</button>
-                            <button onclick="setProTimeframe('15m')" id="ptf-15m" class="pro-tf-btn px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">15m</button>
-                            <button onclick="setProTimeframe('1h')" id="ptf-1h" class="pro-tf-btn px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">1h</button>
-                            <button onclick="setProTimeframe('1D')" id="ptf-1D" class="pro-tf-btn px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">1D</button>
-                        </div>
+                        <div class="abt-spacer"></div>
 
-                        <!-- Indicator Toggles (Native Mode) -->
-                        <div id="pro-indicators-container" class="flex items-center bg-[#1e222d] border border-[#2a2e39] p-0.5 rounded-lg gap-1">
-                            <button onclick="toggleProIndicator('ema9')" id="pind-ema9" class="px-2 py-0.5 rounded text-[10px] font-bold text-cyan-400 bg-cyan-500/20 border border-cyan-500/30 transition cursor-pointer">EMA 9</button>
-                            <button onclick="toggleProIndicator('ema21')" id="pind-ema21" class="px-2 py-0.5 rounded text-[10px] font-bold text-amber-400 bg-amber-500/20 border border-amber-500/30 transition cursor-pointer">EMA 21</button>
-                            <button onclick="toggleProIndicator('ema50')" id="pind-ema50" class="px-2 py-0.5 rounded text-[10px] font-bold text-purple-400 bg-purple-500/20 border border-purple-500/30 transition cursor-pointer">EMA 50</button>
-                            <button onclick="toggleProIndicator('vwap')" id="pind-vwap" class="px-2 py-0.5 rounded text-[10px] font-bold text-yellow-400 bg-yellow-500/20 border border-yellow-500/30 transition cursor-pointer">VWAP</button>
-                            <button onclick="toggleProIndicator('bb')" id="pind-bb" class="px-2 py-0.5 rounded text-[10px] font-bold text-teal-400 bg-teal-500/20 border border-teal-500/30 transition cursor-pointer">Bollinger</button>
-                            <button onclick="toggleProIndicator('supertrend')" id="pind-supertrend" class="px-2 py-0.5 rounded text-[10px] font-bold text-emerald-400 bg-emerald-500/20 border border-emerald-500/30 transition cursor-pointer">Supertrend</button>
-                            <button onclick="toggleProIndicator('rsi')" id="pind-rsi" class="px-2 py-0.5 rounded text-[10px] font-bold text-pink-400 bg-pink-500/20 border border-pink-500/30 transition cursor-pointer">RSI</button>
-                        </div>
+                        <label class="abt-toggle"><input type="checkbox" id="abtVol"  checked> Volume</label>
+                        <label class="abt-toggle"><input type="checkbox" id="abtEma"  checked> EMA 20/50</label>
+                        <label class="abt-toggle"><input type="checkbox" id="abtLvls" checked> Trade levels</label>
                     </div>
 
-                    <!-- Search Input -->
-                    <form onsubmit="event.preventDefault(); handleProSearch(document.getElementById('pro-chart-search-input').value);" class="flex items-center bg-[#1e222d] border border-[#2a2e39] rounded-lg px-2 py-0.5 group focus-within:border-cyan-500/60 transition shrink-0">
-                        <i data-lucide="search" class="w-3.5 h-3.5 text-cyan-400 mr-1.5 shrink-0"></i>
-                        <input id="pro-chart-search-input" type="text" placeholder="Search NSE Symbol..." class="bg-transparent text-white font-mono text-[11px] focus:outline-none w-36 placeholder:text-slate-500">
-                        <button type="submit" class="text-[10px] font-bold bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded transition ml-1 cursor-pointer">Go</button>
-                    </form>
-                </div>
-
-                <!-- 2. Dynamic Real-Time Candlestick & Indicator HUD Bar -->
-                <div class="bg-[#171b26] border-b border-[#1e222d] px-3.5 py-1.5 flex flex-wrap items-center justify-between text-[11px] font-mono text-slate-300 select-none">
-                    <div class="flex flex-wrap items-center gap-3">
-                        <div class="flex items-center gap-1.5 font-bold">
-                            <span id="pro-hud-symbol" class="text-white">NSE:NIFTY 50</span>
-                            <span id="pro-hud-tf" class="text-slate-400 text-[10px]">1m</span>
-                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        </div>
-                        <div class="flex items-center gap-2.5 text-[11px]">
-                            <span>O <strong id="pro-hud-open" class="text-slate-200">24,142.30</strong></span>
-                            <span>H <strong id="pro-hud-high" class="text-emerald-400">24,168.50</strong></span>
-                            <span>L <strong id="pro-hud-low" class="text-rose-400">24,130.10</strong></span>
-                            <span>C <strong id="pro-hud-close" class="text-cyan-300 font-bold">24,158.40</strong></span>
-                            <span id="pro-hud-change" class="px-1.5 py-0.2 rounded font-bold text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">+86.20 (+0.36%)</span>
-                        </div>
-                    </div>
-                    <div id="pro-hud-indicators" class="flex items-center gap-3 text-[10px] text-slate-400 hidden sm:flex">
-                        <span id="hud-ema9" class="text-cyan-400 font-bold">EMA9: 24,152.1</span>
-                        <span id="hud-ema21" class="text-amber-400 font-bold">EMA21: 24,138.8</span>
-                        <span id="hud-vwap" class="text-yellow-400 font-bold">VWAP: 24,145.6</span>
-                        <span id="hud-rsi" class="text-pink-400 font-bold">RSI: 62.4</span>
-                        <span id="hud-supertrend" class="text-emerald-400 font-bold">ST: BUY (24,080)</span>
-                    </div>
-                </div>
-
-                <!-- 3. Main Chart Canvas Area with Left Drawing Toolbar -->
-                <div class="flex-1 relative w-full h-[580px] min-h-[580px] bg-[#131722] overflow-hidden flex">
-                    <!-- Left Mini Drawing Tools Rail -->
-                    <div id="pro-drawing-rail" class="w-9 bg-[#131722] border-r border-[#1e222d] flex flex-col items-center py-2 gap-1.5 select-none z-20 shrink-0">
-                        <button onclick="setProDrawingTool('crosshair')" id="dtool-crosshair" class="p-1.5 rounded text-blue-400 bg-[#1e222d] border border-[#2a2e39] transition cursor-pointer" title="Crosshair">
-                            <i data-lucide="crosshair" class="w-4 h-4"></i>
-                        </button>
-                        <button onclick="setProDrawingTool('trendline')" id="dtool-trendline" class="p-1.5 rounded text-slate-400 hover:text-white hover:bg-[#1e222d] transition cursor-pointer" title="Trendline">
-                            <i data-lucide="trending-up" class="w-4 h-4"></i>
-                        </button>
-                        <button onclick="setProDrawingTool('horizontal')" id="dtool-horizontal" class="p-1.5 rounded text-slate-400 hover:text-white hover:bg-[#1e222d] transition cursor-pointer" title="Horizontal Support / Resistance Ray">
-                            <i data-lucide="minus" class="w-4 h-4"></i>
-                        </button>
-                        <button onclick="setProDrawingTool('fib')" id="dtool-fib" class="p-1.5 rounded text-slate-400 hover:text-white hover:bg-[#1e222d] transition cursor-pointer" title="Fibonacci Retracement">
-                            <i data-lucide="git-commit" class="w-4 h-4"></i>
-                        </button>
-                        <button onclick="setProDrawingTool('brush')" id="dtool-brush" class="p-1.5 rounded text-slate-400 hover:text-white hover:bg-[#1e222d] transition cursor-pointer" title="Freehand Brush">
-                            <i data-lucide="edit-3" class="w-4 h-4"></i>
-                        </button>
-                        <div class="w-5 h-px bg-[#1e222d] my-1"></div>
-                        <button onclick="clearProDrawings()" class="p-1.5 rounded text-rose-400/70 hover:text-rose-300 hover:bg-rose-950/40 transition cursor-pointer" title="Clear Drawings">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i>
-                        </button>
+                    <div class="abt-body flex-1 relative w-full" style="min-height: 480px;">
+                        <div class="abt-legend" id="abtLegend"></div>
+                        <div class="abt-canvas w-full h-full" id="abtCanvas" style="min-height: 480px;"></div>
                     </div>
 
-                    <!-- Native Canvas & TV Container -->
-                    <div id="chart_main_viewport" class="flex-1 relative w-full h-full bg-[#131722] overflow-hidden">
-                        <!-- Mode 1: 100% Guaranteed High-Performance Native Canvas Engine -->
-                        <div id="native_chart_wrapper" class="w-full h-full relative">
-                            <canvas id="proPriceChartCanvas" class="w-full h-full block cursor-crosshair"></canvas>
-                        </div>
-
-                        <!-- Mode 2: TradingView Cloud Embed Container -->
-                        <div id="tv_chart_wrapper" class="hidden absolute inset-0 w-full h-full bg-[#131722]">
-                            <div id="nse_tv_chart_inner" style="height:100%;width:100%"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 4. Bottom Status & Clock Bar -->
-                <div class="bg-[#131722] border-t border-[#1e222d] px-3.5 py-1.5 flex items-center justify-between text-[11px] text-slate-400 select-none">
-                    <div class="flex items-center gap-2 font-mono text-[10px] text-slate-400">
-                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        <span id="chart-bottom-status" class="text-emerald-400 font-bold">100% Real-Time NSE / BSE Exchange Stream · NIFTY 50: 24,158.40</span>
-                    </div>
-                    <div class="flex items-center gap-3 font-mono text-[10px]">
-                        <div id="chart-bottom-clock" class="text-slate-300 font-semibold">15:30:00 IST</div>
-                        <span class="text-cyan-400 font-bold bg-cyan-950/60 px-1.5 py-0.5 rounded border border-cyan-800/40">NSE QUANT PRO</span>
-                    </div>
+                    <div class="abt-signal" id="abtSignal"></div>
                 </div>
             </div>
 
@@ -785,6 +688,7 @@
         </div>
     </div>
 
+    <script src="/static/anilbabu_chart.js?v=2.0"></script>
     <script src="/static/app.js?v=55.0"></script>
 </body>
 </html>
