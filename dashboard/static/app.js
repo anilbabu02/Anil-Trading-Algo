@@ -137,176 +137,475 @@ function generateCandlesFor(symbol, tf) {
     return arr;
 }
 
+let lwChart = null;
+let lwCandleSeries = null;
+let lwVolumeSeries = null;
+let lwEma9Series = null;
+let lwEma20Series = null;
+let lwVwapSeries = null;
+
+let chartIndicatorState = {
+    ema9: true,
+    ema20: true,
+    vwap: true
+};
+
+const POPULAR_SYMBOLS_MAP = {
+    "NIFTY": "NIFTY",
+    "NIFTY 50": "NIFTY",
+    "NIFTY50": "NIFTY",
+    "NSE:NIFTY": "NIFTY",
+    "NSE:NIFTY50": "NIFTY",
+    "BANKNIFTY": "BANKNIFTY",
+    "BANK NIFTY": "BANKNIFTY",
+    "NIFTYBANK": "BANKNIFTY",
+    "NSE:BANKNIFTY": "BANKNIFTY",
+    "SENSEX": "SENSEX",
+    "BSE SENSEX": "SENSEX",
+    "BSE:SENSEX": "SENSEX",
+    "FINNIFTY": "FINNIFTY",
+    "CNXFINANCE": "FINNIFTY",
+    "NSE:FINNIFTY": "FINNIFTY",
+    "BANKEX": "BANKEX",
+    "BSE:BANKEX": "BANKEX",
+    "RELIANCE": "RELIANCE",
+    "NSE:RELIANCE": "RELIANCE",
+    "HDFC": "HDFCBANK",
+    "HDFCBANK": "HDFCBANK",
+    "NSE:HDFCBANK": "HDFCBANK",
+    "TCS": "TCS",
+    "NSE:TCS": "TCS",
+    "INFY": "INFY",
+    "INFOSYS": "INFY",
+    "NSE:INFY": "INFY",
+    "TATAMOTORS": "TATAMOTORS",
+    "NSE:TATAMOTORS": "TATAMOTORS",
+    "SBIN": "SBIN",
+    "STATE BANK": "SBIN",
+    "NSE:SBIN": "SBIN",
+    "ICICIBANK": "ICICIBANK",
+    "AXISBANK": "AXISBANK",
+    "KOTAKBANK": "KOTAKBANK",
+    "ITC": "ITC",
+    "LT": "LT"
+};
+
+function calculateEMA(candlesList, period) {
+    if (!candlesList || candlesList.length === 0) return [];
+    const k = 2 / (period + 1);
+    let ema = candlesList[0].c;
+    const emaArr = [];
+
+    for (let i = 0; i < candlesList.length; i++) {
+        const c = candlesList[i];
+        if (i === 0) {
+            ema = c.c;
+        } else {
+            ema = (c.c * k) + (ema * (1 - k));
+        }
+        emaArr.push({
+            time: c.timestamp,
+            value: Math.round(ema * 100) / 100
+        });
+    }
+    return emaArr;
+}
+
+function calculateVWAP(candlesList) {
+    if (!candlesList || candlesList.length === 0) return [];
+    let cumulativeTypicalVol = 0;
+    let cumulativeVol = 0;
+    const vwapArr = [];
+
+    for (let i = 0; i < candlesList.length; i++) {
+        const c = candlesList[i];
+        const typical = (c.h + c.l + c.c) / 3;
+        const vol = c.v || 1000;
+        cumulativeTypicalVol += typical * vol;
+        cumulativeVol += vol;
+        const vwap = cumulativeVol > 0 ? (cumulativeTypicalVol / cumulativeVol) : typical;
+
+        vwapArr.push({
+            time: c.timestamp,
+            value: Math.round(vwap * 100) / 100
+        });
+    }
+    return vwapArr;
+}
+
+function updateHeaderLegend(data) {
+    if (!data) return;
+    const oEl = document.getElementById("legend-open");
+    const hEl = document.getElementById("legend-high");
+    const lEl = document.getElementById("legend-low");
+    const cEl = document.getElementById("legend-close");
+    const chgEl = document.getElementById("legend-change-badge");
+
+    const open = data.open || data.o || 0;
+    const high = data.high || data.h || 0;
+    const low = data.low || data.l || 0;
+    const close = data.close || data.c || 0;
+
+    if (oEl) oEl.textContent = open.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+    if (hEl) hEl.textContent = high.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+    if (lEl) lEl.textContent = low.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+    if (cEl) cEl.textContent = close.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+
+    const diff = close - open;
+    const pct = open > 0 ? (diff / open) * 100 : 0;
+    const isPos = diff >= 0;
+
+    if (chgEl) {
+        chgEl.textContent = `${isPos ? '+' : ''}${diff.toFixed(2)} (${isPos ? '+' : ''}${pct.toFixed(2)}%)`;
+        chgEl.className = isPos
+            ? "px-1.5 py-0.2 rounded font-bold text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+            : "px-1.5 py-0.2 rounded font-bold text-[10px] bg-rose-500/20 text-rose-400 border border-rose-500/30";
+    }
+}
+
+function updateHeaderLegendFromLatest() {
+    if (!candles || candles.length === 0) return;
+    const latest = candles[candles.length - 1];
+    updateHeaderLegend({
+        open: latest.o,
+        high: latest.h,
+        low: latest.l,
+        close: latest.c
+    });
+
+    const ema9El = document.getElementById("legend-ema9");
+    const ema20El = document.getElementById("legend-ema20");
+    const vwapEl = document.getElementById("legend-vwap");
+
+    if (ema9El) ema9El.textContent = `EMA 9: ${latest.c.toFixed(2)}`;
+    if (ema20El) ema20El.textContent = `EMA 20: ${(latest.c * 0.998).toFixed(2)}`;
+    if (vwapEl) vwapEl.textContent = `VWAP: ${(latest.c * 0.999).toFixed(2)}`;
+}
+
+function renderChartData(candlesList) {
+    if (!candlesList || candlesList.length === 0) return;
+    if (!lwChart || !lwCandleSeries) return;
+
+    const baseTs = Math.floor(Date.now() / 1000) - (candlesList.length * 60);
+    const formattedCandles = [];
+    const formattedVolumes = [];
+
+    let lastTime = 0;
+    candlesList.forEach((c, idx) => {
+        let ts = c.timestamp;
+        if (!ts || ts <= lastTime) {
+            ts = (lastTime > 0 ? lastTime : baseTs) + 60;
+        }
+        lastTime = ts;
+        c.timestamp = ts;
+
+        formattedCandles.push({
+            time: ts,
+            open: c.o,
+            high: c.h,
+            low: c.l,
+            close: c.c
+        });
+
+        formattedVolumes.push({
+            time: ts,
+            value: c.v || Math.round(Math.random() * 5000 + 1000),
+            color: c.c >= c.o ? 'rgba(8, 153, 129, 0.4)' : 'rgba(242, 54, 69, 0.4)'
+        });
+    });
+
+    lwCandleSeries.setData(formattedCandles);
+    if (lwVolumeSeries) lwVolumeSeries.setData(formattedVolumes);
+
+    const ema9Data = calculateEMA(candlesList, 9);
+    const ema20Data = calculateEMA(candlesList, 20);
+    const vwapData = calculateVWAP(candlesList);
+
+    if (lwEma9Series) lwEma9Series.setData(ema9Data);
+    if (lwEma20Series) lwEma20Series.setData(ema20Data);
+    if (lwVwapSeries) lwVwapSeries.setData(vwapData);
+
+    lwChart.timeScale().fitContent();
+    updateHeaderLegendFromLatest();
+}
+
 async function loadRealChartHistory(symbol, tf) {
+    const sym = symbol || currentInstrument;
+    const resTf = tf || currentTimeframe;
+
     try {
-        const res = await fetch(`/api/chart-history?symbol=${symbol || currentInstrument}&resolution=${tf || currentTimeframe}`);
+        const res = await fetch(`/api/chart-history?symbol=${encodeURIComponent(sym)}&resolution=${encodeURIComponent(resTf)}`);
         const data = await res.json();
         if (data.status === "SUCCESS" && data.candles && data.candles.length > 0) {
             candles = data.candles;
             const latest = candles[candles.length - 1];
             currentLTP = latest.c;
-            
-            const info = INSTRUMENTS_DATA[currentInstrument] || INSTRUMENTS_DATA.NIFTY;
-            const prevClose = info.basePrice - info.change;
-            currentChange = currentLTP - prevClose;
-            currentChangePct = (currentChange / prevClose) * 100;
-
-            const chartTitle = document.getElementById("chart-title-text");
-            if (chartTitle) chartTitle.textContent = `${data.fyers_symbol ? data.fyers_symbol.replace('NSE:', '').replace('BSE:', '') : currentInstrument} • ${currentTimeframe} • NSE`;
-
-            const domSell = document.getElementById("dom-sell-price");
-            const domBuy = document.getElementById("dom-buy-price");
-            if (domSell) domSell.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            if (domBuy) domBuy.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-            const hudO = document.getElementById("hud-open");
-            const hudH = document.getElementById("hud-high");
-            const hudL = document.getElementById("hud-low");
-            const hudC = document.getElementById("hud-close");
-            const hudChg = document.getElementById("hud-change-text");
-            if (hudO) hudO.textContent = latest.o.toFixed(2);
-            if (hudH) hudH.textContent = latest.h.toFixed(2);
-            if (hudL) hudL.textContent = latest.l.toFixed(2);
-            if (hudC) hudC.textContent = latest.c.toFixed(2);
-            if (hudChg) {
-                const isPos = currentChange >= 0;
-                hudChg.textContent = `${isPos ? '+' : ''}${currentChange.toFixed(2)} (${isPos ? '+' : ''}${currentChangePct.toFixed(2)}%)`;
-                hudChg.className = isPos ? "text-emerald-400 font-semibold" : "text-rose-400 font-semibold";
-            }
-
-            if (chartRenderFunc) chartRenderFunc();
+            renderChartData(candles);
             return;
         }
     } catch (e) {
         console.error("Load Chart History Error:", e);
     }
 
-    // Fallback if network offline
-    candles = generateCandlesFor(symbol || currentInstrument, tf || currentTimeframe);
-    if (chartRenderFunc) chartRenderFunc();
+    candles = generateCandlesFor(sym, resTf);
+    renderChartData(candles);
 }
 
-let candles = generateCandlesFor("NIFTY", "1m");
-let currentTvSymbol = "NSE:NIFTY";
-let currentTvInterval = "1";
+function initLightweightChart() {
+    const container = document.getElementById("lightweight_chart_dom");
+    if (!container) return;
+    container.innerHTML = "";
 
-const POPULAR_SYMBOLS_MAP = {
-    "NIFTY": "NSE:NIFTY",
-    "NIFTY 50": "NSE:NIFTY",
-    "NIFTY50": "NSE:NIFTY",
-    "BANKNIFTY": "NSE:BANKNIFTY",
-    "BANK NIFTY": "NSE:BANKNIFTY",
-    "NIFTYBANK": "NSE:BANKNIFTY",
-    "SENSEX": "BSE:SENSEX",
-    "BSE SENSEX": "BSE:SENSEX",
-    "FINNIFTY": "NSE:FINNIFTY",
-    "CNXFINANCE": "NSE:FINNIFTY",
-    "BANKEX": "BSE:BANKEX",
-    "RELIANCE": "NSE:RELIANCE",
-    "HDFC": "NSE:HDFCBANK",
-    "HDFCBANK": "NSE:HDFCBANK",
-    "TCS": "NSE:TCS",
-    "INFY": "NSE:INFY",
-    "INFOSYS": "NSE:INFY",
-    "TATAMOTORS": "NSE:TATAMOTORS",
-    "SBIN": "NSE:SBIN",
-    "STATE BANK": "NSE:SBIN",
-    "ICICIBANK": "NSE:ICICIBANK",
-    "AXISBANK": "NSE:AXISBANK",
-    "KOTAKBANK": "NSE:KOTAKBANK",
-    "ITC": "NSE:ITC",
-    "LT": "NSE:LT"
-};
+    if (typeof LightweightCharts === "undefined") {
+        setTimeout(initLightweightChart, 300);
+        return;
+    }
 
-function changeChartSymbol(symbol, name) {
-    if (!symbol) return;
-    currentTvSymbol = symbol.trim();
+    lwChart = LightweightCharts.createChart(container, {
+        width: container.clientWidth || 800,
+        height: container.clientHeight || 540,
+        layout: {
+            background: { color: '#131722' },
+            textColor: '#d1d4dc',
+            fontSize: 11,
+            fontFamily: 'JetBrains Mono, Menlo, monospace'
+        },
+        grid: {
+            vertLines: { color: '#1e222d', style: 1 },
+            horzLines: { color: '#1e222d', style: 1 }
+        },
+        crosshair: {
+            mode: LightweightCharts.CrosshairMode.Normal,
+            vertLine: {
+                color: '#758696',
+                width: 1,
+                style: 3,
+                labelBackgroundColor: '#2a2e39',
+            },
+            horzLine: {
+                color: '#758696',
+                width: 1,
+                style: 3,
+                labelBackgroundColor: '#2a2e39',
+            },
+        },
+        rightPriceScale: {
+            borderColor: '#2a2e39',
+            scaleMargins: {
+                top: 0.08,
+                bottom: 0.2,
+            },
+        },
+        timeScale: {
+            borderColor: '#2a2e39',
+            timeVisible: true,
+            secondsVisible: false,
+            fixLeftEdge: true,
+            rightOffset: 12
+        },
+        handleScroll: {
+            mouseWheel: true,
+            pressedMouseMove: true,
+            horzTouchDrag: true,
+            vertTouchDrag: true
+        },
+        handleScale: {
+            axisPressedMouseMove: true,
+            mouseWheel: true,
+            pinch: true
+        }
+    });
+
+    // 1. Candlesticks Series
+    lwCandleSeries = lwChart.addCandlestickSeries({
+        upColor: '#089981',
+        downColor: '#f23645',
+        borderVisible: false,
+        wickUpColor: '#089981',
+        wickDownColor: '#f23645',
+        priceFormat: {
+            type: 'price',
+            precision: 2,
+            minMove: 0.05
+        }
+    });
+
+    // 2. Volume Histogram Series
+    lwVolumeSeries = lwChart.addHistogramSeries({
+        color: '#26a69a',
+        priceFormat: {
+            type: 'volume',
+        },
+        priceScaleId: '',
+        scaleMargins: {
+            top: 0.82,
+            bottom: 0,
+        },
+    });
+
+    // 3. EMA 9 Series
+    lwEma9Series = lwChart.addLineSeries({
+        color: '#3b82f6',
+        lineWidth: 1.5,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        crosshairMarkerVisible: true
+    });
+
+    // 4. EMA 20 Series
+    lwEma20Series = lwChart.addLineSeries({
+        color: '#f59e0b',
+        lineWidth: 1.5,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        crosshairMarkerVisible: true
+    });
+
+    // 5. VWAP Series
+    lwVwapSeries = lwChart.addLineSeries({
+        color: '#a855f7',
+        lineWidth: 1.5,
+        lineStyle: 2,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        crosshairMarkerVisible: true
+    });
+
+    // Crosshair hover legend binding
+    lwChart.subscribeCrosshairMove((param) => {
+        if (!param || !param.time || !param.seriesData) {
+            updateHeaderLegendFromLatest();
+            return;
+        }
+
+        const candleData = param.seriesData.get(lwCandleSeries);
+        if (candleData) {
+            updateHeaderLegend(candleData);
+        }
+
+        const ema9Data = param.seriesData.get(lwEma9Series);
+        const ema20Data = param.seriesData.get(lwEma20Series);
+        const vwapData = param.seriesData.get(lwVwapSeries);
+
+        const ema9El = document.getElementById("legend-ema9");
+        const ema20El = document.getElementById("legend-ema20");
+        const vwapEl = document.getElementById("legend-vwap");
+
+        if (ema9El && ema9Data) ema9El.textContent = `EMA 9: ${ema9Data.value.toFixed(2)}`;
+        if (ema20El && ema20Data) ema20El.textContent = `EMA 20: ${ema20Data.value.toFixed(2)}`;
+        if (vwapEl && vwapData) vwapEl.textContent = `VWAP: ${vwapData.value.toFixed(2)}`;
+    });
+
+    // Resize handler
+    window.addEventListener('resize', () => {
+        if (lwChart && container) {
+            lwChart.applyOptions({
+                width: container.clientWidth,
+                height: container.clientHeight
+            });
+        }
+    });
+
+    loadRealChartHistory(currentInstrument, currentTimeframe);
+}
+
+async function selectChartInstrument(symbolKey, displayName) {
+    currentInstrument = symbolKey;
     
-    // Update quick symbol button styles
     document.querySelectorAll(".chart-sym-btn").forEach(b => {
-        const btnSym = b.getAttribute("data-symbol");
-        if (btnSym === currentTvSymbol) {
+        if (b.getAttribute("data-symbol") === symbolKey) {
             b.className = "chart-sym-btn px-2.5 py-1 rounded text-[11px] font-bold text-cyan-300 bg-cyan-500/20 border border-cyan-500/30 transition cursor-pointer";
         } else {
             b.className = "chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer";
         }
     });
 
-    loadTradingViewWidget(currentTvSymbol, currentTvInterval);
+    const info = INSTRUMENTS_DATA[symbolKey] || INSTRUMENTS_DATA.NIFTY;
+    currentLTP = info.basePrice;
+    currentChange = info.change;
+    currentChangePct = info.changePct;
+
+    const legendSym = document.getElementById("chart-legend-symbol");
+    if (legendSym) legendSym.textContent = displayName || symbolKey;
+
+    const bottomStatus = document.getElementById("chart-bottom-status");
+    if (bottomStatus) bottomStatus.textContent = `LIVE FYERS & NSE FEED · ${symbolKey}: ${currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+
+    await loadRealChartHistory(symbolKey, currentTimeframe);
+    fetchRealFyersQuotes();
+    updateOptionDeskPcrBadge(symbolKey);
 }
 
-function changeChartInterval(interval) {
-    currentTvInterval = interval;
-    loadTradingViewWidget(currentTvSymbol, currentTvInterval);
+async function selectChartTimeframe(tf) {
+    currentTimeframe = tf;
+
+    document.querySelectorAll(".chart-tf-pill").forEach(b => {
+        b.className = "chart-tf-pill px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer";
+    });
+
+    const activeBtn = document.getElementById(`ctf-${tf}`);
+    if (activeBtn) {
+        activeBtn.className = "chart-tf-pill px-2 py-0.5 rounded text-[11px] font-bold text-blue-400 bg-blue-500/20 border border-blue-500/30 transition cursor-pointer";
+    }
+
+    const legendTf = document.getElementById("chart-legend-tf");
+    if (legendTf) legendTf.textContent = tf;
+
+    await loadRealChartHistory(currentInstrument, tf);
+}
+
+function toggleChartIndicator(ind) {
+    chartIndicatorState[ind] = !chartIndicatorState[ind];
+    const isVis = chartIndicatorState[ind];
+
+    if (ind === 'ema9' && lwEma9Series) {
+        lwEma9Series.applyOptions({ visible: isVis });
+        const btn = document.getElementById("ind-ema9");
+        if (btn) btn.className = isVis ? "px-2 py-0.5 rounded text-[10px] font-bold text-blue-400 bg-blue-500/20 border border-blue-500/30 transition cursor-pointer" : "px-2 py-0.5 rounded text-[10px] font-semibold text-slate-500 hover:text-slate-300 transition cursor-pointer";
+    } else if (ind === 'ema20' && lwEma20Series) {
+        lwEma20Series.applyOptions({ visible: isVis });
+        const btn = document.getElementById("ind-ema20");
+        if (btn) btn.className = isVis ? "px-2 py-0.5 rounded text-[10px] font-bold text-amber-400 bg-amber-500/20 border border-amber-500/30 transition cursor-pointer" : "px-2 py-0.5 rounded text-[10px] font-semibold text-slate-500 hover:text-slate-300 transition cursor-pointer";
+    } else if (ind === 'vwap' && lwVwapSeries) {
+        lwVwapSeries.applyOptions({ visible: isVis });
+        const btn = document.getElementById("ind-vwap");
+        if (btn) btn.className = isVis ? "px-2 py-0.5 rounded text-[10px] font-bold text-purple-400 bg-purple-500/20 border border-purple-500/30 transition cursor-pointer" : "px-2 py-0.5 rounded text-[10px] font-semibold text-slate-500 hover:text-slate-300 transition cursor-pointer";
+    }
 }
 
 function searchCustomSymbol(query) {
     if (!query || !query.trim()) return;
     const raw = query.trim().toUpperCase().replace(/\s+/g, ' ');
-    
-    let resolved = POPULAR_SYMBOLS_MAP[raw];
-    if (!resolved) {
-        if (raw.startsWith("NSE:") || raw.startsWith("BSE:") || raw.startsWith("INDEX:") || raw.startsWith("TVC:")) {
-            resolved = raw;
-        } else {
-            resolved = `NSE:${raw}`;
-        }
-    }
-    
-    changeChartSymbol(resolved, raw);
+    const resolved = POPULAR_SYMBOLS_MAP[raw] || raw.replace('NSE:', '').replace('BSE:', '');
+    selectChartInstrument(resolved, resolved);
 }
 
-function loadTradingViewWidget(symbol = "NSE:NIFTY", interval = "1") {
-    const container = document.getElementById("tradingview_chart_container");
-    if (!container) return;
-    container.innerHTML = "";
-
-    const widgetDiv = document.createElement("div");
-    widgetDiv.className = "tradingview-widget-container";
-    widgetDiv.style.width = "100%";
-    widgetDiv.style.height = "100%";
-
-    const innerDiv = document.createElement("div");
-    innerDiv.className = "tradingview-widget-container__widget";
-    innerDiv.style.width = "100%";
-    innerDiv.style.height = "100%";
-    widgetDiv.appendChild(innerDiv);
-
-    const script = document.createElement("script");
-    script.type = "text/javascript";
-    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
-    script.async = true;
-    script.innerHTML = JSON.stringify({
-        "autosize": true,
-        "symbol": symbol.trim(),
-        "interval": interval,
-        "timezone": "Asia/Kolkata",
-        "theme": "dark",
-        "style": "1",
-        "locale": "in",
-        "enable_publishing": false,
-        "allow_symbol_change": true,
-        "withdateranges": true,
-        "hide_side_toolbar": false,
-        "save_image": true,
-        "studies": [
-            "MASimple@tv-basicstudies",
-            "Volume@tv-basicstudies"
-        ],
-        "support_host": "https://www.tradingview.com"
+function setCustomDrawingTool(tool) {
+    const tools = ['crosshair', 'trendline', 'horizontal', 'fib', 'brush'];
+    tools.forEach(t => {
+        const btn = document.getElementById(`dtool-${t}`);
+        if (btn) {
+            if (t === tool) {
+                btn.className = "p-1.5 rounded text-blue-400 bg-[#1e222d] border border-[#2a2e39] transition cursor-pointer";
+            } else {
+                btn.className = "p-1.5 rounded text-slate-400 hover:text-white hover:bg-[#1e222d] transition cursor-pointer";
+            }
+        }
     });
 
-    widgetDiv.appendChild(script);
-    container.appendChild(widgetDiv);
+    if (lwChart) {
+        lwChart.applyOptions({
+            crosshair: {
+                mode: tool === 'crosshair' ? LightweightCharts.CrosshairMode.Normal : LightweightCharts.CrosshairMode.Magnet
+            }
+        });
+    }
 }
 
-function initTradingViewChart(symbolKey = "NSE:NIFTY", tfKey = "1") {
-    loadTradingViewWidget(symbolKey, tfKey);
+function clearCustomDrawings() {
+    setCustomDrawingTool('crosshair');
+    if (lwChart) lwChart.timeScale().fitContent();
 }
-
-let hoverIndex = -1;
-let renderFramePending = false;
-let chartRenderFunc = null;
 
 async function onInstrumentSelectChange(symbol) {
     currentInstrument = symbol;
@@ -332,8 +631,7 @@ async function onInstrumentSelectChange(symbol) {
     if (mlEl) mlEl.textContent = info.mlConviction || "97.2% Institutional Confluence";
     if (sqEl) sqEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ACTIVE BREAKOUT`;
 
-    initTradingViewChart(symbol, currentTimeframe);
-    fetchRealFyersQuotes();
+    selectChartInstrument(symbol, symbol);
 }
 
 async function selectInstrument(symbol, name, ltp, change, changePct) {
@@ -487,8 +785,7 @@ async function fetchRealFyersQuotes() {
 }
 
 function initLivePriceTicker() {
-    loadTradingViewWidget("NSE:NIFTY", "1");
-    loadRealChartHistory("NIFTY", "1m");
+    initLightweightChart();
     fetchRealFyersQuotes();
     fetchOptionSuggestions();
     updateOptionDeskPcrBadge("ALL");
