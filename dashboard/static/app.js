@@ -143,152 +143,221 @@ function generateCandlesFor(symbol, tf) {
     return arr;
 }
 
-let currentTvSymbol = "NSE:NIFTY";
-let currentTvInterval = "5";
-let tvWidgetInstance = null;
+// -------------------------------------------------------------
+// PRO INSTITUTIONAL MULTI-ENGINE CHARTING SYSTEM (NATIVE & TV)
+// -------------------------------------------------------------
 
-function loadOfficialNseTvChart(symbol = "NSE:NIFTY", interval = "5") {
-    if (!symbol) symbol = "NSE:NIFTY";
-    currentTvSymbol = symbol.trim();
-    currentTvInterval = interval || "5";
-
-    // Update active button styles on .nse-chart-pill
-    document.querySelectorAll(".nse-chart-pill").forEach(b => {
-        if (b.getAttribute("data-symbol") === currentTvSymbol) {
-            b.className = "nse-chart-pill px-2.5 py-1 rounded text-[11px] font-bold text-cyan-300 bg-cyan-500/20 border border-cyan-500/30 transition cursor-pointer";
-        } else {
-            b.className = "nse-chart-pill px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer";
-        }
-    });
-
-    const container = document.getElementById("tradingview_chart_container");
-    if (!container) return;
-    container.innerHTML = "";
-
-    const chartDiv = document.createElement("div");
-    chartDiv.id = "nse_tv_chart_inner";
-    chartDiv.style.width = "100%";
-    chartDiv.style.height = "100%";
-    container.appendChild(chartDiv);
-
-    try {
-        if (typeof TradingView !== "undefined") {
-            tvWidgetInstance = new TradingView.widget({
-                "autosize": true,
-                "symbol": currentTvSymbol,
-                "interval": currentTvInterval,
-                "timezone": "Asia/Kolkata",
-                "theme": "dark",
-                "style": "1",
-                "locale": "in",
-                "toolbar_bg": "#131722",
-                "enable_publishing": false,
-                "allow_symbol_change": true,
-                "container_id": "nse_tv_chart_inner",
-                "hide_side_toolbar": false,
-                "withdateranges": true,
-                "save_image": true,
-                "studies": [
-                    "MASimple@tv-basicstudies",
-                    "RSI@tv-basicstudies",
-                    "Volume@tv-basicstudies"
-                ]
-            });
-        }
-    } catch (e) {
-        console.error("TradingView embed error:", e);
-    }
-
-    const cleanInst = currentTvSymbol.replace("NSE:", "").replace("BSE:", "");
-    if (INSTRUMENTS_DATA[cleanInst]) {
-        currentInstrument = cleanInst;
-        updateOptionDeskPcrBadge(cleanInst);
-    }
-}
-
-function searchOfficialNseSymbol(query) {
-    if (!query || !query.trim()) return;
-    const raw = query.trim().toUpperCase().replace(/\s+/g, ' ');
-    const nseMap = {
-        "NIFTY": "NSE:NIFTY",
-        "NIFTY 50": "NSE:NIFTY",
-        "BANKNIFTY": "NSE:BANKNIFTY",
-        "BANK NIFTY": "NSE:BANKNIFTY",
-        "SENSEX": "BSE:SENSEX",
-        "FINNIFTY": "NSE:FINNIFTY",
-        "BANKEX": "BSE:BANKEX",
-        "RELIANCE": "NSE:RELIANCE",
-        "HDFC": "NSE:HDFCBANK",
-        "HDFCBANK": "NSE:HDFCBANK",
-        "TCS": "NSE:TCS",
-        "INFY": "NSE:INFY",
-        "SBIN": "NSE:SBIN",
-        "TATAMOTORS": "NSE:TATAMOTORS",
-        "ICICIBANK": "NSE:ICICIBANK",
-        "AXISBANK": "NSE:AXISBANK",
-        "KOTAKBANK": "NSE:KOTAKBANK",
-        "ITC": "NSE:ITC",
-        "LT": "NSE:LT"
-    };
-    let target = nseMap[raw];
-    if (!target) {
-        target = raw.startsWith("NSE:") || raw.startsWith("BSE:") ? raw : `NSE:${raw}`;
-    }
-    loadOfficialNseTvChart(target, "5");
-}
+let currentChartEngine = 'native'; // 'native' | 'tv'
+let currentProSymbol = 'NIFTY';
+let currentProTvSymbol = 'NSE:NIFTY';
+let currentProTf = '1m';
 
 let lwChart = null;
 let lwCandleSeries = null;
 let lwVolumeSeries = null;
 let lwEma9Series = null;
-let lwEma20Series = null;
+let lwEma21Series = null;
+let lwEma50Series = null;
 let lwVwapSeries = null;
+let lwBbUpperSeries = null;
+let lwBbLowerSeries = null;
+let lwBbBasisSeries = null;
+let lwRsiSeries = null;
 
-let chartIndicatorState = {
+let proIndicatorState = {
     ema9: true,
-    ema20: true,
-    vwap: true
+    ema21: true,
+    ema50: false,
+    vwap: true,
+    bb: false,
+    supertrend: true,
+    rsi: false
 };
 
-const POPULAR_SYMBOLS_MAP = {
-    "NIFTY": "NIFTY",
-    "NIFTY 50": "NIFTY",
-    "NIFTY50": "NIFTY",
-    "NSE:NIFTY": "NIFTY",
-    "NSE:NIFTY50": "NIFTY",
-    "BANKNIFTY": "BANKNIFTY",
-    "BANK NIFTY": "BANKNIFTY",
-    "NIFTYBANK": "BANKNIFTY",
-    "NSE:BANKNIFTY": "BANKNIFTY",
-    "SENSEX": "SENSEX",
-    "BSE SENSEX": "SENSEX",
-    "BSE:SENSEX": "SENSEX",
-    "FINNIFTY": "FINNIFTY",
-    "CNXFINANCE": "FINNIFTY",
-    "NSE:FINNIFTY": "FINNIFTY",
-    "BANKEX": "BANKEX",
-    "BSE:BANKEX": "BANKEX",
-    "RELIANCE": "RELIANCE",
-    "NSE:RELIANCE": "RELIANCE",
-    "HDFC": "HDFCBANK",
-    "HDFCBANK": "HDFCBANK",
-    "NSE:HDFCBANK": "HDFCBANK",
-    "TCS": "TCS",
-    "NSE:TCS": "TCS",
-    "INFY": "INFY",
-    "INFOSYS": "INFY",
-    "NSE:INFY": "INFY",
-    "TATAMOTORS": "TATAMOTORS",
-    "NSE:TATAMOTORS": "TATAMOTORS",
-    "SBIN": "SBIN",
-    "STATE BANK": "SBIN",
-    "NSE:SBIN": "SBIN",
-    "ICICIBANK": "ICICIBANK",
-    "AXISBANK": "AXISBANK",
-    "KOTAKBANK": "KOTAKBANK",
-    "ITC": "ITC",
-    "LT": "LT"
-};
+let tvWidgetInstance = null;
+
+function setChartEngine(engine) {
+    currentChartEngine = engine;
+
+    const nativeBtn = document.getElementById("engine-btn-native");
+    const tvBtn = document.getElementById("engine-btn-tv");
+    const nativeWrap = document.getElementById("native_chart_wrapper");
+    const tvWrap = document.getElementById("tv_chart_wrapper");
+    const indContainer = document.getElementById("pro-indicators-container");
+    const drawRail = document.getElementById("pro-drawing-rail");
+
+    if (engine === 'native') {
+        if (nativeBtn) {
+            nativeBtn.className = "px-2.5 py-1 rounded text-[11px] font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-500/30 transition cursor-pointer flex items-center gap-1";
+            nativeBtn.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ⚡ Pro Canvas`;
+        }
+        if (tvBtn) {
+            tvBtn.className = "px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer flex items-center gap-1";
+        }
+        if (nativeWrap) nativeWrap.classList.remove("hidden");
+        if (tvWrap) tvWrap.classList.add("hidden");
+        if (indContainer) indContainer.classList.remove("hidden");
+        if (drawRail) drawRail.classList.remove("hidden");
+
+        if (!lwChart) {
+            initNativeProChart();
+        } else {
+            const container = document.getElementById("native_chart_dom");
+            if (container && lwChart) {
+                lwChart.applyOptions({
+                    width: container.clientWidth,
+                    height: container.clientHeight
+                });
+                lwChart.timeScale().fitContent();
+            }
+        }
+    } else {
+        if (tvBtn) {
+            tvBtn.className = "px-2.5 py-1 rounded text-[11px] font-bold text-cyan-300 bg-cyan-500/20 border border-cyan-500/30 transition cursor-pointer flex items-center gap-1";
+            tvBtn.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span> 🌐 TV Cloud`;
+        }
+        if (nativeBtn) {
+            nativeBtn.className = "px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer flex items-center gap-1";
+            nativeBtn.innerHTML = `⚡ Pro Canvas`;
+        }
+        if (nativeWrap) nativeWrap.classList.add("hidden");
+        if (tvWrap) tvWrap.classList.remove("hidden");
+        if (indContainer) indContainer.classList.add("hidden");
+        if (drawRail) drawRail.classList.add("hidden");
+
+        loadOfficialNseTvChart(currentProTvSymbol, currentProTf);
+    }
+}
+
+function selectProChartSymbol(symbolKey, tvSymbol) {
+    currentProSymbol = symbolKey;
+    currentInstrument = symbolKey;
+    currentProTvSymbol = tvSymbol || (symbolKey === 'SENSEX' || symbolKey === 'BANKEX' ? `BSE:${symbolKey}` : `NSE:${symbolKey}`);
+
+    document.querySelectorAll(".pro-sym-btn").forEach(b => {
+        if (b.getAttribute("data-chart-symbol") === symbolKey) {
+            b.className = "pro-sym-btn px-2 py-0.5 rounded text-[11px] font-bold text-cyan-300 bg-cyan-500/20 border border-cyan-500/30 transition cursor-pointer";
+        } else {
+            b.className = "pro-sym-btn px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer";
+        }
+    });
+
+    const hudSym = document.getElementById("pro-hud-symbol");
+    if (hudSym) hudSym.textContent = currentProTvSymbol;
+
+    const info = INSTRUMENTS_DATA[symbolKey] || INSTRUMENTS_DATA.NIFTY;
+    currentLTP = info.basePrice;
+    currentChange = info.change;
+    currentChangePct = info.changePct;
+
+    const bottomStatus = document.getElementById("chart-bottom-status");
+    if (bottomStatus) {
+        bottomStatus.textContent = `100% Real-Time NSE Stream · ${currentProTvSymbol}: ₹${currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    }
+
+    if (currentChartEngine === 'native') {
+        loadRealChartHistory(symbolKey, currentProTf);
+    } else {
+        loadOfficialNseTvChart(currentProTvSymbol, currentProTf);
+    }
+
+    fetchRealFyersQuotes();
+    updateOptionDeskPcrBadge(symbolKey);
+}
+
+function setProTimeframe(tf) {
+    currentProTf = tf;
+    currentTimeframe = tf;
+
+    document.querySelectorAll(".pro-tf-btn").forEach(b => {
+        b.className = "pro-tf-btn px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer";
+    });
+
+    const activeBtn = document.getElementById(`ptf-${tf}`);
+    if (activeBtn) {
+        activeBtn.className = "pro-tf-btn px-2 py-0.5 rounded text-[11px] font-bold text-blue-400 bg-blue-500/20 border border-blue-500/30 transition cursor-pointer";
+    }
+
+    const hudTf = document.getElementById("pro-hud-tf");
+    if (hudTf) hudTf.textContent = tf;
+
+    if (currentChartEngine === 'native') {
+        loadRealChartHistory(currentProSymbol, tf);
+    } else {
+        loadOfficialNseTvChart(currentProTvSymbol, tf);
+    }
+}
+
+function toggleProIndicator(ind) {
+    proIndicatorState[ind] = !proIndicatorState[ind];
+    const isVis = proIndicatorState[ind];
+    const btn = document.getElementById(`pind-${ind}`);
+
+    const colorMap = {
+        ema9: "cyan",
+        ema21: "amber",
+        ema50: "purple",
+        vwap: "yellow",
+        bb: "teal",
+        supertrend: "emerald",
+        rsi: "pink"
+    };
+
+    const color = colorMap[ind] || "cyan";
+
+    if (btn) {
+        btn.className = isVis
+            ? `px-2 py-0.5 rounded text-[10px] font-bold text-${color}-400 bg-${color}-500/20 border border-${color}-500/30 transition cursor-pointer`
+            : `px-2 py-0.5 rounded text-[10px] font-semibold text-slate-500 hover:text-slate-300 transition cursor-pointer`;
+    }
+
+    if (ind === 'ema9' && lwEma9Series) lwEma9Series.applyOptions({ visible: isVis });
+    if (ind === 'ema21' && lwEma21Series) lwEma21Series.applyOptions({ visible: isVis });
+    if (ind === 'ema50' && lwEma50Series) lwEma50Series.applyOptions({ visible: isVis });
+    if (ind === 'vwap' && lwVwapSeries) lwVwapSeries.applyOptions({ visible: isVis });
+    if (ind === 'bb') {
+        if (lwBbUpperSeries) lwBbUpperSeries.applyOptions({ visible: isVis });
+        if (lwBbLowerSeries) lwBbLowerSeries.applyOptions({ visible: isVis });
+        if (lwBbBasisSeries) lwBbBasisSeries.applyOptions({ visible: isVis });
+    }
+
+    // Re-render markers if Supertrend is toggled
+    if (ind === 'supertrend' && candles && candles.length > 0) {
+        applySupertrendMarkers(candles);
+    }
+}
+
+function handleProSearch(query) {
+    if (!query || !query.trim()) return;
+    const raw = query.trim().toUpperCase().replace(/\s+/g, ' ');
+    const nseMap = {
+        "NIFTY": "NIFTY",
+        "NIFTY 50": "NIFTY",
+        "BANKNIFTY": "BANKNIFTY",
+        "BANK NIFTY": "BANKNIFTY",
+        "SENSEX": "SENSEX",
+        "FINNIFTY": "FINNIFTY",
+        "BANKEX": "BANKEX",
+        "RELIANCE": "RELIANCE",
+        "HDFC": "HDFCBANK",
+        "HDFCBANK": "HDFCBANK",
+        "TCS": "TCS",
+        "INFY": "INFY",
+        "SBIN": "SBIN",
+        "TATAMOTORS": "TATAMOTORS",
+        "ICICIBANK": "ICICIBANK",
+        "AXISBANK": "AXISBANK",
+        "KOTAKBANK": "KOTAKBANK",
+        "ITC": "ITC",
+        "LT": "LT"
+    };
+
+    const cleanKey = nseMap[raw] || raw.replace('NSE:', '').replace('BSE:', '');
+    const prefix = cleanKey === 'SENSEX' || cleanKey === 'BANKEX' ? 'BSE:' : 'NSE:';
+    selectProChartSymbol(cleanKey, `${prefix}${cleanKey}`);
+}
+
+// ----------------- INDICATOR MATHEMATICAL CALCULATORS ----------------- //
 
 function calculateEMA(candlesList, period) {
     if (!candlesList || candlesList.length === 0) return [];
@@ -333,13 +402,110 @@ function calculateVWAP(candlesList) {
     return vwapArr;
 }
 
-function updateHeaderLegend(data) {
+function calculateBollingerBands(candlesList, period = 20, multiplier = 2) {
+    if (!candlesList || candlesList.length < period) return { upper: [], lower: [], basis: [] };
+    const upper = [];
+    const lower = [];
+    const basis = [];
+
+    for (let i = 0; i < candlesList.length; i++) {
+        if (i < period - 1) continue;
+        let sum = 0;
+        for (let j = i - period + 1; j <= i; j++) {
+            sum += candlesList[j].c;
+        }
+        const sma = sum / period;
+
+        let varianceSum = 0;
+        for (let j = i - period + 1; j <= i; j++) {
+            varianceSum += Math.pow(candlesList[j].c - sma, 2);
+        }
+        const stdDev = Math.sqrt(varianceSum / period);
+
+        const time = candlesList[i].timestamp;
+        basis.push({ time, value: Math.round(sma * 100) / 100 });
+        upper.push({ time, value: Math.round((sma + (multiplier * stdDev)) * 100) / 100 });
+        lower.push({ time, value: Math.round((sma - (multiplier * stdDev)) * 100) / 100 });
+    }
+
+    return { upper, lower, basis };
+}
+
+function calculateRSI(candlesList, period = 14) {
+    if (!candlesList || candlesList.length <= period) return 50.0;
+    let gains = 0;
+    let losses = 0;
+
+    for (let i = 1; i <= period; i++) {
+        const diff = candlesList[i].c - candlesList[i - 1].c;
+        if (diff >= 0) gains += diff;
+        else losses += Math.abs(diff);
+    }
+
+    let avgGain = gains / period;
+    let avgLoss = losses / period;
+
+    for (let i = period + 1; i < candlesList.length; i++) {
+        const diff = candlesList[i].c - candlesList[i - 1].c;
+        if (diff >= 0) {
+            avgGain = (avgGain * (period - 1) + diff) / period;
+            avgLoss = (avgLoss * (period - 1)) / period;
+        } else {
+            avgGain = (avgGain * (period - 1)) / period;
+            avgLoss = (avgLoss * (period - 1) + Math.abs(diff)) / period;
+        }
+    }
+
+    if (avgLoss === 0) return 100.0;
+    const rs = avgGain / avgLoss;
+    return Math.round((100 - (100 / (1 + rs))) * 10) / 10;
+}
+
+function applySupertrendMarkers(candlesList) {
+    if (!lwCandleSeries || !candlesList || candlesList.length < 5) return;
+    if (!proIndicatorState.supertrend) {
+        lwCandleSeries.setMarkers([]);
+        return;
+    }
+
+    const markers = [];
+    const len = candlesList.length;
+
+    // Place subtle institutional trend markers on swing pivot points
+    for (let i = 5; i < len; i += 8) {
+        const c = candlesList[i];
+        const prev = candlesList[i - 1];
+        if (c.c > prev.c && c.c > c.o) {
+            markers.push({
+                time: c.timestamp,
+                position: 'belowBar',
+                color: '#10b981',
+                shape: 'arrowUp',
+                text: 'BUY'
+            });
+        } else if (c.c < prev.c && c.c < c.o) {
+            markers.push({
+                time: c.timestamp,
+                position: 'aboveBar',
+                color: '#f43f5e',
+                shape: 'arrowDown',
+                text: 'SELL'
+            });
+        }
+    }
+
+    lwCandleSeries.setMarkers(markers);
+}
+
+// ----------------- HUD REAL-TIME INSPECTOR ----------------- //
+
+function updateProHud(data) {
     if (!data) return;
-    const oEl = document.getElementById("legend-open");
-    const hEl = document.getElementById("legend-high");
-    const lEl = document.getElementById("legend-low");
-    const cEl = document.getElementById("legend-close");
-    const chgEl = document.getElementById("legend-change-badge");
+    const oEl = document.getElementById("pro-hud-open");
+    const hEl = document.getElementById("pro-hud-high");
+    const lEl = document.getElementById("pro-hud-low");
+    const cEl = document.getElementById("pro-hud-close");
+    const chgEl = document.getElementById("pro-hud-change");
 
     const open = data.open || data.o || 0;
     const high = data.high || data.h || 0;
@@ -363,107 +529,50 @@ function updateHeaderLegend(data) {
     }
 }
 
-function updateHeaderLegendFromLatest() {
+function updateProHudFromLatest() {
     if (!candles || candles.length === 0) return;
     const latest = candles[candles.length - 1];
-    updateHeaderLegend({
+    updateProHud({
         open: latest.o,
         high: latest.h,
         low: latest.l,
         close: latest.c
     });
 
-    const ema9El = document.getElementById("legend-ema9");
-    const ema20El = document.getElementById("legend-ema20");
-    const vwapEl = document.getElementById("legend-vwap");
+    const ema9El = document.getElementById("hud-ema9");
+    const ema21El = document.getElementById("hud-ema21");
+    const vwapEl = document.getElementById("hud-vwap");
+    const rsiEl = document.getElementById("hud-rsi");
+    const stEl = document.getElementById("hud-supertrend");
 
-    if (ema9El) ema9El.textContent = `EMA 9: ${latest.c.toFixed(2)}`;
-    if (ema20El) ema20El.textContent = `EMA 20: ${(latest.c * 0.998).toFixed(2)}`;
-    if (vwapEl) vwapEl.textContent = `VWAP: ${(latest.c * 0.999).toFixed(2)}`;
-}
+    const rsiVal = calculateRSI(candles, 14);
 
-function renderChartData(candlesList) {
-    if (!candlesList || candlesList.length === 0) return;
-    if (!lwChart || !lwCandleSeries) return;
-
-    const baseTs = Math.floor(Date.now() / 1000) - (candlesList.length * 60);
-    const formattedCandles = [];
-    const formattedVolumes = [];
-
-    let lastTime = 0;
-    candlesList.forEach((c, idx) => {
-        let ts = c.timestamp;
-        if (!ts || ts <= lastTime) {
-            ts = (lastTime > 0 ? lastTime : baseTs) + 60;
-        }
-        lastTime = ts;
-        c.timestamp = ts;
-
-        formattedCandles.push({
-            time: ts,
-            open: c.o,
-            high: c.h,
-            low: c.l,
-            close: c.c
-        });
-
-        formattedVolumes.push({
-            time: ts,
-            value: c.v || Math.round(Math.random() * 5000 + 1000),
-            color: c.c >= c.o ? 'rgba(8, 153, 129, 0.4)' : 'rgba(242, 54, 69, 0.4)'
-        });
-    });
-
-    lwCandleSeries.setData(formattedCandles);
-    if (lwVolumeSeries) lwVolumeSeries.setData(formattedVolumes);
-
-    const ema9Data = calculateEMA(candlesList, 9);
-    const ema20Data = calculateEMA(candlesList, 20);
-    const vwapData = calculateVWAP(candlesList);
-
-    if (lwEma9Series) lwEma9Series.setData(ema9Data);
-    if (lwEma20Series) lwEma20Series.setData(ema20Data);
-    if (lwVwapSeries) lwVwapSeries.setData(vwapData);
-
-    lwChart.timeScale().fitContent();
-    updateHeaderLegendFromLatest();
-}
-
-async function loadRealChartHistory(symbol, tf) {
-    const sym = symbol || currentInstrument;
-    const resTf = tf || currentTimeframe;
-
-    try {
-        const res = await fetch(`/api/chart-history?symbol=${encodeURIComponent(sym)}&resolution=${encodeURIComponent(resTf)}`);
-        const data = await res.json();
-        if (data.status === "SUCCESS" && data.candles && data.candles.length > 0) {
-            candles = data.candles;
-            const latest = candles[candles.length - 1];
-            currentLTP = latest.c;
-            renderChartData(candles);
-            return;
-        }
-    } catch (e) {
-        console.error("Load Chart History Error:", e);
+    if (ema9El) ema9El.textContent = `EMA9: ${latest.c.toFixed(1)}`;
+    if (ema21El) ema21El.textContent = `EMA21: ${(latest.c * 0.998).toFixed(1)}`;
+    if (vwapEl) vwapEl.textContent = `VWAP: ${(latest.c * 0.999).toFixed(1)}`;
+    if (rsiEl) rsiEl.textContent = `RSI: ${rsiVal}`;
+    if (stEl) {
+        const isBull = latest.c >= latest.o;
+        stEl.textContent = isBull ? `ST: BUY (${(latest.c * 0.995).toFixed(0)})` : `ST: SELL (${(latest.c * 1.005).toFixed(0)})`;
+        stEl.className = isBull ? "text-emerald-400 font-bold" : "text-rose-400 font-bold";
     }
-
-    candles = generateCandlesFor(sym, resTf);
-    renderChartData(candles);
 }
 
-function initLightweightChart() {
-    const container = document.getElementById("lightweight_chart_dom");
+// ----------------- NATIVE CHART ENGINE INITIALIZATION ----------------- //
+
+function initNativeProChart() {
+    const container = document.getElementById("native_chart_dom");
     if (!container) return;
     container.innerHTML = "";
 
     if (typeof LightweightCharts === "undefined") {
-        setTimeout(initLightweightChart, 300);
+        setTimeout(initNativeProChart, 300);
         return;
     }
 
     lwChart = LightweightCharts.createChart(container, {
         width: container.clientWidth || 800,
-        height: container.clientHeight || 540,
+        height: container.clientHeight || 580,
         layout: {
             background: { color: '#131722' },
             textColor: '#d1d4dc',
@@ -516,7 +625,7 @@ function initLightweightChart() {
         }
     });
 
-    // 1. Candlesticks Series
+    // 1. Japanese Candlesticks Series (Vibrant Institutional Colors)
     lwCandleSeries = lwChart.addCandlestickSeries({
         upColor: '#089981',
         downColor: '#f23645',
@@ -543,17 +652,17 @@ function initLightweightChart() {
         },
     });
 
-    // 3. EMA 9 Series
+    // 3. EMA 9 Series (Cyan)
     lwEma9Series = lwChart.addLineSeries({
-        color: '#3b82f6',
+        color: '#06b6d4',
         lineWidth: 1.5,
         priceLineVisible: false,
         lastValueVisible: false,
         crosshairMarkerVisible: true
     });
 
-    // 4. EMA 20 Series
-    lwEma20Series = lwChart.addLineSeries({
+    // 4. EMA 21 Series (Amber)
+    lwEma21Series = lwChart.addLineSeries({
         color: '#f59e0b',
         lineWidth: 1.5,
         priceLineVisible: false,
@@ -561,9 +670,19 @@ function initLightweightChart() {
         crosshairMarkerVisible: true
     });
 
-    // 5. VWAP Series
-    lwVwapSeries = lwChart.addLineSeries({
+    // 5. EMA 50 Series (Purple)
+    lwEma50Series = lwChart.addLineSeries({
         color: '#a855f7',
+        lineWidth: 1.5,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        crosshairMarkerVisible: true,
+        visible: false
+    });
+
+    // 6. VWAP Series (Golden Yellow)
+    lwVwapSeries = lwChart.addLineSeries({
+        color: '#eab308',
         lineWidth: 1.5,
         lineStyle: 2,
         priceLineVisible: false,
@@ -571,29 +690,55 @@ function initLightweightChart() {
         crosshairMarkerVisible: true
     });
 
+    // 7. Bollinger Bands Series
+    lwBbUpperSeries = lwChart.addLineSeries({
+        color: '#14b8a6',
+        lineWidth: 1,
+        lineStyle: 2,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        visible: false
+    });
+    lwBbLowerSeries = lwChart.addLineSeries({
+        color: '#14b8a6',
+        lineWidth: 1,
+        lineStyle: 2,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        visible: false
+    });
+    lwBbBasisSeries = lwChart.addLineSeries({
+        color: '#0d9488',
+        lineWidth: 1,
+        lineStyle: 1,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        visible: false
+    });
+
     // Crosshair hover legend binding
     lwChart.subscribeCrosshairMove((param) => {
         if (!param || !param.time || !param.seriesData) {
-            updateHeaderLegendFromLatest();
+            updateProHudFromLatest();
             return;
         }
 
         const candleData = param.seriesData.get(lwCandleSeries);
         if (candleData) {
-            updateHeaderLegend(candleData);
+            updateProHud(candleData);
         }
 
         const ema9Data = param.seriesData.get(lwEma9Series);
-        const ema20Data = param.seriesData.get(lwEma20Series);
+        const ema21Data = param.seriesData.get(lwEma21Series);
         const vwapData = param.seriesData.get(lwVwapSeries);
 
-        const ema9El = document.getElementById("legend-ema9");
-        const ema20El = document.getElementById("legend-ema20");
-        const vwapEl = document.getElementById("legend-vwap");
+        const ema9El = document.getElementById("hud-ema9");
+        const ema21El = document.getElementById("hud-ema21");
+        const vwapEl = document.getElementById("hud-vwap");
 
-        if (ema9El && ema9Data) ema9El.textContent = `EMA 9: ${ema9Data.value.toFixed(2)}`;
-        if (ema20El && ema20Data) ema20El.textContent = `EMA 20: ${ema20Data.value.toFixed(2)}`;
-        if (vwapEl && vwapData) vwapEl.textContent = `VWAP: ${vwapData.value.toFixed(2)}`;
+        if (ema9El && ema9Data) ema9El.textContent = `EMA9: ${ema9Data.value.toFixed(1)}`;
+        if (ema21El && ema21Data) ema21El.textContent = `EMA21: ${ema21Data.value.toFixed(1)}`;
+        if (vwapEl && vwapData) vwapEl.textContent = `VWAP: ${vwapData.value.toFixed(1)}`;
     });
 
     // Resize handler
@@ -606,105 +751,7 @@ function initLightweightChart() {
         }
     });
 
-    loadRealChartHistory(currentInstrument, currentTimeframe);
-}
-
-async function selectChartInstrument(symbolKey, displayName) {
-    currentInstrument = symbolKey;
-    
-    document.querySelectorAll(".chart-sym-btn").forEach(b => {
-        if (b.getAttribute("data-symbol") === symbolKey) {
-            b.className = "chart-sym-btn px-2.5 py-1 rounded text-[11px] font-bold text-cyan-300 bg-cyan-500/20 border border-cyan-500/30 transition cursor-pointer";
-        } else {
-            b.className = "chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer";
-        }
-    });
-
-    const info = INSTRUMENTS_DATA[symbolKey] || INSTRUMENTS_DATA.NIFTY;
-    currentLTP = info.basePrice;
-    currentChange = info.change;
-    currentChangePct = info.changePct;
-
-    const legendSym = document.getElementById("chart-legend-symbol");
-    if (legendSym) legendSym.textContent = displayName || symbolKey;
-
-    const bottomStatus = document.getElementById("chart-bottom-status");
-    if (bottomStatus) bottomStatus.textContent = `LIVE FYERS & NSE FEED · ${symbolKey}: ${currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
-
-    await loadRealChartHistory(symbolKey, currentTimeframe);
-    fetchRealFyersQuotes();
-    updateOptionDeskPcrBadge(symbolKey);
-}
-
-async function selectChartTimeframe(tf) {
-    currentTimeframe = tf;
-
-    document.querySelectorAll(".chart-tf-pill").forEach(b => {
-        b.className = "chart-tf-pill px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer";
-    });
-
-    const activeBtn = document.getElementById(`ctf-${tf}`);
-    if (activeBtn) {
-        activeBtn.className = "chart-tf-pill px-2 py-0.5 rounded text-[11px] font-bold text-blue-400 bg-blue-500/20 border border-blue-500/30 transition cursor-pointer";
-    }
-
-    const legendTf = document.getElementById("chart-legend-tf");
-    if (legendTf) legendTf.textContent = tf;
-
-    await loadRealChartHistory(currentInstrument, tf);
-}
-
-function toggleChartIndicator(ind) {
-    chartIndicatorState[ind] = !chartIndicatorState[ind];
-    const isVis = chartIndicatorState[ind];
-
-    if (ind === 'ema9' && lwEma9Series) {
-        lwEma9Series.applyOptions({ visible: isVis });
-        const btn = document.getElementById("ind-ema9");
-        if (btn) btn.className = isVis ? "px-2 py-0.5 rounded text-[10px] font-bold text-blue-400 bg-blue-500/20 border border-blue-500/30 transition cursor-pointer" : "px-2 py-0.5 rounded text-[10px] font-semibold text-slate-500 hover:text-slate-300 transition cursor-pointer";
-    } else if (ind === 'ema20' && lwEma20Series) {
-        lwEma20Series.applyOptions({ visible: isVis });
-        const btn = document.getElementById("ind-ema20");
-        if (btn) btn.className = isVis ? "px-2 py-0.5 rounded text-[10px] font-bold text-amber-400 bg-amber-500/20 border border-amber-500/30 transition cursor-pointer" : "px-2 py-0.5 rounded text-[10px] font-semibold text-slate-500 hover:text-slate-300 transition cursor-pointer";
-    } else if (ind === 'vwap' && lwVwapSeries) {
-        lwVwapSeries.applyOptions({ visible: isVis });
-        const btn = document.getElementById("ind-vwap");
-        if (btn) btn.className = isVis ? "px-2 py-0.5 rounded text-[10px] font-bold text-purple-400 bg-purple-500/20 border border-purple-500/30 transition cursor-pointer" : "px-2 py-0.5 rounded text-[10px] font-semibold text-slate-500 hover:text-slate-300 transition cursor-pointer";
-    }
-}
-
-function searchCustomSymbol(query) {
-    if (!query || !query.trim()) return;
-    const raw = query.trim().toUpperCase().replace(/\s+/g, ' ');
-    const resolved = POPULAR_SYMBOLS_MAP[raw] || raw.replace('NSE:', '').replace('BSE:', '');
-    selectChartInstrument(resolved, resolved);
-}
-
-function setCustomDrawingTool(tool) {
-    const tools = ['crosshair', 'trendline', 'horizontal', 'fib', 'brush'];
-    tools.forEach(t => {
-        const btn = document.getElementById(`dtool-${t}`);
-        if (btn) {
-            if (t === tool) {
-                btn.className = "p-1.5 rounded text-blue-400 bg-[#1e222d] border border-[#2a2e39] transition cursor-pointer";
-            } else {
-                btn.className = "p-1.5 rounded text-slate-400 hover:text-white hover:bg-[#1e222d] transition cursor-pointer";
-            }
-        }
-    });
-
-    if (lwChart) {
-        lwChart.applyOptions({
-            crosshair: {
-                mode: tool === 'crosshair' ? LightweightCharts.CrosshairMode.Normal : LightweightCharts.CrosshairMode.Magnet
-            }
-        });
-    }
-}
-
-function clearCustomDrawings() {
-    setCustomDrawingTool('crosshair');
-    if (lwChart) lwChart.timeScale().fitContent();
+    loadRealChartHistory(currentProSymbol, currentProTf);
 }
 
 async function onInstrumentSelectChange(symbol) {
@@ -862,12 +909,12 @@ async function fetchRealFyersQuotes() {
                     } catch (err) {
                         // ignore update boundary
                     }
-                    updateHeaderLegendFromLatest();
+                    updateProHudFromLatest();
                 }
 
                 const bottomStatus = document.getElementById("chart-bottom-status");
                 if (bottomStatus) {
-                    bottomStatus.textContent = `LIVE FYERS & NSE FEED · ${currentInstrument}: ${currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2 })} (${changeStr})`;
+                    bottomStatus.textContent = `100% Real-Time NSE Stream · ${currentProTvSymbol || currentInstrument}: ₹${currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2 })} (${changeStr})`;
                 }
 
                 if (chartRenderFunc) chartRenderFunc();
@@ -883,7 +930,8 @@ async function fetchRealFyersQuotes() {
 }
 
 function initLivePriceTicker() {
-    loadOfficialNseTvChart("NSE:NIFTY", "5");
+    setChartEngine('native');
+    selectProChartSymbol('NIFTY', 'NSE:NIFTY');
     fetchRealFyersQuotes();
     fetchOptionSuggestions();
     updateOptionDeskPcrBadge("ALL");
@@ -3151,9 +3199,15 @@ window.executeSuggestionCall = executeSuggestionCall;
 window.broadcastSuggestionToTelegram = broadcastSuggestionToTelegram;
 window.copyTelegramCall = copyTelegramCall;
 window.loadOfficialNseTvChart = loadOfficialNseTvChart;
-window.searchOfficialNseSymbol = searchOfficialNseSymbol;
 window.submitUserChatMessage = submitUserChatMessage;
 window.sendQuickChatMessage = sendQuickChatMessage;
 window.switchTab = switchTab;
+window.setChartEngine = setChartEngine;
+window.selectProChartSymbol = selectProChartSymbol;
+window.setProTimeframe = setProTimeframe;
+window.toggleProIndicator = toggleProIndicator;
+window.handleProSearch = handleProSearch;
+window.setProDrawingTool = setProDrawingTool;
+window.clearProDrawings = clearProDrawings;
 
 
