@@ -16,12 +16,58 @@ document.addEventListener("DOMContentLoaded", () => {
     executeBacktest();
 });
 
+function isIndianMarketOpen() {
+    const now = new Date();
+    // Convert to IST (UTC + 5.5 hours)
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const istTime = new Date(utc + (3600000 * 5.5));
+    
+    const day = istTime.getDay(); // 0 = Sunday, 6 = Saturday
+    if (day === 0 || day === 6) {
+        return false;
+    }
+    
+    const hours = istTime.getHours();
+    const minutes = istTime.getMinutes();
+    const totalMinutes = hours * 60 + minutes;
+    
+    // Regular NSE/BSE Trading Hours: 09:15 to 15:30 IST
+    return totalMinutes >= 555 && totalMinutes <= 930;
+}
+
+function updateMarketStatusBadge() {
+    const badge = document.getElementById("version-live-badge");
+    if (!badge) return;
+
+    const isOpen = isIndianMarketOpen();
+    if (isOpen) {
+        // Market is OPEN -> Green in colour with blinking/pulsing beacon
+        badge.className = "px-2 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 shadow-sm shadow-emerald-500/20";
+        badge.innerHTML = `
+            <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span>v2.0 LIVE</span>
+        `;
+    } else {
+        // Market is CLOSED or Holiday/Weekend -> Red in colour
+        badge.className = "px-2 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-rose-500/10 text-rose-400 border border-rose-500/30 flex items-center gap-1";
+        badge.innerHTML = `
+            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+            <span>v2.0 CLOSED</span>
+        `;
+    }
+}
+
 function initClock() {
+    updateMarketStatusBadge();
     setInterval(() => {
         const now = new Date();
         const timeStr = now.toTimeString().split(' ')[0] + " IST";
         const clockEl = document.getElementById("clock");
         if (clockEl) clockEl.textContent = timeStr;
+        updateMarketStatusBadge();
     }, 1000);
 }
 
