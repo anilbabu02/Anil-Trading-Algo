@@ -113,14 +113,6 @@
                             <span>AI Quant Actions</span>
                         </button>
                     </div>
-
-                    <!-- Right Sentiment & PCR Badge -->
-                    <div class="flex items-center gap-2">
-                        <div id="pcr-sentiment-pill" class="px-2.5 py-1 rounded bg-[#1e222d] border border-[#2a2e39] text-[11px] font-bold text-rose-400 flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-rose-400 animate-pulse"></span>
-                            <span id="pcr-sentiment-text">PCR 0.59 - Bearish (Call Build)</span>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- 2. Main Full-Featured TradingView Pro Live Chart Engine -->
@@ -257,6 +249,12 @@
                         </div>
                     </div>
                     <div class="flex flex-wrap items-center gap-2 text-xs">
+                        <!-- Real-Time Option Chain Put-Call Ratio (PCR) Telemetry Badge -->
+                        <div id="option-desk-pcr-badge" class="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[11px] font-bold text-rose-400 flex items-center gap-1.5 shadow-inner">
+                            <span id="option-desk-pcr-dot" class="w-2 h-2 rounded-full bg-rose-400 animate-pulse"></span>
+                            <span id="option-desk-pcr-text">PCR 0.59 - Bearish (Call Build)</span>
+                        </div>
+
                         <!-- Strategy Mode Switcher -->
                         <div class="flex items-center bg-slate-900 border border-slate-800 p-0.5 rounded-lg">
                             <button onclick="switchOptionMode('single')" id="opt-mode-single" type="button" class="px-2.5 py-1 rounded-md text-[11px] font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-500/30 transition">

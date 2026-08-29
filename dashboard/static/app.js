@@ -238,17 +238,6 @@ async function onInstrumentSelectChange(symbol) {
     const selectEl = document.getElementById("instrument-select");
     if (selectEl && selectEl.value !== symbol) selectEl.value = symbol;
 
-    // Update PCR Sentiment Pill linked to top bar
-    const pcrData = INSTRUMENT_PCR_MAP[symbol] || INSTRUMENT_PCR_MAP.NIFTY;
-    const pcrText = document.getElementById("pcr-sentiment-text");
-    const pcrPill = document.getElementById("pcr-sentiment-pill");
-    if (pcrText && pcrPill) {
-        pcrText.textContent = `PCR ${pcrData.pcr} - ${pcrData.bias}`;
-        pcrPill.className = pcrData.isBull 
-            ? "px-2.5 py-1 rounded bg-[#1e222d] border border-[#2a2e39] text-[11px] font-bold text-emerald-400 flex items-center gap-1.5"
-            : "px-2.5 py-1 rounded bg-[#1e222d] border border-[#2a2e39] text-[11px] font-bold text-rose-400 flex items-center gap-1.5";
-    }
-
     const atrEl = document.getElementById("metric-atr");
     const rvolEl = document.getElementById("metric-rvol");
     const adxEl = document.getElementById("metric-adx");
@@ -422,8 +411,10 @@ function initLivePriceTicker() {
     loadRealChartHistory(currentInstrument, currentTimeframe);
     fetchRealFyersQuotes();
     fetchOptionSuggestions();
+    updateOptionDeskPcrBadge("ALL");
     setInterval(fetchRealFyersQuotes, 1500);
     setInterval(fetchOptionSuggestions, 3000);
+    setInterval(() => updateOptionDeskPcrBadge(currentSuggestionFilter), 3000);
 }
 
 // Global Drawing Tool Functions & State
@@ -1519,6 +1510,38 @@ function filterSuggestions(type) {
     }
 
     applyCurrentSuggestionFilter();
+    updateOptionDeskPcrBadge(currentSuggestionFilter);
+}
+
+async function updateOptionDeskPcrBadge(selectedFilter = "ALL") {
+    try {
+        const res = await fetch(`/api/pcr?t=${Date.now()}`);
+        const result = await res.json();
+        if (result && result.status === "SUCCESS" && result.data) {
+            const pcrMap = result.data;
+            const key = (selectedFilter || "ALL").toUpperCase();
+            const pcrObj = pcrMap[key] || pcrMap["ALL"] || pcrMap["NIFTY"];
+            
+            const badgeEl = document.getElementById("option-desk-pcr-badge");
+            const textEl = document.getElementById("option-desk-pcr-text");
+            const dotEl = document.getElementById("option-desk-pcr-dot");
+
+            if (textEl && badgeEl) {
+                const label = pcrObj.underlying ? `${pcrObj.underlying} PCR` : `PCR`;
+                textEl.textContent = `${label} ${pcrObj.pcr.toFixed(2)} - ${pcrObj.bias}`;
+                
+                if (pcrObj.is_bull) {
+                    badgeEl.className = "px-2.5 py-1 rounded-lg bg-emerald-950/40 border border-emerald-800/60 text-[11px] font-bold text-emerald-400 flex items-center gap-1.5 shadow-inner";
+                    if (dotEl) dotEl.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+                } else {
+                    badgeEl.className = "px-2.5 py-1 rounded-lg bg-rose-950/40 border border-rose-800/60 text-[11px] font-bold text-rose-400 flex items-center gap-1.5 shadow-inner";
+                    if (dotEl) dotEl.className = "w-2 h-2 rounded-full bg-rose-400 animate-pulse";
+                }
+            }
+        }
+    } catch (e) {
+        console.error("Option Desk PCR fetch error:", e);
+    }
 }
 
 async function executeSuggestionCall(id) {

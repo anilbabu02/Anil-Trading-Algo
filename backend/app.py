@@ -311,6 +311,16 @@ def get_option_suggestions() -> List[Dict[str, Any]]:
     live_map = quotes_res.get("quotes", {})
     return option_advisor.get_all_suggestions(live_map)
 
+@app.get("/api/pcr")
+def get_live_pcr_telemetry() -> Dict[str, Any]:
+    quotes_res = get_live_quotes()
+    live_map = quotes_res.get("quotes", {})
+    return {
+        "status": "SUCCESS",
+        "timestamp": datetime.now().strftime("%H:%M:%S"),
+        "data": option_advisor.get_pcr_data(live_map)
+    }
+
 
 class ExecuteSuggestionRequest(BaseModel):
     suggestion_id: str
