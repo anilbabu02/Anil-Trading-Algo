@@ -143,6 +143,100 @@ function generateCandlesFor(symbol, tf) {
     return arr;
 }
 
+let currentTvSymbol = "NSE:NIFTY";
+let currentTvInterval = "5";
+let tvWidgetInstance = null;
+
+function loadOfficialNseTvChart(symbol = "NSE:NIFTY", interval = "5") {
+    if (!symbol) symbol = "NSE:NIFTY";
+    currentTvSymbol = symbol.trim();
+    currentTvInterval = interval || "5";
+
+    // Update active button styles on .nse-chart-pill
+    document.querySelectorAll(".nse-chart-pill").forEach(b => {
+        if (b.getAttribute("data-symbol") === currentTvSymbol) {
+            b.className = "nse-chart-pill px-2.5 py-1 rounded text-[11px] font-bold text-cyan-300 bg-cyan-500/20 border border-cyan-500/30 transition cursor-pointer";
+        } else {
+            b.className = "nse-chart-pill px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer";
+        }
+    });
+
+    const container = document.getElementById("tradingview_chart_container");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const chartDiv = document.createElement("div");
+    chartDiv.id = "nse_tv_chart_inner";
+    chartDiv.style.width = "100%";
+    chartDiv.style.height = "100%";
+    container.appendChild(chartDiv);
+
+    try {
+        if (typeof TradingView !== "undefined") {
+            tvWidgetInstance = new TradingView.widget({
+                "autosize": true,
+                "symbol": currentTvSymbol,
+                "interval": currentTvInterval,
+                "timezone": "Asia/Kolkata",
+                "theme": "dark",
+                "style": "1",
+                "locale": "in",
+                "toolbar_bg": "#131722",
+                "enable_publishing": false,
+                "allow_symbol_change": true,
+                "container_id": "nse_tv_chart_inner",
+                "hide_side_toolbar": false,
+                "withdateranges": true,
+                "save_image": true,
+                "studies": [
+                    "MASimple@tv-basicstudies",
+                    "RSI@tv-basicstudies",
+                    "Volume@tv-basicstudies"
+                ]
+            });
+        }
+    } catch (e) {
+        console.error("TradingView embed error:", e);
+    }
+
+    const cleanInst = currentTvSymbol.replace("NSE:", "").replace("BSE:", "");
+    if (INSTRUMENTS_DATA[cleanInst]) {
+        currentInstrument = cleanInst;
+        updateOptionDeskPcrBadge(cleanInst);
+    }
+}
+
+function searchOfficialNseSymbol(query) {
+    if (!query || !query.trim()) return;
+    const raw = query.trim().toUpperCase().replace(/\s+/g, ' ');
+    const nseMap = {
+        "NIFTY": "NSE:NIFTY",
+        "NIFTY 50": "NSE:NIFTY",
+        "BANKNIFTY": "NSE:BANKNIFTY",
+        "BANK NIFTY": "NSE:BANKNIFTY",
+        "SENSEX": "BSE:SENSEX",
+        "FINNIFTY": "NSE:FINNIFTY",
+        "BANKEX": "BSE:BANKEX",
+        "RELIANCE": "NSE:RELIANCE",
+        "HDFC": "NSE:HDFCBANK",
+        "HDFCBANK": "NSE:HDFCBANK",
+        "TCS": "NSE:TCS",
+        "INFY": "NSE:INFY",
+        "SBIN": "NSE:SBIN",
+        "TATAMOTORS": "NSE:TATAMOTORS",
+        "ICICIBANK": "NSE:ICICIBANK",
+        "AXISBANK": "NSE:AXISBANK",
+        "KOTAKBANK": "NSE:KOTAKBANK",
+        "ITC": "NSE:ITC",
+        "LT": "NSE:LT"
+    };
+    let target = nseMap[raw];
+    if (!target) {
+        target = raw.startsWith("NSE:") || raw.startsWith("BSE:") ? raw : `NSE:${raw}`;
+    }
+    loadOfficialNseTvChart(target, "5");
+}
+
 let lwChart = null;
 let lwCandleSeries = null;
 let lwVolumeSeries = null;
@@ -789,7 +883,7 @@ async function fetchRealFyersQuotes() {
 }
 
 function initLivePriceTicker() {
-    initLightweightChart();
+    loadOfficialNseTvChart("NSE:NIFTY", "5");
     fetchRealFyersQuotes();
     fetchOptionSuggestions();
     updateOptionDeskPcrBadge("ALL");
@@ -2316,7 +2410,7 @@ async function triggerEmergencySquareOff() {
 }
 
 function switchTab(tabName) {
-    ['suggestions', 'news', 'positions', 'backtest', 'trades', 'telegram'].forEach(t => {
+    ['suggestions', 'news', 'positions', 'backtest', 'trades', 'telegram', 'ai-chat'].forEach(t => {
         const content = document.getElementById(`tab-${t}`);
         const btn = document.getElementById(`tab-btn-${t}`);
         if (content) content.classList.add('hidden');
@@ -2336,6 +2430,98 @@ function switchTab(tabName) {
     if (tabName === 'trades') fetchTrades();
     if (tabName === 'news') fetchNews();
     if (tabName === 'suggestions') fetchOptionSuggestions();
+    if (tabName === 'ai-chat') {
+        const msgs = document.getElementById("ai-chat-messages");
+        if (msgs) msgs.scrollTop = msgs.scrollHeight;
+    }
+}
+
+async function submitUserChatMessage(customMsg) {
+    const input = document.getElementById("ai-chat-input");
+    const msg = customMsg || (input ? input.value.trim() : "");
+    if (!msg) return;
+    if (input) input.value = "";
+
+    const container = document.getElementById("ai-chat-messages");
+    if (!container) return;
+
+    // Render user message bubble
+    const userBubble = document.createElement("div");
+    userBubble.className = "flex items-start gap-2.5 justify-end";
+    userBubble.innerHTML = `
+        <div class="bg-cyan-600/20 border border-cyan-500/30 rounded-xl p-3 max-w-lg text-slate-100 text-right">
+            <p class="font-semibold text-cyan-300 text-[10px]">You</p>
+            <p class="leading-relaxed">${msg}</p>
+        </div>
+        <div class="w-7 h-7 rounded-full bg-slate-800 text-cyan-300 flex items-center justify-center text-xs shrink-0 font-bold">👤</div>
+    `;
+    container.appendChild(userBubble);
+    container.scrollTop = container.scrollHeight;
+
+    // Render loading bubble
+    const botBubble = document.createElement("div");
+    botBubble.className = "flex items-start gap-2.5";
+    botBubble.innerHTML = `
+        <div class="w-7 h-7 rounded-full bg-cyan-600/30 text-cyan-400 flex items-center justify-center text-xs shrink-0 font-bold">🤖</div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 max-w-2xl text-slate-200 space-y-1.5 shadow-md">
+            <p class="font-semibold text-cyan-400 text-[11px]">NSE Quantitative AI Copilot</p>
+            <p class="text-slate-400 animate-pulse">Analyzing real-time NSE microstructure & derivatives flow...</p>
+        </div>
+    `;
+    container.appendChild(botBubble);
+    container.scrollTop = container.scrollHeight;
+
+    try {
+        const res = await fetch("/api/ai-chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: msg, symbol: currentInstrument })
+        });
+        const data = await res.json();
+        const formattedReply = (data.reply || "Analysis complete.")
+            .replace(/\n\n/g, "<br><br>")
+            .replace(/\n/g, "<br>")
+            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+            .replace(/\*(.*?)\*/g, "<em>$1</em>")
+            .replace(/`(.*?)`/g, "<code class='px-1 py-0.5 rounded bg-slate-800 text-cyan-300 font-mono text-[10px]'>$1</code>");
+
+        let actionHtml = "";
+        if (data.action_type === "SUGGESTION_EXECUTE" && data.action_payload) {
+            const sug = data.action_payload;
+            actionHtml = `
+                <div class="pt-2 border-t border-slate-800/80 flex items-center gap-2">
+                    <button onclick="executeOptionSuggestion('${sug.id}')" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow transition flex items-center gap-1.5 cursor-pointer">
+                        <span>⚡ 1-Click Execute ${sug.symbol}</span>
+                    </button>
+                </div>
+            `;
+        }
+
+        botBubble.innerHTML = `
+            <div class="w-7 h-7 rounded-full bg-cyan-600/30 text-cyan-400 flex items-center justify-center text-xs shrink-0 font-bold">🤖</div>
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 max-w-2xl text-slate-200 space-y-2 shadow-md">
+                <div class="flex items-center justify-between">
+                    <p class="font-semibold text-cyan-400 text-[11px]">NSE Quantitative AI Copilot</p>
+                    <span class="text-[10px] text-slate-500 font-mono">${data.timestamp || ''}</span>
+                </div>
+                <div class="leading-relaxed text-slate-200">${formattedReply}</div>
+                ${actionHtml}
+            </div>
+        `;
+        container.scrollTop = container.scrollHeight;
+    } catch (err) {
+        botBubble.innerHTML = `
+            <div class="w-7 h-7 rounded-full bg-rose-600/30 text-rose-400 flex items-center justify-center text-xs shrink-0 font-bold">⚠️</div>
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 text-rose-300">
+                Failed to contact AI Copilot. Please check backend connection.
+            </div>
+        `;
+    }
+}
+
+function sendQuickChatMessage(text) {
+    switchTab('ai-chat');
+    submitUserChatMessage(text);
 }
 
 async function sendTestTelegramAlert() {
@@ -2964,5 +3150,10 @@ window.closeStatsModal = closeStatsModal;
 window.executeSuggestionCall = executeSuggestionCall;
 window.broadcastSuggestionToTelegram = broadcastSuggestionToTelegram;
 window.copyTelegramCall = copyTelegramCall;
+window.loadOfficialNseTvChart = loadOfficialNseTvChart;
+window.searchOfficialNseSymbol = searchOfficialNseSymbol;
+window.submitUserChatMessage = submitUserChatMessage;
+window.sendQuickChatMessage = sendQuickChatMessage;
+window.switchTab = switchTab;
 
 
