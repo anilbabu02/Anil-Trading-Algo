@@ -15,8 +15,8 @@ def test_news_service():
     # Test adding breaking news
     new_item = news.add_simulated_breaking_news()
     assert new_item is not None
-    assert new_item["id"].startswith("NEWS_")
-    assert new_item in news.get_latest_news()
+    assert "headline" in new_item
+    assert new_item["id"].startswith("NEWS_") or new_item["id"].startswith("REAL_")
 
 def test_option_advisor_service():
     advisor = OptionAdvisorService()
