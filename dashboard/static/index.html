@@ -12,72 +12,73 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Fyers Connect Client SDK -->
     <script src="https://api-connect-docs.fyers.in/fyers-lib.js"></script>
-    <link rel="stylesheet" href="/static/style.css?v=5.0">
+    <link rel="stylesheet" href="/static/style.css?v=6.0">
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-emerald-500 selection:text-white">
 
-    <!-- Top Navigation Bar -->
-    <header class="border-b border-slate-800/80 bg-slate-900/90 backdrop-blur sticky top-0 z-50 px-6 py-3 flex flex-wrap justify-between items-center gap-4">
-        <div class="flex items-center gap-3.5">
+    <!-- Top Navigation Bar (Single-Row Institutional Precision Header) -->
+    <header class="border-b border-slate-800/90 bg-slate-900/95 backdrop-blur-md sticky top-0 z-50 px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3 select-none">
+        <!-- Left: Brand Logo & Title -->
+        <div class="flex items-center gap-3 shrink-0">
             <!-- 3D Live Motion Brand Logo -->
-            <div class="brand-logo-container relative w-11 h-11 cursor-pointer group">
+            <div class="brand-logo-container relative w-10 h-10 shrink-0 cursor-pointer group">
                 <div class="brand-logo-glow"></div>
-                <img src="/static/logo.png" alt="Anil Babu Trades Logo" class="brand-logo-img w-11 h-11 rounded-xl shadow-lg border border-emerald-500/40">
+                <img src="/static/logo.png" alt="Anil Babu Trades Logo" class="brand-logo-img w-10 h-10 rounded-xl shadow-md border border-emerald-500/40">
                 <div class="brand-logo-shimmer"></div>
             </div>
-            <div>
+            <div class="leading-tight">
                 <div class="flex items-center gap-2">
-                    <h1 class="font-black text-base tracking-wider text-white">ANIL BABU TRADES</h1>
-                    <span id="version-live-badge" class="px-2 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-rose-500/10 text-rose-400 border border-rose-500/30 flex items-center gap-1">
-                        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                    <h1 class="font-black text-sm sm:text-base tracking-wider text-white whitespace-nowrap">ANIL BABU TRADES</h1>
+                    <span id="version-live-badge" class="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-rose-500/10 text-rose-400 border border-rose-500/30 flex items-center gap-1 shrink-0">
+                        <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
                         <span>v2.0 CLOSED</span>
                     </span>
-                    <span id="fyers-header-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                    <span id="fyers-header-badge" class="hidden sm:flex px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 items-center gap-1 shrink-0">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                         FYERS LIVE: ₹13,376.15
                     </span>
                 </div>
-                <p class="text-[11px] text-slate-400">Institutional Multi-Strategy Derivatives & Cash Engine</p>
+                <p class="text-[10px] sm:text-[11px] text-slate-400 hidden sm:block whitespace-nowrap">Institutional Multi-Strategy Derivatives & Cash Engine</p>
             </div>
         </div>
 
-        <!-- Middle Market Regime Indicator -->
-        <div class="hidden md:flex items-center gap-3.5 bg-slate-950/90 border border-slate-800/90 px-4 py-1.5 rounded-xl shrink-0 shadow-inner">
+        <!-- Middle: Market Regime & Clock Indicator -->
+        <div class="hidden xl:flex items-center gap-3 bg-slate-950/90 border border-slate-800/90 px-3.5 py-1.5 rounded-xl shrink-0 shadow-inner">
             <div class="flex items-center gap-2">
                 <span id="regime-dot-container" class="relative flex h-2.5 w-2.5">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
                 </span>
                 <span class="text-xs text-slate-400 font-medium">Market Regime:</span>
-                <span id="regime-badge" class="text-xs font-black text-rose-400 tracking-wide">TRENDING BEAR</span>
+                <span id="regime-badge" class="text-xs font-black text-emerald-400 tracking-wide">TRENDING BULL</span>
             </div>
             <div class="h-3.5 w-px bg-slate-800"></div>
             <div class="text-xs text-slate-400 flex items-center gap-1.5 whitespace-nowrap">
                 <i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i>
-                <span id="clock" class="font-mono text-slate-200 font-bold">19:49:00 IST</span>
+                <span id="clock" class="font-mono text-slate-200 font-bold">14:45:00 IST</span>
             </div>
         </div>
 
-        <!-- Quick Controls -->
-        <div class="flex items-center gap-2.5">
+        <!-- Right: Action Controls Grouped Inline -->
+        <div class="flex items-center gap-2 shrink-0">
             <!-- Single Interactive Connect Fyers Button with Live Green State -->
-            <button onclick="openFyersConnectModal()" id="connect-fyers-btn" type="button" class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 border border-blue-500/30 rounded-lg text-xs font-semibold transition cursor-pointer">
-                <span>⚡</span>
+            <button onclick="openFyersConnectModal()" id="connect-fyers-btn" type="button" class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 border border-blue-500/30 rounded-lg text-xs font-semibold transition cursor-pointer whitespace-nowrap">
+                <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
                 <span id="connect-fyers-btn-text">Connect Fyers</span>
             </button>
             <!-- Executive Stats Popup Modal Trigger -->
-            <button onclick="openStatsModal()" type="button" class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/80 hover:bg-slate-750 text-slate-200 border border-slate-700/80 rounded-lg text-xs font-semibold transition cursor-pointer shadow-sm">
+            <button onclick="openStatsModal()" type="button" class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-slate-800/80 hover:bg-slate-750 text-slate-200 border border-slate-700/80 rounded-lg text-xs font-semibold transition cursor-pointer shadow-sm whitespace-nowrap">
                 <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 text-emerald-400"></i>
-                <span>Executive Stats</span>
+                <span class="hidden md:inline">Executive Stats</span>
                 <span class="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-mono">₹10.8k</span>
             </button>
-            <button onclick="triggerPremarketDigest()" class="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 rounded-lg text-xs font-medium transition cursor-pointer">
+            <button onclick="triggerPremarketDigest()" class="hidden md:flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 rounded-lg text-xs font-medium transition cursor-pointer whitespace-nowrap">
                 <i data-lucide="send" class="w-3.5 h-3.5"></i>
-                8:30 AM Digest
+                <span>8:30 AM Digest</span>
             </button>
-            <button onclick="triggerEmergencySquareOff()" class="flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold shadow-lg shadow-rose-600/20 transition cursor-pointer active:scale-95">
+            <button onclick="triggerEmergencySquareOff()" class="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-bold shadow-lg shadow-rose-600/20 transition cursor-pointer active:scale-95 whitespace-nowrap">
                 <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i>
-                1-Click Exit
+                <span>1-Click Exit</span>
             </button>
         </div>
     </header>
@@ -724,6 +725,6 @@
         </div>
     </div>
 
-    <script src="/static/app.js?v=53.0"></script>
+    <script src="/static/app.js?v=55.0"></script>
 </body>
 </html>
