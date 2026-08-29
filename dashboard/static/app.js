@@ -37,26 +37,38 @@ function isIndianMarketOpen() {
 
 function updateMarketStatusBadge() {
     const badge = document.getElementById("version-live-badge");
-    if (!badge) return;
-
+    const deskPill = document.getElementById("tab-desk-live-pill");
     const isOpen = isIndianMarketOpen();
-    if (isOpen) {
-        // Market is OPEN -> Green in colour with blinking/pulsing beacon
-        badge.className = "px-2 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 shadow-sm shadow-emerald-500/20";
-        badge.innerHTML = `
-            <span class="relative flex h-2 w-2">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span>v2.0 LIVE</span>
-        `;
-    } else {
-        // Market is CLOSED or Holiday/Weekend -> Red in colour
-        badge.className = "px-2 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-rose-500/10 text-rose-400 border border-rose-500/30 flex items-center gap-1";
-        badge.innerHTML = `
-            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-            <span>v2.0 CLOSED</span>
-        `;
+
+    if (badge) {
+        if (isOpen) {
+            // Market is OPEN -> Green in colour with blinking/pulsing beacon
+            badge.className = "px-2 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 shadow-sm shadow-emerald-500/20";
+            badge.innerHTML = `
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span>v2.0 LIVE</span>
+            `;
+        } else {
+            // Market is CLOSED or Holiday/Weekend -> Red in colour
+            badge.className = "px-2 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-rose-500/10 text-rose-400 border border-rose-500/30 flex items-center gap-1";
+            badge.innerHTML = `
+                <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                <span>v2.0 CLOSED</span>
+            `;
+        }
+    }
+
+    if (deskPill) {
+        if (isOpen) {
+            deskPill.className = "px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-semibold flex items-center gap-1";
+            deskPill.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Today's Live`;
+        } else {
+            deskPill.className = "px-1.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-semibold flex items-center gap-1";
+            deskPill.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span> Market Closed`;
+        }
     }
 }
 
