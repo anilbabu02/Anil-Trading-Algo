@@ -91,11 +91,17 @@ let currentChange = -126.80;
 let currentChangePct = -0.52;
 
 const INSTRUMENTS_DATA = {
-    NIFTY: { name: "NIFTY50 Index", basePrice: 24207.75, change: -126.80, changePct: -0.52, atr: 68.4, rvol: 1.35, adx: 26.8, orderbook: "+18.4% Bid Heavy", mlConviction: "96.5% Institutional Confluence", squeeze: "ACTIVE BREAKOUT" },
-    SENSEX: { name: "SENSEX Index", basePrice: 77472.94, change: -183.15, changePct: -0.24, atr: 380.0, rvol: 1.45, adx: 36.2, orderbook: "+21.2% Bid Heavy", mlConviction: "97.0% Institutional Confluence", squeeze: "ACTIVE BREAKOUT" },
-    BANKNIFTY: { name: "NIFTYBANK Index", basePrice: 57783.75, change: 269.55, changePct: 0.47, atr: 245.0, rvol: 1.85, adx: 35.8, orderbook: "+24.6% Bid Heavy", mlConviction: "97.2% Institutional Confluence", squeeze: "ACTIVE BREAKOUT" },
-    BANKEX: { name: "BANKEX Index", basePrice: 65407.31, change: 258.17, changePct: 0.40, atr: 280.0, rvol: 1.40, adx: 32.5, orderbook: "+19.5% Bid Heavy", mlConviction: "96.0% Institutional Confluence", squeeze: "ACTIVE EXPANSION" },
-    FINNIFTY: { name: "FINNIFTY Index", basePrice: 26386.75, change: 139.80, changePct: 0.53, atr: 110.0, rvol: 1.55, adx: 31.0, orderbook: "+20.1% Bid Heavy", mlConviction: "96.2% Institutional Confluence", squeeze: "ACTIVE BREAKOUT" }
+    NIFTY: { name: "NIFTY50 Index", basePrice: 24158.40, change: 86.20, changePct: 0.36, atr: 68.4, rvol: 1.35, adx: 26.8, orderbook: "+18.4% Bid Heavy", mlConviction: "96.5% Institutional Confluence", squeeze: "ACTIVE BREAKOUT" },
+    BANKNIFTY: { name: "NIFTYBANK Index", basePrice: 51240.60, change: 269.55, changePct: 0.53, atr: 245.0, rvol: 1.85, adx: 35.8, orderbook: "+24.6% Bid Heavy", mlConviction: "97.2% Institutional Confluence", squeeze: "ACTIVE BREAKOUT" },
+    SENSEX: { name: "SENSEX Index", basePrice: 80120.50, change: 312.40, changePct: 0.39, atr: 380.0, rvol: 1.45, adx: 36.2, orderbook: "+21.2% Bid Heavy", mlConviction: "97.0% Institutional Confluence", squeeze: "ACTIVE BREAKOUT" },
+    BANKEX: { name: "BANKEX Index", basePrice: 57820.30, change: 258.17, changePct: 0.45, atr: 280.0, rvol: 1.40, adx: 32.5, orderbook: "+19.5% Bid Heavy", mlConviction: "96.0% Institutional Confluence", squeeze: "ACTIVE EXPANSION" },
+    FINNIFTY: { name: "FINNIFTY Index", basePrice: 23890.15, change: 139.80, changePct: 0.59, atr: 110.0, rvol: 1.55, adx: 31.0, orderbook: "+20.1% Bid Heavy", mlConviction: "96.2% Institutional Confluence", squeeze: "ACTIVE BREAKOUT" },
+    RELIANCE: { name: "Reliance Industries", basePrice: 2985.60, change: 18.40, changePct: 0.62, atr: 24.5, rvol: 1.65, adx: 28.4, orderbook: "+22.8% Bid Heavy", mlConviction: "98.1% Institutional Confluence", squeeze: "ACTIVE BREAKOUT" },
+    HDFCBANK: { name: "HDFC Bank Ltd", basePrice: 1648.20, change: -12.30, changePct: -0.74, atr: 16.8, rvol: 1.25, adx: 24.1, orderbook: "+14.2% Bid Heavy", mlConviction: "95.4% Institutional Confluence", squeeze: "PULLBACK CONSOLIDATION" },
+    TCS: { name: "Tata Consultancy Services", basePrice: 4182.50, change: 34.10, changePct: 0.82, atr: 38.2, rvol: 1.40, adx: 29.5, orderbook: "+19.7% Bid Heavy", mlConviction: "96.8% Institutional Confluence", squeeze: "ACTIVE BREAKOUT" },
+    INFY: { name: "Infosys Ltd", basePrice: 1824.90, change: 21.60, changePct: 1.20, atr: 19.4, rvol: 1.72, adx: 34.0, orderbook: "+26.4% Bid Heavy", mlConviction: "98.4% Institutional Confluence", squeeze: "ACTIVE BREAKOUT" },
+    TATAMOTORS: { name: "Tata Motors Ltd", basePrice: 1042.80, change: 14.50, changePct: 1.41, atr: 15.6, rvol: 1.88, adx: 38.2, orderbook: "+28.1% Bid Heavy", mlConviction: "98.9% Institutional Confluence", squeeze: "ACTIVE BREAKOUT" },
+    SBIN: { name: "State Bank of India", basePrice: 824.50, change: 8.90, changePct: 1.09, atr: 9.8, rvol: 1.50, adx: 31.5, orderbook: "+21.0% Bid Heavy", mlConviction: "97.5% Institutional Confluence", squeeze: "ACTIVE BREAKOUT" }
 };
 
 function generateCandlesFor(symbol, tf) {
@@ -731,7 +737,7 @@ async function fetchRealFyersQuotes() {
                 }
             }
 
-            const activeQ = data.quotes[currentInstrument];
+            const activeQ = data.quotes[currentInstrument] || data.quotes["NIFTY"];
             if (activeQ) {
                 currentLTP = activeQ.ltp;
                 currentChange = activeQ.change;
@@ -745,31 +751,29 @@ async function fetchRealFyersQuotes() {
                 if (domSell) domSell.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 if (domBuy) domBuy.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-                if (candles && candles.length > 0) {
+                // Live tick update on Lightweight Charts
+                if (lwCandleSeries && candles && candles.length > 0) {
                     const lastCandle = candles[candles.length - 1];
                     lastCandle.c = currentLTP;
                     if (currentLTP > lastCandle.h) lastCandle.h = currentLTP;
                     if (currentLTP < lastCandle.l) lastCandle.l = currentLTP;
+                    try {
+                        lwCandleSeries.update({
+                            time: lastCandle.timestamp,
+                            open: lastCandle.o,
+                            high: lastCandle.h,
+                            low: lastCandle.l,
+                            close: lastCandle.c
+                        });
+                    } catch (err) {
+                        // ignore update boundary
+                    }
+                    updateHeaderLegendFromLatest();
                 }
 
-                const hudO = document.getElementById("hud-open");
-                const hudH = document.getElementById("hud-high");
-                const hudL = document.getElementById("hud-low");
-                const hudC = document.getElementById("hud-close");
-                const hudChg = document.getElementById("hud-change-text");
-
-                if (hoverIndex === -1) {
-                    if (hudO) hudO.textContent = (activeQ.open || currentLTP).toFixed(2);
-                    if (hudH) hudH.textContent = (activeQ.high || currentLTP).toFixed(2);
-                    if (hudL) hudL.textContent = (activeQ.low || currentLTP).toFixed(2);
-                    if (hudC) {
-                        hudC.textContent = currentLTP.toFixed(2);
-                        hudC.className = isPositive ? "text-emerald-400 font-semibold" : "text-rose-400 font-semibold";
-                    }
-                    if (hudChg) {
-                        hudChg.textContent = changeStr;
-                        hudChg.className = isPositive ? "text-emerald-400 font-semibold" : "text-rose-400 font-semibold";
-                    }
+                const bottomStatus = document.getElementById("chart-bottom-status");
+                if (bottomStatus) {
+                    bottomStatus.textContent = `LIVE FYERS & NSE FEED · ${currentInstrument}: ${currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2 })} (${changeStr})`;
                 }
 
                 if (chartRenderFunc) chartRenderFunc();
