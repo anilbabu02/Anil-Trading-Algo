@@ -10,7 +10,8 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Fyers Connect Client SDK -->
+    <!-- Fyers & TradingView Real-Time Charting SDK -->
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script src="https://api-connect-docs.fyers.in/fyers-lib.js"></script>
     <link rel="stylesheet" href="/static/style.css?v=7.0">
 </head>
@@ -145,84 +146,20 @@
                     </div>
                 </div>
 
-                <!-- 2. Main Chart Body with Left Toolbar & Floating BUY/SELL Ticket -->
-                <div class="flex flex-1 relative min-h-[380px]">
-                    <!-- Left Drawing Tools -->
-                    <div class="w-9 bg-[#131722] border-r border-[#1e222d] flex flex-col items-center py-1.5 space-y-2 select-none text-slate-400 z-10">
-                        <button onclick="setDrawingTool('crosshair')" id="tool-crosshair" class="drawing-tool-btn p-1 bg-[#2a2e39] text-blue-400 rounded transition cursor-pointer" title="Pointer: Crosshair & Tooltips"><i data-lucide="plus" class="w-3.5 h-3.5"></i></button>
-                        <button onclick="setDrawingTool('trendline')" id="tool-trendline" class="drawing-tool-btn p-1 hover:bg-[#2a2e39] hover:text-white text-slate-400 rounded transition cursor-pointer" title="Pointer: Trendline (Click & Drag)"><i data-lucide="trending-up" class="w-3.5 h-3.5"></i></button>
-                        <button onclick="setDrawingTool('horizontal')" id="tool-horizontal" class="drawing-tool-btn p-1 hover:bg-[#2a2e39] hover:text-white text-slate-400 rounded transition cursor-pointer" title="Pointer: Horizontal Support/Resistance"><i data-lucide="minus" class="w-3.5 h-3.5"></i></button>
-                        <button onclick="setDrawingTool('fib')" id="tool-fib" class="drawing-tool-btn p-1 hover:bg-[#2a2e39] hover:text-white text-slate-400 rounded transition cursor-pointer" title="Pointer: Fibonacci Retracement"><i data-lucide="git-commit" class="w-3.5 h-3.5"></i></button>
-                        <button onclick="setDrawingTool('brush')" id="tool-brush" class="drawing-tool-btn p-1 hover:bg-[#2a2e39] hover:text-white text-slate-400 rounded transition cursor-pointer" title="Pointer: Freehand Pen Brush"><i data-lucide="brush" class="w-3.5 h-3.5"></i></button>
-                        <button onclick="setDrawingTool('ruler')" id="tool-ruler" class="drawing-tool-btn p-1 hover:bg-[#2a2e39] hover:text-white text-slate-400 rounded transition cursor-pointer" title="Pointer: Price & Range Ruler"><i data-lucide="ruler" class="w-3.5 h-3.5"></i></button>
-                        <button onclick="resetChartZoom()" id="tool-zoom" class="drawing-tool-btn p-1 hover:bg-[#2a2e39] hover:text-white text-slate-400 rounded transition cursor-pointer" title="Reset View / Fit Graph"><i data-lucide="zoom-in" class="w-3.5 h-3.5"></i></button>
-                        <button onclick="clearChartDrawings()" id="tool-delete" class="drawing-tool-btn p-1 hover:bg-rose-900/30 hover:text-rose-400 text-slate-400 rounded mt-auto transition cursor-pointer" title="Clear All Drawings"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-                    </div>
-
-                    <!-- Canvas Area -->
-                    <div class="flex-1 relative bg-[#131722] overflow-hidden">
-                        
-                        <!-- Top-Left Chart Header & HUD Legend -->
-                        <div class="absolute top-2 left-3 z-20 space-y-1 select-none pointer-events-auto">
-                            <div class="flex items-center gap-1.5 text-xs font-bold text-slate-100">
-                                <span id="chart-title-text">NIFTY50-INDEX • 5 • NSE</span>
-                                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                                <div class="flex items-center gap-1.5 font-mono text-[10px] text-slate-300">
-                                    <span>O <strong id="hud-open" class="text-emerald-400 font-semibold">24133.05</strong></span>
-                                    <span>H <strong id="hud-high" class="text-emerald-400 font-semibold">24133.05</strong></span>
-                                    <span>L <strong id="hud-low" class="text-rose-400 font-semibold">24133.05</strong></span>
-                                    <span>C <strong id="hud-close" class="text-emerald-400 font-semibold">24133.05</strong></span>
-                                    <span id="hud-change-text" class="text-emerald-400 font-semibold">-0.55 (-0.00%)</span>
-                                </div>
-                            </div>
-
-                            <!-- 1-Click Floating BUY / SELL DOM Ticket (From Reference Screenshot) -->
-                            <div class="flex items-center bg-[#0b0e14]/90 border border-[#2a2e39] rounded-lg p-0.5 shadow-xl backdrop-blur-sm gap-1 w-max">
-                                <button onclick="executeQuickTrade('SELL')" type="button" class="flex flex-col items-center justify-center px-2.5 py-0.5 rounded bg-[#f23645] hover:bg-rose-600 text-white font-bold text-[11px] transition cursor-pointer active:scale-95">
-                                    <span id="dom-sell-price" class="font-mono text-[11px]">24,133.05</span>
-                                    <span class="text-[8px] uppercase tracking-wider opacity-90">SELL</span>
-                                </button>
-                                <div class="px-1.5 text-center font-mono text-[9px] text-slate-400">
-                                    <div>0.00</div>
-                                    <div class="text-[8px] text-slate-500">1 Lot</div>
-                                </div>
-                                <button onclick="executeQuickTrade('BUY')" type="button" class="flex flex-col items-center justify-center px-2.5 py-0.5 rounded bg-[#089981] hover:bg-emerald-600 text-white font-bold text-[11px] transition cursor-pointer active:scale-95">
-                                    <span id="dom-buy-price" class="font-mono text-[11px]">24,133.05</span>
-                                    <span class="text-[8px] uppercase tracking-wider opacity-90">BUY</span>
-                                </button>
-                            </div>
-
-                            <!-- Indicator Legend (MA 9) -->
-                            <div class="space-y-0.5 text-[10px] font-mono text-slate-400">
-                                <div class="flex items-center gap-1">
-                                    <span>MA 9 close 0:</span>
-                                    <strong id="hud-ma9-val" class="text-blue-400 font-bold">24,145.86</strong>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Live Canvas -->
-                        <canvas id="livePriceChart" class="w-full h-full block cursor-crosshair"></canvas>
-
-                        <!-- TV Logo Watermark -->
-                        <div class="absolute bottom-2 left-3 z-10 pointer-events-none opacity-40">
-                            <div class="flex items-center gap-1 font-bold text-[10px] text-slate-400">
-                                <span class="w-4 h-4 rounded bg-slate-800 text-white flex items-center justify-center text-[9px] font-black">TV</span>
-                                <span class="tracking-wider uppercase font-mono">TRADINGVIEW</span>
-                            </div>
-                        </div>
-                    </div>
+                <!-- 2. Main Official TradingView / Fyers Real-Time Advanced Chart Body -->
+                <div class="flex-1 relative w-full min-h-[520px] bg-[#131722] overflow-hidden flex flex-col">
+                    <div id="tradingview_fyers_widget" class="w-full h-full min-h-[520px] flex-1"></div>
                 </div>
 
-                <!-- 3. Bottom Time Range & Live Clock Bar -->
+                <!-- 3. Bottom Status & Live Exchange Clock Bar -->
                 <div class="bg-[#131722] border-t border-[#1e222d] px-3 py-1.5 flex items-center justify-between text-[11px] text-slate-400 select-none">
                     <div class="flex items-center gap-2 font-mono text-[10px] text-slate-400">
                         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        <span class="text-emerald-400 font-bold">NSE/BSE Real-Time Candlestick Feed</span>
+                        <span class="text-emerald-400 font-bold">Fyers & TradingView Real-Time Institutional Feed</span>
                     </div>
                     <div class="flex items-center gap-3 font-mono text-[10px]">
-                        <div id="chart-bottom-clock" class="text-slate-300 font-semibold">15:18:21 UTC+5:30</div>
-                        <span class="text-cyan-400 font-bold bg-cyan-950/60 px-1.5 py-0.5 rounded border border-cyan-800/40">AUTO</span>
+                        <div id="chart-bottom-clock" class="text-slate-300 font-semibold">15:30:00 IST</div>
+                        <span class="text-cyan-400 font-bold bg-cyan-950/60 px-1.5 py-0.5 rounded border border-cyan-800/40">FYERS PRO</span>
                     </div>
                 </div>
             </div>

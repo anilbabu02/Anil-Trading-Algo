@@ -187,6 +187,58 @@ async function loadRealChartHistory(symbol, tf) {
 }
 
 let candles = generateCandlesFor("NIFTY", "5m");
+const TV_SYMBOL_MAP = {
+    "NIFTY": "NSE:NIFTY",
+    "BANKNIFTY": "NSE:BANKNIFTY",
+    "SENSEX": "BSE:SENSEX",
+    "BANKEX": "BSE:BANKEX",
+    "FINNIFTY": "NSE:CNXFINANCE"
+};
+
+const TV_TF_MAP = {
+    "1m": "1",
+    "5m": "5",
+    "15m": "15",
+    "1h": "60",
+    "1D": "D"
+};
+
+function initTradingViewChart(symbolKey = "NIFTY", tfKey = "5m") {
+    const sym = TV_SYMBOL_MAP[symbolKey] || "NSE:NIFTY";
+    const tf = TV_TF_MAP[tfKey] || "5";
+
+    const container = document.getElementById("tradingview_fyers_widget");
+    if (!container) return;
+    container.innerHTML = "";
+
+    try {
+        if (typeof TradingView !== "undefined") {
+            new TradingView.widget({
+                "autosize": true,
+                "symbol": sym,
+                "interval": tf,
+                "timezone": "Asia/Kolkata",
+                "theme": "dark",
+                "style": "1",
+                "locale": "in",
+                "toolbar_bg": "#131722",
+                "enable_publishing": false,
+                "allow_symbol_change": true,
+                "withdateranges": true,
+                "hide_side_toolbar": false,
+                "save_image": false,
+                "container_id": "tradingview_fyers_widget",
+                "studies": [
+                    "MASimple@tv-basicstudies",
+                    "Volume@tv-basicstudies"
+                ]
+            });
+        }
+    } catch (e) {
+        console.error("TradingView widget init error:", e);
+    }
+}
+
 let hoverIndex = -1;
 let renderFramePending = false;
 let chartRenderFunc = null;
@@ -218,7 +270,7 @@ async function onInstrumentSelectChange(symbol) {
     if (mlEl) mlEl.textContent = info.mlConviction || "97.2% Institutional Confluence";
     if (sqEl) sqEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ACTIVE BREAKOUT`;
 
-    await loadRealChartHistory(symbol, currentTimeframe);
+    initTradingViewChart(symbol, currentTimeframe);
     fetchRealFyersQuotes();
 }
 
@@ -247,7 +299,7 @@ async function selectTimeframe(tf) {
         chartTitle.textContent = `${info.name.toUpperCase()} • ${tf} • NSE`;
     }
 
-    await loadRealChartHistory(currentInstrument, tf);
+    initTradingViewChart(currentInstrument, tf);
 }
 
 // Global window bindings
@@ -379,6 +431,7 @@ async function fetchRealFyersQuotes() {
 }
 
 function initLivePriceTicker() {
+    initTradingViewChart(currentInstrument, currentTimeframe);
     loadRealChartHistory(currentInstrument, currentTimeframe);
     fetchRealFyersQuotes();
     fetchOptionSuggestions();
