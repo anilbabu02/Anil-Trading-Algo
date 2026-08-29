@@ -275,19 +275,45 @@ function searchCustomSymbol(query) {
 function loadTradingViewWidget(symbol = "NSE:NIFTY", interval = "1") {
     const container = document.getElementById("tradingview_chart_container");
     if (!container) return;
+    container.innerHTML = "";
 
-    const cleanSym = symbol.trim();
-    const encodedSym = encodeURIComponent(cleanSym);
-    const widgetUrl = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=${encodedSym}&interval=${interval}&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=131722&studies=%5B%22MASimple%40tv-basicstudies%22%2C%22Volume%40tv-basicstudies%22%5D&theme=dark&style=1&timezone=Asia%2FKolkata&withdateranges=1&locale=in`;
+    const widgetDiv = document.createElement("div");
+    widgetDiv.className = "tradingview-widget-container";
+    widgetDiv.style.width = "100%";
+    widgetDiv.style.height = "100%";
 
-    const existingIframe = document.getElementById("tradingview_active_iframe");
-    if (existingIframe) {
-        existingIframe.src = widgetUrl;
-    } else {
-        container.innerHTML = `
-            <iframe id="tradingview_active_iframe" src="${widgetUrl}" class="w-full h-full min-h-[580px] flex-1 border-0" frameborder="0" allowtransparency="true" scrolling="no" allowfullscreen></iframe>
-        `;
-    }
+    const innerDiv = document.createElement("div");
+    innerDiv.className = "tradingview-widget-container__widget";
+    innerDiv.style.width = "100%";
+    innerDiv.style.height = "100%";
+    widgetDiv.appendChild(innerDiv);
+
+    const script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
+    script.async = true;
+    script.innerHTML = JSON.stringify({
+        "autosize": true,
+        "symbol": symbol.trim(),
+        "interval": interval,
+        "timezone": "Asia/Kolkata",
+        "theme": "dark",
+        "style": "1",
+        "locale": "in",
+        "enable_publishing": false,
+        "allow_symbol_change": true,
+        "withdateranges": true,
+        "hide_side_toolbar": false,
+        "save_image": true,
+        "studies": [
+            "MASimple@tv-basicstudies",
+            "Volume@tv-basicstudies"
+        ],
+        "support_host": "https://www.tradingview.com"
+    });
+
+    widgetDiv.appendChild(script);
+    container.appendChild(widgetDiv);
 }
 
 function initTradingViewChart(symbolKey = "NSE:NIFTY", tfKey = "1") {
