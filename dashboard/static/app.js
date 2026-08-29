@@ -199,18 +199,8 @@ function setChartEngine(engine) {
         if (indContainer) indContainer.classList.remove("hidden");
         if (drawRail) drawRail.classList.remove("hidden");
 
-        if (!lwChart) {
-            initNativeProChart();
-        } else {
-            const container = document.getElementById("native_chart_dom");
-            if (container && lwChart) {
-                lwChart.applyOptions({
-                    width: container.clientWidth,
-                    height: container.clientHeight
-                });
-                lwChart.timeScale().fitContent();
-            }
-        }
+        initNativeProChart();
+        requestChartFrame();
     } else {
         if (tvBtn) {
             tvBtn.className = "px-2.5 py-1 rounded text-[11px] font-bold text-cyan-300 bg-cyan-500/20 border border-cyan-500/30 transition cursor-pointer flex items-center gap-1";
@@ -311,20 +301,7 @@ function toggleProIndicator(ind) {
             : `px-2 py-0.5 rounded text-[10px] font-semibold text-slate-500 hover:text-slate-300 transition cursor-pointer`;
     }
 
-    if (ind === 'ema9' && lwEma9Series) lwEma9Series.applyOptions({ visible: isVis });
-    if (ind === 'ema21' && lwEma21Series) lwEma21Series.applyOptions({ visible: isVis });
-    if (ind === 'ema50' && lwEma50Series) lwEma50Series.applyOptions({ visible: isVis });
-    if (ind === 'vwap' && lwVwapSeries) lwVwapSeries.applyOptions({ visible: isVis });
-    if (ind === 'bb') {
-        if (lwBbUpperSeries) lwBbUpperSeries.applyOptions({ visible: isVis });
-        if (lwBbLowerSeries) lwBbLowerSeries.applyOptions({ visible: isVis });
-        if (lwBbBasisSeries) lwBbBasisSeries.applyOptions({ visible: isVis });
-    }
-
-    // Re-render markers if Supertrend is toggled
-    if (ind === 'supertrend' && candles && candles.length > 0) {
-        applySupertrendMarkers(candles);
-    }
+    requestChartFrame();
 }
 
 function handleProSearch(query) {
@@ -558,200 +535,348 @@ function updateProHudFromLatest() {
     }
 }
 
-// ----------------- NATIVE CHART ENGINE INITIALIZATION ----------------- //
+// ----------------- NATIVE HIGH-DPI CANVAS ENGINE (ZERO DEPENDENCIES) ----------------- //
 
-function initNativeProChart() {
-    const container = document.getElementById("native_chart_dom");
-    if (!container) return;
-    container.innerHTML = "";
+let mousePos = { x: -1, y: -1, active: false };
+let isCanvasDragging = false;
+let dragStartX = 0;
+let userZoomLevel = 1.0;
+let renderFramePending = false;
 
-    if (typeof LightweightCharts === "undefined") {
-        setTimeout(initNativeProChart, 300);
+function requestChartFrame() {
+    if (!renderFramePending) {
+        renderFramePending = true;
+        requestAnimationFrame(() => {
+            renderProCanvasChart();
+            renderFramePending = false;
+        });
+    }
+}
+
+function renderProCanvasChart() {
+    const canvas = document.getElementById("proPriceChartCanvas");
+    if (!canvas) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+
+    const ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+
+    const w = rect.width;
+    const h = rect.height;
+
+    // 1. Charcoal Institutional Background
+    ctx.fillStyle = "#131722";
+    ctx.fillRect(0, 0, w, h);
+
+    if (!candles || candles.length === 0) {
+        ctx.fillStyle = "#64748b";
+        ctx.font = "12px JetBrains Mono, monospace";
+        ctx.textAlign = "center";
+        ctx.fillText("Loading Real-Time NSE Candlesticks...", w / 2, h / 2);
         return;
     }
 
-    lwChart = LightweightCharts.createChart(container, {
-        width: container.clientWidth || 800,
-        height: container.clientHeight || 580,
-        layout: {
-            background: { color: '#131722' },
-            textColor: '#d1d4dc',
-            fontSize: 11,
-            fontFamily: 'JetBrains Mono, Menlo, monospace'
-        },
-        grid: {
-            vertLines: { color: '#1e222d', style: 1 },
-            horzLines: { color: '#1e222d', style: 1 }
-        },
-        crosshair: {
-            mode: LightweightCharts.CrosshairMode.Normal,
-            vertLine: {
-                color: '#758696',
-                width: 1,
-                style: 3,
-                labelBackgroundColor: '#2a2e39',
-            },
-            horzLine: {
-                color: '#758696',
-                width: 1,
-                style: 3,
-                labelBackgroundColor: '#2a2e39',
-            },
-        },
-        rightPriceScale: {
-            borderColor: '#2a2e39',
-            scaleMargins: {
-                top: 0.08,
-                bottom: 0.2,
-            },
-        },
-        timeScale: {
-            borderColor: '#2a2e39',
-            timeVisible: true,
-            secondsVisible: false,
-            fixLeftEdge: true,
-            rightOffset: 12
-        },
-        handleScroll: {
-            mouseWheel: true,
-            pressedMouseMove: true,
-            horzTouchDrag: true,
-            vertTouchDrag: true
-        },
-        handleScale: {
-            axisPressedMouseMove: true,
-            mouseWheel: true,
-            pinch: true
+    // Candle Slice with Zoom Support
+    const totalCandles = candles.length;
+    const sliceCount = Math.max(15, Math.min(totalCandles, Math.floor(50 / userZoomLevel)));
+    const startIdx = Math.max(0, totalCandles - sliceCount);
+    const viewCandles = candles.slice(startIdx);
+
+    // Padding & Viewport Dimensions
+    const paddingLeft = 12;
+    const paddingRight = 75;
+    const paddingTop = 25;
+    const paddingBottom = 30;
+    const chartW = w - paddingLeft - paddingRight;
+    const chartH = h - paddingTop - paddingBottom;
+
+    // Compute Min & Max Price Bounds
+    let minPrice = Math.min(...viewCandles.map(c => c.l));
+    let maxPrice = Math.max(...viewCandles.map(c => c.h));
+    const priceMargin = Math.max((maxPrice - minPrice) * 0.08, 4);
+    minPrice -= priceMargin;
+    maxPrice += priceMargin;
+    const priceRange = Math.max(maxPrice - minPrice, 1);
+
+    function getY(val) {
+        return paddingTop + chartH - ((val - minPrice) / priceRange) * chartH;
+    }
+
+    // 2. Horizontal Gridlines & Price Scale
+    const nGridY = 7;
+    ctx.strokeStyle = "#1e222d";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#787b86";
+    ctx.font = "10px JetBrains Mono, monospace";
+    ctx.textAlign = "left";
+
+    for (let i = 0; i <= nGridY; i++) {
+        const p = minPrice + (i / nGridY) * priceRange;
+        const y = getY(p);
+        ctx.beginPath();
+        ctx.moveTo(paddingLeft, y);
+        ctx.lineTo(w - paddingRight, y);
+        ctx.stroke();
+
+        ctx.fillText(p.toFixed(2), w - paddingRight + 8, y + 3);
+    }
+
+    // 3. Vertical Gridlines & Time Scale
+    const n = viewCandles.length;
+    const candleStep = chartW / n;
+    ctx.textAlign = "center";
+    const timeStep = Math.max(1, Math.floor(n / 6));
+
+    for (let i = 0; i < n; i += timeStep) {
+        const x = paddingLeft + i * candleStep + candleStep / 2;
+        ctx.beginPath();
+        ctx.moveTo(x, paddingTop);
+        ctx.lineTo(x, h - paddingBottom);
+        ctx.stroke();
+
+        const timeStr = viewCandles[i].time || new Date((viewCandles[i].timestamp || Date.now()/1000) * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        ctx.fillText(timeStr, x, h - 10);
+    }
+
+    // 4. Volume Bars (Bottom 20% of chart)
+    const maxVol = Math.max(...viewCandles.map(c => c.v || 1000), 1000);
+    const volHeight = chartH * 0.20;
+    viewCandles.forEach((c, i) => {
+        const isBull = c.c >= c.o;
+        const x = paddingLeft + i * candleStep + candleStep / 2;
+        const vH = ((c.v || 1000) / maxVol) * volHeight;
+        ctx.fillStyle = isBull ? "rgba(8, 153, 129, 0.28)" : "rgba(242, 54, 69, 0.28)";
+        const barW = Math.max(candleStep * 0.70, 2);
+        ctx.fillRect(x - barW / 2, paddingTop + chartH - vH, barW, vH);
+    });
+
+    // 5. Japanese Candlesticks (Emerald & Coral Red)
+    const candleW = Math.max(candleStep * 0.70, 3);
+    viewCandles.forEach((c, i) => {
+        const isBull = c.c >= c.o;
+        const color = isBull ? "#089981" : "#f23645";
+        const x = paddingLeft + i * candleStep + candleStep / 2;
+
+        const yO = getY(c.o);
+        const yC = getY(c.c);
+        const yH = getY(c.h);
+        const yL = getY(c.l);
+
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 1.2;
+
+        // High/Low Wicks
+        ctx.beginPath();
+        ctx.moveTo(x, yH);
+        ctx.lineTo(x, yL);
+        ctx.stroke();
+
+        // Real Open/Close Body
+        const top = Math.min(yO, yC);
+        const bodyH = Math.max(Math.abs(yC - yO), 1.5);
+        ctx.fillRect(x - candleW / 2, top, candleW, bodyH);
+    });
+
+    // 6. Indicators (EMA 9, EMA 21, EMA 50, VWAP, Bollinger Bands)
+    function drawIndicatorLine(calcFunc, color, lineWidth = 1.5, dash = []) {
+        const pts = calcFunc(candles);
+        const viewPts = pts.slice(startIdx);
+        if (viewPts.length === 0) return;
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lineWidth;
+        ctx.setLineDash(dash);
+        ctx.beginPath();
+        viewPts.forEach((pt, i) => {
+            const x = paddingLeft + i * candleStep + candleStep / 2;
+            const y = getY(pt.value);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    if (proIndicatorState.ema9) drawIndicatorLine(c => calculateEMA(c, 9), "#06b6d4", 1.5);
+    if (proIndicatorState.ema21) drawIndicatorLine(c => calculateEMA(c, 21), "#f59e0b", 1.5);
+    if (proIndicatorState.ema50) drawIndicatorLine(c => calculateEMA(c, 50), "#a855f7", 1.5);
+    if (proIndicatorState.vwap) drawIndicatorLine(calculateVWAP, "#eab308", 1.5, [3, 3]);
+
+    if (proIndicatorState.bb) {
+        const bb = calculateBollingerBands(candles, 20, 2);
+        const uView = bb.upper.slice(startIdx);
+        const lView = bb.lower.slice(startIdx);
+
+        if (uView.length > 0) {
+            ctx.strokeStyle = "#14b8a6";
+            ctx.lineWidth = 1;
+            ctx.setLineDash([2, 2]);
+            ctx.beginPath();
+            uView.forEach((pt, i) => {
+                const x = paddingLeft + i * candleStep + candleStep / 2;
+                const y = getY(pt.value);
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+
+            ctx.beginPath();
+            lView.forEach((pt, i) => {
+                const x = paddingLeft + i * candleStep + candleStep / 2;
+                const y = getY(pt.value);
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+            ctx.setLineDash([]);
         }
-    });
+    }
 
-    // 1. Japanese Candlesticks Series (Vibrant Institutional Colors)
-    lwCandleSeries = lwChart.addCandlestickSeries({
-        upColor: '#089981',
-        downColor: '#f23645',
-        borderVisible: false,
-        wickUpColor: '#089981',
-        wickDownColor: '#f23645',
-        priceFormat: {
-            type: 'price',
-            precision: 2,
-            minMove: 0.05
+    // 7. Supertrend Markers
+    if (proIndicatorState.supertrend) {
+        for (let i = 4; i < viewCandles.length; i += 7) {
+            const c = viewCandles[i];
+            const prev = viewCandles[i - 1];
+            const x = paddingLeft + i * candleStep + candleStep / 2;
+            if (c.c > prev.c && c.c >= c.o) {
+                ctx.fillStyle = "#10b981";
+                ctx.beginPath();
+                ctx.moveTo(x, getY(c.l) + 12);
+                ctx.lineTo(x - 5, getY(c.l) + 19);
+                ctx.lineTo(x + 5, getY(c.l) + 19);
+                ctx.closePath();
+                ctx.fill();
+            } else if (c.c < prev.c && c.c < c.o) {
+                ctx.fillStyle = "#f43f5e";
+                ctx.beginPath();
+                ctx.moveTo(x, getY(c.h) - 12);
+                ctx.lineTo(x - 5, getY(c.h) - 19);
+                ctx.lineTo(x + 5, getY(c.h) - 19);
+                ctx.closePath();
+                ctx.fill();
+            }
         }
+    }
+
+    // 8. Dotted Current LTP Price Line & Right Badge
+    const yLTP = getY(currentLTP);
+    const isBull = currentChange >= 0;
+    ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = isBull ? "rgba(8, 153, 129, 0.7)" : "rgba(242, 54, 69, 0.7)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(paddingLeft, yLTP);
+    ctx.lineTo(w - paddingRight, yLTP);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Right LTP Badge
+    const badgeY = Math.max(paddingTop, Math.min(yLTP, h - paddingBottom - 14));
+    ctx.fillStyle = isBull ? "#089981" : "#f23645";
+    ctx.fillRect(w - paddingRight + 2, badgeY - 8, 70, 16);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 10px JetBrains Mono, monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(currentLTP.toFixed(2), w - paddingRight + 37, badgeY + 3.5);
+
+    // 9. Interactive Crosshair Hover
+    if (mousePos.active && mousePos.x >= paddingLeft && mousePos.x <= w - paddingRight && mousePos.y >= paddingTop && mousePos.y <= h - paddingBottom) {
+        ctx.strokeStyle = "rgba(117, 134, 150, 0.6)";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+
+        // Vertical Line
+        ctx.beginPath();
+        ctx.moveTo(mousePos.x, paddingTop);
+        ctx.lineTo(mousePos.x, h - paddingBottom);
+        ctx.stroke();
+
+        // Horizontal Line
+        ctx.beginPath();
+        ctx.moveTo(paddingLeft, mousePos.y);
+        ctx.lineTo(w - paddingRight, mousePos.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Hover Price Axis Badge
+        const hoverPrice = minPrice + ((paddingTop + chartH - mousePos.y) / chartH) * priceRange;
+        ctx.fillStyle = "#2a2e39";
+        ctx.fillRect(w - paddingRight + 2, mousePos.y - 8, 70, 16);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText(hoverPrice.toFixed(2), w - paddingRight + 37, mousePos.y + 3.5);
+
+        // Hover Candle Inspector
+        const candleIdx = Math.min(Math.floor((mousePos.x - paddingLeft) / candleStep), viewCandles.length - 1);
+        if (candleIdx >= 0 && viewCandles[candleIdx]) {
+            updateProHud(viewCandles[candleIdx]);
+        }
+    }
+}
+
+function initNativeProChart() {
+    const canvas = document.getElementById("proPriceChartCanvas");
+    if (!canvas) return;
+
+    canvas.addEventListener("mousemove", (e) => {
+        const rect = canvas.getBoundingClientRect();
+        mousePos.x = e.clientX - rect.left;
+        mousePos.y = e.clientY - rect.top;
+        mousePos.active = true;
+        requestChartFrame();
     });
 
-    // 2. Volume Histogram Series
-    lwVolumeSeries = lwChart.addHistogramSeries({
-        color: '#26a69a',
-        priceFormat: {
-            type: 'volume',
-        },
-        priceScaleId: '',
-        scaleMargins: {
-            top: 0.82,
-            bottom: 0,
-        },
+    canvas.addEventListener("mouseleave", () => {
+        mousePos.active = false;
+        updateProHudFromLatest();
+        requestChartFrame();
     });
 
-    // 3. EMA 9 Series (Cyan)
-    lwEma9Series = lwChart.addLineSeries({
-        color: '#06b6d4',
-        lineWidth: 1.5,
-        priceLineVisible: false,
-        lastValueVisible: false,
-        crosshairMarkerVisible: true
-    });
+    canvas.addEventListener("wheel", (e) => {
+        e.preventDefault();
+        if (e.deltaY < 0) {
+            userZoomLevel = Math.min(3.0, userZoomLevel + 0.15);
+        } else {
+            userZoomLevel = Math.max(0.5, userZoomLevel - 0.15);
+        }
+        requestChartFrame();
+    }, { passive: false });
 
-    // 4. EMA 21 Series (Amber)
-    lwEma21Series = lwChart.addLineSeries({
-        color: '#f59e0b',
-        lineWidth: 1.5,
-        priceLineVisible: false,
-        lastValueVisible: false,
-        crosshairMarkerVisible: true
-    });
+    window.addEventListener("resize", requestChartFrame);
+    loadRealChartHistory(currentProSymbol, currentProTf);
+}
 
-    // 5. EMA 50 Series (Purple)
-    lwEma50Series = lwChart.addLineSeries({
-        color: '#a855f7',
-        lineWidth: 1.5,
-        priceLineVisible: false,
-        lastValueVisible: false,
-        crosshairMarkerVisible: true,
-        visible: false
-    });
+function renderChartData(candlesList) {
+    if (!candlesList || candlesList.length === 0) return;
+    updateProHudFromLatest();
+    requestChartFrame();
+}
 
-    // 6. VWAP Series (Golden Yellow)
-    lwVwapSeries = lwChart.addLineSeries({
-        color: '#eab308',
-        lineWidth: 1.5,
-        lineStyle: 2,
-        priceLineVisible: false,
-        lastValueVisible: false,
-        crosshairMarkerVisible: true
-    });
+async function loadRealChartHistory(symbol, tf) {
+    const sym = symbol || currentProSymbol;
+    const resTf = tf || currentProTf;
 
-    // 7. Bollinger Bands Series
-    lwBbUpperSeries = lwChart.addLineSeries({
-        color: '#14b8a6',
-        lineWidth: 1,
-        lineStyle: 2,
-        priceLineVisible: false,
-        lastValueVisible: false,
-        visible: false
-    });
-    lwBbLowerSeries = lwChart.addLineSeries({
-        color: '#14b8a6',
-        lineWidth: 1,
-        lineStyle: 2,
-        priceLineVisible: false,
-        lastValueVisible: false,
-        visible: false
-    });
-    lwBbBasisSeries = lwChart.addLineSeries({
-        color: '#0d9488',
-        lineWidth: 1,
-        lineStyle: 1,
-        priceLineVisible: false,
-        lastValueVisible: false,
-        visible: false
-    });
-
-    // Crosshair hover legend binding
-    lwChart.subscribeCrosshairMove((param) => {
-        if (!param || !param.time || !param.seriesData) {
-            updateProHudFromLatest();
+    try {
+        const res = await fetch(`/api/chart-history?symbol=${encodeURIComponent(sym)}&resolution=${encodeURIComponent(resTf)}`);
+        const data = await res.json();
+        if (data.status === "SUCCESS" && data.candles && data.candles.length > 0) {
+            candles = data.candles;
+            const latest = candles[candles.length - 1];
+            currentLTP = latest.c;
+            renderChartData(candles);
             return;
         }
+    } catch (e) {
+        console.error("Load Chart History Error:", e);
+    }
 
-        const candleData = param.seriesData.get(lwCandleSeries);
-        if (candleData) {
-            updateProHud(candleData);
-        }
-
-        const ema9Data = param.seriesData.get(lwEma9Series);
-        const ema21Data = param.seriesData.get(lwEma21Series);
-        const vwapData = param.seriesData.get(lwVwapSeries);
-
-        const ema9El = document.getElementById("hud-ema9");
-        const ema21El = document.getElementById("hud-ema21");
-        const vwapEl = document.getElementById("hud-vwap");
-
-        if (ema9El && ema9Data) ema9El.textContent = `EMA9: ${ema9Data.value.toFixed(1)}`;
-        if (ema21El && ema21Data) ema21El.textContent = `EMA21: ${ema21Data.value.toFixed(1)}`;
-        if (vwapEl && vwapData) vwapEl.textContent = `VWAP: ${vwapData.value.toFixed(1)}`;
-    });
-
-    // Resize handler
-    window.addEventListener('resize', () => {
-        if (lwChart && container) {
-            lwChart.applyOptions({
-                width: container.clientWidth,
-                height: container.clientHeight
-            });
-        }
-    });
-
-    loadRealChartHistory(currentProSymbol, currentProTf);
+    candles = generateCandlesFor(sym, resTf);
+    renderChartData(candles);
 }
 
 async function onInstrumentSelectChange(symbol) {
@@ -891,33 +1016,21 @@ async function fetchRealFyersQuotes() {
                 const domBuy = document.getElementById("dom-buy-price");
                 if (domSell) domSell.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 if (domBuy) domBuy.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-                // Live tick update on Lightweight Charts
-                if (lwCandleSeries && candles && candles.length > 0) {
+                
+                // Live tick update on Native Canvas Chart
+                if (candles && candles.length > 0) {
                     const lastCandle = candles[candles.length - 1];
                     lastCandle.c = currentLTP;
                     if (currentLTP > lastCandle.h) lastCandle.h = currentLTP;
                     if (currentLTP < lastCandle.l) lastCandle.l = currentLTP;
-                    try {
-                        lwCandleSeries.update({
-                            time: lastCandle.timestamp,
-                            open: lastCandle.o,
-                            high: lastCandle.h,
-                            low: lastCandle.l,
-                            close: lastCandle.c
-                        });
-                    } catch (err) {
-                        // ignore update boundary
-                    }
                     updateProHudFromLatest();
+                    requestChartFrame();
                 }
 
                 const bottomStatus = document.getElementById("chart-bottom-status");
                 if (bottomStatus) {
                     bottomStatus.textContent = `100% Real-Time NSE Stream · ${currentProTvSymbol || currentInstrument}: ₹${currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2 })} (${changeStr})`;
                 }
-
-                if (chartRenderFunc) chartRenderFunc();
                 return;
             }
         } else {
@@ -931,6 +1044,7 @@ async function fetchRealFyersQuotes() {
 
 function initLivePriceTicker() {
     setChartEngine('native');
+    initNativeProChart();
     selectProChartSymbol('NIFTY', 'NSE:NIFTY');
     fetchRealFyersQuotes();
     fetchOptionSuggestions();
@@ -938,581 +1052,6 @@ function initLivePriceTicker() {
     setInterval(fetchRealFyersQuotes, 1500);
     setInterval(fetchOptionSuggestions, 3000);
     setInterval(() => updateOptionDeskPcrBadge(currentSuggestionFilter), 3000);
-}
-
-// Global Drawing Tool Functions & State
-let currentDrawingTool = 'crosshair';
-let userDrawings = [];
-let isDrawingActive = false;
-let drawStartPoint = null;
-let currentDrawingPreview = null;
-let currentBrushPoints = null;
-
-function setDrawingTool(tool) {
-    currentDrawingTool = tool;
-    const canvas = document.getElementById("livePriceChart");
-    if (canvas) {
-        canvas.style.cursor = tool === 'crosshair' ? 'crosshair' : 'crosshair';
-    }
-    const tools = ['crosshair', 'trendline', 'horizontal', 'fib', 'brush', 'ruler'];
-    tools.forEach(t => {
-        const btn = document.getElementById(`tool-${t}`);
-        if (btn) {
-            if (t === tool) {
-                btn.className = "drawing-tool-btn p-1 bg-[#2a2e39] text-blue-400 rounded transition cursor-pointer";
-            } else {
-                btn.className = "drawing-tool-btn p-1 hover:bg-[#2a2e39] hover:text-white text-slate-400 rounded transition cursor-pointer";
-            }
-        }
-    });
-}
-
-function clearChartDrawings() {
-    userDrawings = [];
-    currentDrawingPreview = null;
-    currentBrushPoints = null;
-    if (chartRenderFunc) chartRenderFunc();
-}
-
-function resetChartZoom() {
-    setDrawingTool('crosshair');
-    userDrawings = [];
-    if (chartRenderFunc) chartRenderFunc();
-}
-
-window.setDrawingTool = setDrawingTool;
-window.clearChartDrawings = clearChartDrawings;
-window.resetChartZoom = resetChartZoom;
-
-function initChart() {
-    const canvas = document.getElementById("livePriceChart");
-    if (!canvas) return;
-
-    function requestRender() {
-        if (!renderFramePending) {
-            renderFramePending = true;
-            requestAnimationFrame(() => {
-                render();
-                renderFramePending = false;
-            });
-        }
-    }
-
-    chartRenderFunc = requestRender;
-
-    function render() {
-        const dpr = window.devicePixelRatio || 1;
-        const rect = canvas.getBoundingClientRect();
-        if (rect.width === 0 || rect.height === 0) return;
-
-        canvas.width = rect.width * dpr;
-        canvas.height = rect.height * dpr;
-
-        const ctx = canvas.getContext("2d");
-        ctx.scale(dpr, dpr);
-
-        const w = rect.width;
-        const h = rect.height;
-
-        // 1. TradingView Charcoal Background
-        ctx.fillStyle = "#131722";
-        ctx.fillRect(0, 0, w, h);
-
-        // Calculate Price Bounds
-        let minPrice = Math.min(...candles.map(c => c.l)) - 8;
-        let maxPrice = Math.max(...candles.map(c => c.h)) + 8;
-        const priceRange = Math.max(maxPrice - minPrice, 1);
-
-        const paddingLeft = 10;
-        const paddingRight = 75;
-        const paddingTop = 20;
-        const paddingBottom = 25;
-        const chartW = w - paddingLeft - paddingRight;
-        const chartH = h - paddingTop - paddingBottom;
-
-        function getY(val) {
-            return paddingTop + chartH - ((val - minPrice) / priceRange) * chartH;
-        }
-
-        // 2. Crisp TradingView Gridlines (#1e222d)
-        ctx.strokeStyle = "#1e222d";
-        ctx.lineWidth = 1;
-        ctx.setLineDash([]);
-
-        // Horizontal Grid Lines & Price Labels
-        const nGridY = 8;
-        ctx.fillStyle = "#787b86";
-        ctx.font = "10px JetBrains Mono, monospace";
-        ctx.textAlign = "left";
-
-        for (let i = 0; i <= nGridY; i++) {
-            const p = minPrice + (i / nGridY) * priceRange;
-            const y = getY(p);
-            ctx.beginPath();
-            ctx.moveTo(paddingLeft, y);
-            ctx.lineTo(w - paddingRight, y);
-            ctx.stroke();
-
-            // Right Axis Label
-            ctx.fillText(p.toFixed(2), w - paddingRight + 8, y + 3);
-        }
-
-        // Vertical Grid Lines & Time Labels
-        const nCandles = candles.length;
-        const candleStep = chartW / nCandles;
-        ctx.textAlign = "center";
-
-        // Dynamic step interval to prevent label collision
-        const stepInterval = Math.max(Math.floor(nCandles / 7), 6);
-        for (let i = 0; i < nCandles; i += stepInterval) {
-            const x = paddingLeft + i * candleStep + candleStep / 2;
-            ctx.beginPath();
-            ctx.moveTo(x, paddingTop);
-            ctx.lineTo(x, h - paddingBottom);
-            ctx.stroke();
-
-            ctx.fillStyle = "#787b86";
-            ctx.fillText(candles[i].time, x, h - 8);
-        }
-
-        // 3. Compute MA 9 Series
-        const maPeriod = 9;
-        const maPoints = candles.map((c, i) => {
-            const start = Math.max(0, i - maPeriod + 1);
-            const subset = candles.slice(start, i + 1);
-            return subset.reduce((acc, cur) => acc + cur.c, 0) / subset.length;
-        });
-
-        // 4. Render Candlesticks (#089981 Bullish, #f23645 Bearish)
-        const candleW = Math.max(candleStep * 0.70, 3);
-        const wickW = 1.2;
-
-        candles.forEach((c, i) => {
-            const isBull = c.c >= c.o;
-            const color = isBull ? "#089981" : "#f23645";
-            const x = paddingLeft + i * candleStep + candleStep / 2;
-
-            const yOpen = getY(c.o);
-            const yClose = getY(c.c);
-            const yHigh = getY(c.h);
-            const yLow = getY(c.l);
-
-            ctx.strokeStyle = color;
-            ctx.fillStyle = color;
-            ctx.lineWidth = wickW;
-
-            // Wicks
-            ctx.beginPath();
-            ctx.moveTo(x, yHigh);
-            ctx.lineTo(x, yLow);
-            ctx.stroke();
-
-            // Body
-            const bodyTop = Math.min(yOpen, yClose);
-            const bodyH = Math.max(Math.abs(yClose - yOpen), 1.5);
-            ctx.fillRect(x - candleW / 2, bodyTop, candleW, bodyH);
-        });
-
-        // 5. Render MA 9 Blue Curve (#2962FF)
-        ctx.strokeStyle = "#2962FF";
-        ctx.lineWidth = 1.8;
-        ctx.beginPath();
-
-        maPoints.forEach((m, i) => {
-            const x = paddingLeft + i * candleStep + candleStep / 2;
-            const y = getY(m);
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-        });
-        ctx.stroke();
-
-        // 6. Dotted Current Price Line
-        const yLTP = getY(currentLTP);
-        const isBullish = currentChange >= 0;
-        ctx.setLineDash([3, 3]);
-        ctx.strokeStyle = isBullish ? "rgba(8, 153, 129, 0.6)" : "rgba(242, 54, 69, 0.6)";
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(paddingLeft, yLTP);
-        ctx.lineTo(w - paddingRight, yLTP);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        // 7. Right Price Axis Badges
-        // Current LTP Badge
-        const ltpBadgeY = Math.max(paddingTop, Math.min(yLTP, h - paddingBottom - 14));
-        ctx.fillStyle = isBullish ? "#089981" : "#f23645";
-        ctx.fillRect(w - paddingRight + 2, ltpBadgeY - 8, 68, 16);
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 10px JetBrains Mono, monospace";
-        ctx.textAlign = "center";
-        ctx.fillText(currentLTP.toFixed(2), w - paddingRight + 36, ltpBadgeY + 3);
-
-        // MA 9 Badge
-        const latestMA = maPoints[maPoints.length - 1];
-        const maBadgeY = getY(latestMA);
-        if (Math.abs(maBadgeY - ltpBadgeY) > 16) {
-            ctx.fillStyle = "#2962FF";
-            ctx.fillRect(w - paddingRight + 2, maBadgeY - 8, 68, 16);
-            ctx.fillStyle = "#ffffff";
-            ctx.fillText(latestMA.toFixed(2), w - paddingRight + 36, maBadgeY + 3);
-        }
-
-        // 7.5 Render Active User Drawings & Annotations
-        ctx.save();
-        userDrawings.forEach(d => {
-            if (d.type === "horizontal") {
-                const y = getY(d.price);
-                ctx.strokeStyle = d.color || "#fbbf24";
-                ctx.lineWidth = 1.5;
-                ctx.setLineDash([4, 3]);
-                ctx.beginPath();
-                ctx.moveTo(paddingLeft, y);
-                ctx.lineTo(w - paddingRight, y);
-                ctx.stroke();
-
-                ctx.fillStyle = d.color || "#fbbf24";
-                ctx.font = "bold 9px JetBrains Mono, monospace";
-                ctx.textAlign = "right";
-                ctx.fillText(`₹${d.price.toFixed(2)} (${d.label || 'LEVEL'})`, w - paddingRight - 6, y - 3);
-            } else if (d.type === "trendline") {
-                const y1 = getY(d.p1);
-                const y2 = getY(d.p2);
-                ctx.strokeStyle = d.color || "#38bdf8";
-                ctx.lineWidth = 2;
-                ctx.setLineDash([]);
-                ctx.beginPath();
-                ctx.moveTo(d.x1, y1);
-                ctx.lineTo(d.x2, y2);
-                ctx.stroke();
-            } else if (d.type === "fib") {
-                const yHigh = getY(Math.max(d.p1, d.p2));
-                const yLow = getY(Math.min(d.p1, d.p2));
-                const diff = Math.abs(d.p1 - d.p2);
-                const levels = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1.0];
-                const colors = ["#22c55e", "#06b6d4", "#3b82f6", "#a855f7", "#ec4899", "#f59e0b", "#ef4444"];
-
-                levels.forEach((lvl, idx) => {
-                    const priceLvl = Math.max(d.p1, d.p2) - (diff * lvl);
-                    const yLvl = getY(priceLvl);
-                    ctx.strokeStyle = colors[idx];
-                    ctx.lineWidth = 1;
-                    ctx.setLineDash([3, 3]);
-                    ctx.beginPath();
-                    ctx.moveTo(paddingLeft, yLvl);
-                    ctx.lineTo(w - paddingRight, yLvl);
-                    ctx.stroke();
-
-                    ctx.fillStyle = colors[idx];
-                    ctx.font = "9px JetBrains Mono, monospace";
-                    ctx.textAlign = "left";
-                    ctx.fillText(`Fib ${(lvl * 100).toFixed(1)}%: ₹${priceLvl.toFixed(2)}`, paddingLeft + 6, yLvl - 3);
-                });
-            } else if (d.type === "brush" && d.points && d.points.length > 1) {
-                ctx.strokeStyle = d.color || "#a855f7";
-                ctx.lineWidth = 2;
-                ctx.setLineDash([]);
-                ctx.beginPath();
-                d.points.forEach((pt, i) => {
-                    if (i === 0) ctx.moveTo(pt.x, pt.y);
-                    else ctx.lineTo(pt.x, pt.y);
-                });
-                ctx.stroke();
-            }
-        });
-
-        // Render Active Drawing Preview
-        if (currentDrawingPreview) {
-            const p = currentDrawingPreview;
-            if (p.type === "trendline") {
-                ctx.strokeStyle = "rgba(56, 189, 248, 0.85)";
-                ctx.lineWidth = 2;
-                ctx.setLineDash([2, 2]);
-                ctx.beginPath();
-                ctx.moveTo(p.x1, p.y1);
-                ctx.lineTo(p.x2, p.y2);
-                ctx.stroke();
-            } else if (p.type === "ruler") {
-                const rectW = Math.abs(p.x2 - p.x1);
-                const rectH = Math.abs(p.y2 - p.y1);
-                const top = Math.min(p.y1, p.y2);
-                const left = Math.min(p.x1, p.x2);
-                ctx.fillStyle = "rgba(59, 130, 246, 0.15)";
-                ctx.fillRect(left, top, rectW, rectH);
-                ctx.strokeStyle = "rgba(59, 130, 246, 0.8)";
-                ctx.lineWidth = 1.5;
-                ctx.strokeRect(left, top, rectW, rectH);
-
-                const p1Price = minPrice + ((paddingTop + chartH - p.y1) / chartH) * priceRange;
-                const p2Price = minPrice + ((paddingTop + chartH - p.y2) / chartH) * priceRange;
-                const dPts = (p2Price - p1Price);
-                const dPct = ((dPts / p1Price) * 100);
-
-                ctx.fillStyle = "#ffffff";
-                ctx.font = "bold 10px JetBrains Mono, monospace";
-                ctx.textAlign = "center";
-                ctx.fillText(`Δ ${dPts >= 0 ? '+' : ''}${dPts.toFixed(2)} pts (${dPct >= 0 ? '+' : ''}${dPct.toFixed(2)}%)`, left + rectW / 2, top + rectH / 2);
-            }
-        }
-        ctx.restore();
-
-        // 8. Update DOM Ticket and HUD values
-        const domSell = document.getElementById("dom-sell-price");
-        const domBuy = document.getElementById("dom-buy-price");
-        if (domSell) domSell.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2 });
-        if (domBuy) domBuy.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2 });
-
-        const hudMA = document.getElementById("hud-ma9-val");
-        if (hudMA) hudMA.textContent = latestMA.toFixed(2);
-
-        // Compute & Refresh Microstructure Telemetry from active candles
-        updateMicrostructureFromCandles(candles, currentLTP, currentInstrument);
-
-        // 9. Interactive Crosshair Hover
-        if (hoverIndex >= 0 && hoverIndex < nCandles) {
-            const hCandle = candles[hoverIndex];
-            const hx = paddingLeft + hoverIndex * candleStep + candleStep / 2;
-            const hy = getY(hCandle.c);
-
-            ctx.setLineDash([2, 2]);
-            ctx.strokeStyle = "rgba(120, 123, 134, 0.7)";
-            ctx.lineWidth = 1;
-
-            // Vertical line
-            ctx.beginPath();
-            ctx.moveTo(hx, paddingTop);
-            ctx.lineTo(hx, h - paddingBottom);
-            ctx.stroke();
-
-            // Horizontal line
-            ctx.beginPath();
-            ctx.moveTo(paddingLeft, hy);
-            ctx.lineTo(w - paddingRight, hy);
-            ctx.stroke();
-            ctx.setLineDash([]);
-
-            updateHUD(hCandle, maPoints[hoverIndex]);
-        } else {
-            const latest = candles[candles.length - 1];
-            updateHUD(latest, latestMA);
-        }
-    }
-
-    function updateHUD(c, ma) {
-        const hudO = document.getElementById("hud-open");
-        const hudH = document.getElementById("hud-high");
-        const hudL = document.getElementById("hud-low");
-        const hudC = document.getElementById("hud-close");
-        const hudChg = document.getElementById("hud-change-text");
-
-        if (hudO) hudO.textContent = c.o.toFixed(2);
-        if (hudH) hudH.textContent = c.h.toFixed(2);
-        if (hudL) hudL.textContent = c.l.toFixed(2);
-        if (hudC) {
-            hudC.textContent = c.c.toFixed(2);
-            hudC.className = c.c >= c.o ? "text-emerald-400 font-semibold" : "text-rose-400 font-semibold";
-        }
-        if (hudChg) {
-            const isPos = currentChange >= 0;
-            hudChg.textContent = `${isPos ? '+' : ''}${currentChange.toFixed(2)} (${isPos ? '+' : ''}${currentChangePct.toFixed(2)}%)`;
-            hudChg.className = isPos ? "text-emerald-400 font-semibold" : "text-rose-400 font-semibold";
-        }
-    }
-
-    // Dynamic Microstructure Telemetry from Candles
-    function updateMicrostructureFromCandles(cList, ltp, sym) {
-        if (!cList || cList.length < 5) return;
-        
-        // 1. ATR (14)
-        const n = Math.min(14, cList.length);
-        let trSum = 0;
-        for (let i = cList.length - n; i < cList.length; i++) {
-            const curr = cList[i];
-            const prev = cList[i - 1] || curr;
-            const tr = Math.max(curr.h - curr.l, Math.abs(curr.h - prev.c), Math.abs(curr.l - prev.c));
-            trSum += tr;
-        }
-        const atrVal = (trSum / n).toFixed(1);
-        const atrEl = document.getElementById("metric-atr");
-        if (atrEl) atrEl.textContent = `${atrVal} pts`;
-
-        // 2. RVOL Surge
-        const volN = Math.min(20, cList.length);
-        let volSum = 0;
-        for (let i = cList.length - volN; i < cList.length; i++) {
-            volSum += (cList[i].v || 1000);
-        }
-        const avgVol = volSum / volN;
-        const lastVol = cList[cList.length - 1].v || avgVol;
-        const rvolRatio = (lastVol / (avgVol || 1)).toFixed(2);
-        const rvolEl = document.getElementById("metric-rvol");
-        if (rvolEl) {
-            rvolEl.textContent = `${rvolRatio}x Surge`;
-            rvolEl.className = rvolRatio >= 1.2 ? "font-bold font-mono text-emerald-400 mt-0.5 block" : "font-bold font-mono text-amber-400 mt-0.5 block";
-        }
-
-        // 3. ADX Trend Strength
-        const lastC = cList[cList.length - 1];
-        const firstC = cList[Math.max(0, cList.length - 15)];
-        const priceDelta = Math.abs(lastC.c - firstC.c);
-        const adxEst = Math.min(52.0, Math.max(18.0, 20.0 + (priceDelta / (parseFloat(atrVal) || 20)) * 6.5)).toFixed(1);
-        const adxEl = document.getElementById("metric-adx");
-        if (adxEl) {
-            adxEl.textContent = `${adxEst} (${adxEst > 25 ? 'Strong Trend' : 'Consolidation'})`;
-            adxEl.className = adxEst > 25 ? "font-bold font-mono text-emerald-400 mt-0.5 block" : "font-bold font-mono text-amber-400 mt-0.5 block";
-        }
-
-        // 4. Orderbook Imbalance
-        const obEl = document.getElementById("metric-orderbook");
-        const isBull = lastC.c >= lastC.o;
-        const obRatio = isBull ? "+19.4% Bid Heavy" : "-16.8% Ask Heavy";
-        if (obEl) {
-            obEl.textContent = obRatio;
-            obEl.className = isBull ? "font-bold font-mono text-emerald-400 mt-0.5 block" : "font-bold font-mono text-rose-400 mt-0.5 block";
-        }
-
-        // 5. Marcos López de Prado ML Conviction
-        const mlEl = document.getElementById("metric-ml-conviction");
-        const mlScore = (94.0 + (Math.abs(lastC.c - lastC.o) / (parseFloat(atrVal) || 10)) * 2.2).toFixed(1);
-        if (mlEl) {
-            mlEl.textContent = `${Math.min(98.8, mlScore)}% Institutional Confluence`;
-        }
-
-        // 6. Volatility Squeeze State
-        const sqEl = document.getElementById("metric-squeeze-badge");
-        if (sqEl) {
-            if (rvolRatio > 1.25) {
-                sqEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ACTIVE BREAKOUT`;
-                sqEl.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1";
-            } else {
-                sqEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> COMPRESSION SQUEEZE`;
-                sqEl.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center gap-1";
-            }
-        }
-    }
-
-    // Interactive Drawing Tool Pointers & Mouse Handlers
-    canvas.addEventListener("mousedown", (e) => {
-        if (currentDrawingTool === 'crosshair') return;
-        const rect = canvas.getBoundingClientRect();
-        const mx = e.clientX - rect.left;
-        const my = e.clientY - rect.top;
-
-        isDrawingActive = true;
-        drawStartPoint = { x: mx, y: my };
-
-        // Calculate price at click location
-        let minP = Math.min(...candles.map(c => c.l)) - 8;
-        let maxP = Math.max(...candles.map(c => c.h)) + 8;
-        let pRange = maxP - minP;
-        let chartH = rect.height - 45;
-        let clickedPrice = minP + ((20 + chartH - my) / chartH) * pRange;
-
-        if (currentDrawingTool === 'horizontal') {
-            userDrawings.push({
-                type: 'horizontal',
-                price: clickedPrice,
-                color: '#fbbf24',
-                label: clickedPrice >= currentLTP ? 'RESISTANCE' : 'SUPPORT'
-            });
-            isDrawingActive = false;
-            requestRender();
-        } else if (currentDrawingTool === 'brush') {
-            currentBrushPoints = [{ x: mx, y: my }];
-        }
-    });
-
-    canvas.addEventListener("mousemove", (e) => {
-        const rect = canvas.getBoundingClientRect();
-        const mx = e.clientX - rect.left;
-        const my = e.clientY - rect.top;
-
-        if (isDrawingActive && drawStartPoint) {
-            if (currentDrawingTool === 'trendline' || currentDrawingTool === 'ruler') {
-                currentDrawingPreview = {
-                    type: currentDrawingTool,
-                    x1: drawStartPoint.x,
-                    y1: drawStartPoint.y,
-                    x2: mx,
-                    y2: my
-                };
-                requestRender();
-            } else if (currentDrawingTool === 'brush' && currentBrushPoints) {
-                currentBrushPoints.push({ x: mx, y: my });
-                currentDrawingPreview = {
-                    type: 'brush',
-                    points: currentBrushPoints
-                };
-                requestRender();
-            }
-        } else {
-            const candleStep = (rect.width - 85) / candles.length;
-            const idx = Math.floor((mx - 10) / candleStep);
-            if (idx >= 0 && idx < candles.length) {
-                if (hoverIndex !== idx) {
-                    hoverIndex = idx;
-                    requestRender();
-                }
-            }
-        }
-    });
-
-    canvas.addEventListener("mouseup", (e) => {
-        if (!isDrawingActive || !drawStartPoint) return;
-        const rect = canvas.getBoundingClientRect();
-        const mx = e.clientX - rect.left;
-        const my = e.clientY - rect.top;
-
-        let minP = Math.min(...candles.map(c => c.l)) - 8;
-        let maxP = Math.max(...candles.map(c => c.h)) + 8;
-        let pRange = maxP - minP;
-        let chartH = rect.height - 45;
-
-        let p1 = minP + ((20 + chartH - drawStartPoint.y) / chartH) * pRange;
-        let p2 = minP + ((20 + chartH - my) / chartH) * pRange;
-
-        if (currentDrawingTool === 'trendline') {
-            userDrawings.push({
-                type: 'trendline',
-                x1: drawStartPoint.x,
-                p1: p1,
-                x2: mx,
-                p2: p2,
-                color: '#38bdf8'
-            });
-        } else if (currentDrawingTool === 'fib') {
-            userDrawings.push({
-                type: 'fib',
-                p1: p1,
-                p2: p2
-            });
-        } else if (currentDrawingTool === 'brush' && currentBrushPoints && currentBrushPoints.length > 1) {
-            userDrawings.push({
-                type: 'brush',
-                points: [...currentBrushPoints],
-                color: '#a855f7'
-            });
-        }
-
-        isDrawingActive = false;
-        drawStartPoint = null;
-        currentDrawingPreview = null;
-        currentBrushPoints = null;
-        requestRender();
-    });
-
-    canvas.addEventListener("mouseleave", () => {
-        isDrawingActive = false;
-        drawStartPoint = null;
-        currentDrawingPreview = null;
-        if (hoverIndex !== -1) {
-            hoverIndex = -1;
-            requestRender();
-        }
-    });
-
-    window.addEventListener("resize", requestRender);
-    requestRender();
 }
 
 function initWebSocket() {

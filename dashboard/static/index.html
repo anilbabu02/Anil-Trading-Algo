@@ -203,14 +203,13 @@
 
                     <!-- Native Canvas & TV Container -->
                     <div id="chart_main_viewport" class="flex-1 relative w-full h-full bg-[#131722] overflow-hidden">
-                        <!-- Mode 1: Native High-FPS Lightweight Canvas -->
+                        <!-- Mode 1: 100% Guaranteed High-Performance Native Canvas Engine -->
                         <div id="native_chart_wrapper" class="w-full h-full relative">
-                            <div id="native_chart_dom" class="w-full h-full"></div>
-                            <canvas id="customDrawingCanvas" class="absolute inset-0 pointer-events-none z-10 w-full h-full"></canvas>
+                            <canvas id="proPriceChartCanvas" class="w-full h-full block cursor-crosshair"></canvas>
                         </div>
 
                         <!-- Mode 2: TradingView Cloud Embed Container -->
-                        <div id="tv_chart_wrapper" class="hidden w-full h-full">
+                        <div id="tv_chart_wrapper" class="hidden absolute inset-0 w-full h-full bg-[#131722]">
                             <div id="nse_tv_chart_inner" style="height:100%;width:100%"></div>
                         </div>
                     </div>
