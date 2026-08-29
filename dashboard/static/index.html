@@ -94,39 +94,24 @@
             <div class="lg:col-span-2 bg-[#131722] border border-[#1e222d] rounded-xl flex flex-col shadow-2xl overflow-hidden">
                 
                 <!-- 1. Interactive Symbol Switcher & Chart Header Bar -->
-                <div class="bg-[#131722] border-b border-[#1e222d] px-3.5 py-2 flex flex-wrap items-center justify-between gap-2 select-none text-xs text-slate-300">
-                    <div class="flex flex-wrap items-center gap-2">
-                        <!-- Quick Symbol Pills -->
-                        <div class="flex items-center bg-[#1e222d] border border-[#2a2e39] p-0.5 rounded-lg gap-1">
-                            <button onclick="changeChartSymbol('NSE:NIFTY', 'NIFTY 50')" data-symbol="NSE:NIFTY" class="chart-sym-btn px-2.5 py-1 rounded text-[11px] font-bold text-cyan-300 bg-cyan-500/20 border border-cyan-500/30 transition cursor-pointer">NIFTY 50</button>
-                            <button onclick="changeChartSymbol('NSE:BANKNIFTY', 'BANK NIFTY')" data-symbol="NSE:BANKNIFTY" class="chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">BANK NIFTY</button>
-                            <button onclick="changeChartSymbol('BSE:SENSEX', 'SENSEX')" data-symbol="BSE:SENSEX" class="chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">SENSEX</button>
-                            <button onclick="changeChartSymbol('NSE:FINNIFTY', 'FINNIFTY')" data-symbol="NSE:FINNIFTY" class="chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">FINNIFTY</button>
-                            <button onclick="changeChartSymbol('BSE:BANKEX', 'BANKEX')" data-symbol="BSE:BANKEX" class="chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">BANKEX</button>
-                            <button onclick="changeChartSymbol('NSE:RELIANCE', 'RELIANCE')" data-symbol="NSE:RELIANCE" class="chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">RELIANCE</button>
-                            <button onclick="changeChartSymbol('NSE:HDFCBANK', 'HDFCBANK')" data-symbol="NSE:HDFCBANK" class="chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">HDFC</button>
-                        </div>
-
-                        <!-- Custom Search Box Form with Enter Key & Search Button -->
-                        <form onsubmit="event.preventDefault(); searchCustomSymbol(document.getElementById('custom-chart-symbol-input').value);" class="flex items-center bg-[#1e222d] border border-[#2a2e39] rounded-lg px-2 py-0.5 group focus-within:border-cyan-500/60 transition">
-                            <i data-lucide="search" class="w-3.5 h-3.5 text-cyan-400 mr-1.5 shrink-0"></i>
-                            <input id="custom-chart-symbol-input" type="text" placeholder="Search (e.g. TCS, INFY)..." class="bg-transparent text-white font-mono text-[11px] focus:outline-none w-40 placeholder:text-slate-500">
-                            <button type="submit" class="text-[10px] font-bold bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded transition ml-1 cursor-pointer">Search</button>
-                        </form>
-
-                        <!-- Timeframe Selector -->
-                        <div class="flex items-center bg-[#1e222d] border border-[#2a2e39] p-0.5 rounded-lg gap-0.5">
-                            <button onclick="changeChartInterval('1')" id="tf-btn-1" class="chart-tf-btn px-2 py-0.5 rounded text-[11px] font-bold text-blue-400 bg-blue-500/20 border border-blue-500/30 transition cursor-pointer">1m</button>
-                            <button onclick="changeChartInterval('5')" id="tf-btn-5" class="chart-tf-btn px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">5m</button>
-                            <button onclick="changeChartInterval('15')" id="tf-btn-15" class="chart-tf-btn px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">15m</button>
-                            <button onclick="changeChartInterval('60')" id="tf-btn-60" class="chart-tf-btn px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">1h</button>
-                            <button onclick="changeChartInterval('D')" id="tf-btn-D" class="chart-tf-btn px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">1D</button>
-                        </div>
+                <div class="bg-[#131722] border-b border-[#1e222d] px-3.5 py-2 flex flex-wrap items-center justify-between gap-3 select-none text-xs text-slate-300">
+                    <!-- Quick Symbol Switcher Buttons -->
+                    <div class="flex flex-wrap items-center bg-[#1e222d] border border-[#2a2e39] p-0.5 rounded-lg gap-1">
+                        <button onclick="changeChartSymbol('NSE:NIFTY', 'NIFTY 50')" data-symbol="NSE:NIFTY" class="chart-sym-btn px-2.5 py-1 rounded text-[11px] font-bold text-cyan-300 bg-cyan-500/20 border border-cyan-500/30 transition cursor-pointer">NIFTY 50</button>
+                        <button onclick="changeChartSymbol('NSE:BANKNIFTY', 'BANK NIFTY')" data-symbol="NSE:BANKNIFTY" class="chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">BANK NIFTY</button>
+                        <button onclick="changeChartSymbol('BSE:SENSEX', 'SENSEX')" data-symbol="BSE:SENSEX" class="chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">SENSEX</button>
+                        <button onclick="changeChartSymbol('NSE:FINNIFTY', 'FINNIFTY')" data-symbol="NSE:FINNIFTY" class="chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">FINNIFTY</button>
+                        <button onclick="changeChartSymbol('BSE:BANKEX', 'BANKEX')" data-symbol="BSE:BANKEX" class="chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">BANKEX</button>
+                        <button onclick="changeChartSymbol('NSE:RELIANCE', 'RELIANCE')" data-symbol="NSE:RELIANCE" class="chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">RELIANCE</button>
+                        <button onclick="changeChartSymbol('NSE:HDFCBANK', 'HDFCBANK')" data-symbol="NSE:HDFCBANK" class="chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">HDFC</button>
                     </div>
 
-                    <div class="flex items-center gap-2">
-                        <span id="active-chart-label" class="font-mono text-[11px] font-bold text-cyan-400 bg-cyan-950/60 px-2.5 py-1 rounded-lg border border-cyan-800/40">NSE:NIFTY · 1m</span>
-                    </div>
+                    <!-- Custom Search Box Form -->
+                    <form onsubmit="event.preventDefault(); searchCustomSymbol(document.getElementById('custom-chart-symbol-input').value);" class="flex items-center bg-[#1e222d] border border-[#2a2e39] rounded-lg px-2 py-0.5 group focus-within:border-cyan-500/60 transition">
+                        <i data-lucide="search" class="w-3.5 h-3.5 text-cyan-400 mr-1.5 shrink-0"></i>
+                        <input id="custom-chart-symbol-input" type="text" placeholder="Search (e.g. TCS, INFY, SBIN)..." class="bg-transparent text-white font-mono text-[11px] focus:outline-none w-48 placeholder:text-slate-500">
+                        <button type="submit" class="text-[10px] font-bold bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded transition ml-1 cursor-pointer">Search</button>
+                    </form>
                 </div>
 
                 <!-- 2. Main Full-Featured TradingView Pro Live Chart Engine -->

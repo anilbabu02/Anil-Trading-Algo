@@ -232,27 +232,11 @@ function changeChartSymbol(symbol, name) {
         }
     });
 
-    const labelEl = document.getElementById("active-chart-label");
-    if (labelEl) labelEl.textContent = `${currentTvSymbol} · ${currentTvInterval === 'D' ? '1D' : currentTvInterval + 'm'}`;
-
     loadTradingViewWidget(currentTvSymbol, currentTvInterval);
 }
 
 function changeChartInterval(interval) {
     currentTvInterval = interval;
-
-    document.querySelectorAll(".chart-tf-btn").forEach(b => {
-        b.className = "chart-tf-btn px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer";
-    });
-
-    const activeBtn = document.getElementById(`tf-btn-${interval}`);
-    if (activeBtn) {
-        activeBtn.className = "chart-tf-btn px-2 py-0.5 rounded text-[11px] font-bold text-blue-400 bg-blue-500/20 border border-blue-500/30 transition cursor-pointer";
-    }
-
-    const labelEl = document.getElementById("active-chart-label");
-    if (labelEl) labelEl.textContent = `${currentTvSymbol} · ${interval === 'D' ? '1D' : interval + 'm'}`;
-
     loadTradingViewWidget(currentTvSymbol, currentTvInterval);
 }
 
