@@ -1527,15 +1527,17 @@ async function updateOptionDeskPcrBadge(selectedFilter = "ALL") {
             const dotEl = document.getElementById("option-desk-pcr-dot");
 
             if (textEl && badgeEl) {
-                const label = pcrObj.underlying ? `${pcrObj.underlying} PCR` : `PCR`;
-                textEl.textContent = `${label} ${pcrObj.pcr.toFixed(2)} - ${pcrObj.bias}`;
+                const label = key === "ALL" ? "PCR" : `${key} PCR`;
+                const biasShort = pcrObj.is_bull ? "Bullish" : "Bearish";
+                textEl.textContent = `${label} ${pcrObj.pcr.toFixed(2)} · ${biasShort}`;
+                badgeEl.title = `Exchange Open Interest: ${pcrObj.bias}`;
                 
                 if (pcrObj.is_bull) {
-                    badgeEl.className = "px-2.5 py-1 rounded-lg bg-emerald-950/40 border border-emerald-800/60 text-[11px] font-bold text-emerald-400 flex items-center gap-1.5 shadow-inner";
-                    if (dotEl) dotEl.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+                    badgeEl.className = "px-2.5 py-1 rounded-lg bg-emerald-950/40 border border-emerald-800/60 text-[11px] font-bold text-emerald-400 flex items-center gap-1.5 shadow-inner cursor-default";
+                    if (dotEl) dotEl.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0";
                 } else {
-                    badgeEl.className = "px-2.5 py-1 rounded-lg bg-rose-950/40 border border-rose-800/60 text-[11px] font-bold text-rose-400 flex items-center gap-1.5 shadow-inner";
-                    if (dotEl) dotEl.className = "w-2 h-2 rounded-full bg-rose-400 animate-pulse";
+                    badgeEl.className = "px-2.5 py-1 rounded-lg bg-rose-950/40 border border-rose-800/60 text-[11px] font-bold text-rose-400 flex items-center gap-1.5 shadow-inner cursor-default";
+                    if (dotEl) dotEl.className = "w-2 h-2 rounded-full bg-rose-400 animate-pulse shrink-0";
                 }
             }
         }
