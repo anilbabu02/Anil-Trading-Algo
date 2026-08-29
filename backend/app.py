@@ -317,7 +317,9 @@ class ExecuteSuggestionRequest(BaseModel):
 
 @app.post("/api/option-suggestions/execute")
 async def execute_option_suggestion(req: ExecuteSuggestionRequest) -> Dict[str, Any]:
-    suggestions = option_advisor.get_all_suggestions()
+    quotes_res = get_live_quotes()
+    live_map = quotes_res.get("quotes", {})
+    suggestions = option_advisor.get_all_suggestions(live_map)
     match = next((s for s in suggestions if s["id"] == req.suggestion_id), None)
     if not match:
         raise HTTPException(status_code=404, detail="Option suggestion call not found.")
@@ -675,7 +677,9 @@ class BroadcastSuggestionReq(BaseModel):
 
 @app.post("/api/telegram/broadcast-suggestion")
 async def broadcast_suggestion_to_telegram(req: BroadcastSuggestionReq) -> Dict[str, Any]:
-    suggestions = option_advisor.get_all_suggestions()
+    quotes_res = get_live_quotes()
+    live_map = quotes_res.get("quotes", {})
+    suggestions = option_advisor.get_all_suggestions(live_map)
     item = next((s for s in suggestions if s["id"] == req.suggestion_id), None)
     if not item:
         raise HTTPException(status_code=404, detail="Option suggestion not found.")
