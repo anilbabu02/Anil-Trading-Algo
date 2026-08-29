@@ -188,10 +188,10 @@ async function loadRealChartHistory(symbol, tf) {
 
 let candles = generateCandlesFor("NIFTY", "5m");
 const TV_SYMBOL_MAP = {
-    "NIFTY": "NSE:NIFTY50",
+    "NIFTY": "NSE:NIFTY",
     "BANKNIFTY": "NSE:BANKNIFTY",
     "SENSEX": "BSE:SENSEX",
-    "FINNIFTY": "NSE:CNXFINANCE",
+    "FINNIFTY": "NSE:FINNIFTY",
     "BANKEX": "BSE:BANKEX"
 };
 
@@ -212,13 +212,13 @@ const INSTRUMENT_PCR_MAP = {
 };
 
 function initTradingViewChart(symbolKey = "NIFTY", tfKey = "5m") {
-    const sym = TV_SYMBOL_MAP[symbolKey] || "NSE:NIFTY50";
+    const sym = TV_SYMBOL_MAP[symbolKey] || "NSE:NIFTY";
     const tf = TV_TF_MAP[tfKey] || "5";
 
     const iframe = document.getElementById("tradingview_fyers_iframe");
     if (!iframe) return;
 
-    const newSrc = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=${encodeURIComponent(sym)}&interval=${tf}&hidetoptoolbar=0&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=131722&studies=%5B%22MASimple%40tv-basicstudies%22%2C%22Volume%40tv-basicstudies%22%5D&theme=dark&style=1&timezone=Asia%2FKolkata&locale=in`;
+    const newSrc = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=${encodeURIComponent(sym)}&interval=${tf}&hidetoptoolbar=0&hidesidetoolbar=0&symboledit=1&saveimage=0&toolbarbg=131722&studies=%5B%22MASimple%40tv-basicstudies%22%2C%22Volume%40tv-basicstudies%22%5D&theme=dark&style=1&timezone=Asia%2FKolkata&locale=in`;
     if (iframe.src !== newSrc) {
         iframe.src = newSrc;
     }
@@ -279,18 +279,12 @@ async function selectTimeframe(tf) {
         const btn = document.getElementById(`tf-${t}`);
         if (btn) {
             if (t === tf) {
-                btn.className = "px-1.5 py-0.5 rounded text-[11px] font-bold text-blue-400 bg-blue-500/10 border border-blue-500/30";
+                btn.className = "px-2 py-0.5 rounded text-[11px] font-bold text-blue-400 bg-blue-500/20 border border-blue-500/30 transition";
             } else {
-                btn.className = "px-1.5 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white";
+                btn.className = "px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition";
             }
         }
     });
-
-    const chartTitle = document.getElementById("chart-title-text");
-    if (chartTitle) {
-        const info = INSTRUMENTS_DATA[currentInstrument] || INSTRUMENTS_DATA.NIFTY;
-        chartTitle.textContent = `${info.name.toUpperCase()} • ${tf} • NSE`;
-    }
 
     initTradingViewChart(currentInstrument, tf);
 }
