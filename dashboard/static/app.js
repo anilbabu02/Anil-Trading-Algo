@@ -386,6 +386,50 @@ function initLivePriceTicker() {
     setInterval(fetchOptionSuggestions, 3000);
 }
 
+// Global Drawing Tool Functions & State
+let currentDrawingTool = 'crosshair';
+let userDrawings = [];
+let isDrawingActive = false;
+let drawStartPoint = null;
+let currentDrawingPreview = null;
+let currentBrushPoints = null;
+
+function setDrawingTool(tool) {
+    currentDrawingTool = tool;
+    const canvas = document.getElementById("livePriceChart");
+    if (canvas) {
+        canvas.style.cursor = tool === 'crosshair' ? 'crosshair' : 'crosshair';
+    }
+    const tools = ['crosshair', 'trendline', 'horizontal', 'fib', 'brush', 'ruler'];
+    tools.forEach(t => {
+        const btn = document.getElementById(`tool-${t}`);
+        if (btn) {
+            if (t === tool) {
+                btn.className = "drawing-tool-btn p-1 bg-[#2a2e39] text-blue-400 rounded transition cursor-pointer";
+            } else {
+                btn.className = "drawing-tool-btn p-1 hover:bg-[#2a2e39] hover:text-white text-slate-400 rounded transition cursor-pointer";
+            }
+        }
+    });
+}
+
+function clearChartDrawings() {
+    userDrawings = [];
+    currentDrawingPreview = null;
+    currentBrushPoints = null;
+    if (chartRenderFunc) chartRenderFunc();
+}
+
+function resetChartZoom() {
+    setDrawingTool('crosshair');
+    userDrawings = [];
+    if (chartRenderFunc) chartRenderFunc();
+}
+
+window.setDrawingTool = setDrawingTool;
+window.clearChartDrawings = clearChartDrawings;
+window.resetChartZoom = resetChartZoom;
+
 function initChart() {
     const canvas = document.getElementById("livePriceChart");
     if (!canvas) return;
@@ -916,46 +960,6 @@ function initChart() {
     window.addEventListener("resize", requestRender);
     requestRender();
 }
-
-// Global Drawing Tool Functions
-let currentDrawingTool = 'crosshair';
-let userDrawings = [];
-let isDrawingActive = false;
-let drawStartPoint = null;
-let currentDrawingPreview = null;
-let currentBrushPoints = null;
-
-function setDrawingTool(tool) {
-    currentDrawingTool = tool;
-    const tools = ['crosshair', 'trendline', 'horizontal', 'fib', 'brush', 'ruler'];
-    tools.forEach(t => {
-        const btn = document.getElementById(`tool-${t}`);
-        if (btn) {
-            if (t === tool) {
-                btn.className = "drawing-tool-btn p-1 bg-[#2a2e39] text-blue-400 rounded transition cursor-pointer";
-            } else {
-                btn.className = "drawing-tool-btn p-1 hover:bg-[#2a2e39] hover:text-white text-slate-400 rounded transition cursor-pointer";
-            }
-        }
-    });
-}
-
-function clearChartDrawings() {
-    userDrawings = [];
-    currentDrawingPreview = null;
-    currentBrushPoints = null;
-    if (chartRenderFunc) chartRenderFunc();
-}
-
-function resetChartZoom() {
-    setDrawingTool('crosshair');
-    userDrawings = [];
-    if (chartRenderFunc) chartRenderFunc();
-}
-
-window.setDrawingTool = setDrawingTool;
-window.clearChartDrawings = clearChartDrawings;
-window.resetChartZoom = resetChartZoom;
 
 function initWebSocket() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
