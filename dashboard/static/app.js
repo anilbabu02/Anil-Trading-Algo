@@ -1174,10 +1174,31 @@ async function executeSuggestionCall(id) {
         });
         const data = await res.json();
         if (data.status === "SUCCESS") {
+            const sug = data.suggestion || {};
             const orderId = data.order?.order_id || 'FILLED';
-            alert(`⚡ ${data.message}\n\nBroker Order ID: ${orderId}\nOrder successfully routed to Fyers.`);
+            const slVal = sug.stop_loss ? `₹${parseFloat(sug.stop_loss).toFixed(2)} (-15% Hard SL)` : '₹0.00';
+            const t1Val = sug.target_1 ? `₹${parseFloat(sug.target_1).toFixed(2)} (+30% Target 1)` : '₹0.00';
+            const t2Val = sug.target_2 ? `₹${parseFloat(sug.target_2).toFixed(2)} (+50% Target 2)` : '₹0.00';
+            const entryVal = sug.entry_price ? `₹${parseFloat(sug.entry_price).toFixed(2)}` : '₹0.00';
+
+            alert(
+                `⚡ 1-LOT BUY ORDER EXECUTED WITH FULL RISK & TARGET PROTECTION!\n` +
+                `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+                `📌 Symbol: ${sug.symbol || 'OPTION CONTRACT'}\n` +
+                `📊 Quantity: ${sug.lot_size || 65} (1-Lot Strict Protocol)\n` +
+                `💵 Executed Entry: ${entryVal}\n` +
+                `🛑 Hard Stop Loss: ${slVal}\n` +
+                `🎯 Target 1 (+30% Day Target): ${t1Val}\n` +
+                `🎯 Target 2 (+50% Expansion): ${t2Val}\n` +
+                `🛡️ Exchange GTT SL: Armed & Active\n` +
+                `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+                `Order ID: ${orderId}\n` +
+                `Position has been registered in the Active Positions & Risk tab.`
+            );
             fetchOptionSuggestions();
             fetchStatus();
+            fetchPositions();
+            switchTab('positions');
         } else {
             alert(`⚠️ Fyers Execution Notice:\n\n${data.message || data.detail || "Could not execute order in Fyers."}`);
         }

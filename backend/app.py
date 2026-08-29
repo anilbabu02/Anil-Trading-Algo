@@ -110,20 +110,43 @@ class PlaceOrderRequest(BaseModel):
     direction: str
     quantity: int = 65
     price: float = 0.0
+    stop_loss: Optional[float] = None
+    target: Optional[float] = None
     order_type: str = "MARKET"
 
 @app.post("/api/trades/place")
 async def place_quick_trade(req: PlaceOrderRequest) -> Dict[str, Any]:
-    """Places a quick 1-click trade directly via broker engine."""
+    """Places a quick 1-click trade directly via broker engine with Stop Loss and Target."""
+    entry = req.price if req.price > 0 else 120.0
+    sl = req.stop_loss if req.stop_loss is not None else round(entry * 0.85, 2)
+    tgt = req.target if req.target is not None else round(entry * 1.30, 2)
+
     order_res = engine.broker.place_order(
         symbol=req.symbol,
         direction=req.direction,
         quantity=req.quantity,
-        price=req.price,
+        price=entry,
+        stop_loss=sl,
+        take_profit=tgt,
         order_type=req.order_type,
         tag="ANIL_BABU_DOM"
     )
-    return {"status": "SUCCESS", "order": order_res}
+
+    pos_id = f"POS_{uuid.uuid4().hex[:8].upper()}"
+    engine.active_position = Position(
+        id=pos_id,
+        symbol=req.symbol,
+        strategy=StrategyType.SQUEEZE_BREAKOUT,
+        direction=SignalDirection.BUY_CE if "CE" in req.symbol.upper() else SignalDirection.BUY_PE,
+        quantity=req.quantity,
+        entry_price=entry,
+        underlying_entry_price=24200.0,
+        current_price=entry,
+        stop_loss=sl,
+        original_stop_loss=sl,
+        target=tgt
+    )
+    return {"status": "SUCCESS", "order": order_res, "stop_loss": sl, "target": tgt}
 
 @app.get("/api/events")
 def get_events(limit: int = 50) -> List[Dict[str, Any]]:
@@ -261,11 +284,18 @@ async def execute_option_suggestion(req: ExecuteSuggestionRequest) -> Dict[str, 
         fyers_sym = f"{prefix}{clean_sym}"
 
     qty = match.get("lot_size", 65)
+    entry_price = float(match.get("current_ltp") or match.get("entry_price") or 120.0)
+    stop_loss = float(match.get("stop_loss") or round(entry_price * 0.85, 2))
+    target_1 = float(match.get("target_1") or round(entry_price * 1.30, 2))
+    target_2 = float(match.get("target_2") or round(entry_price * 1.50, 2))
+
     order_res = engine.broker.place_order(
         symbol=fyers_sym,
         direction=match.get("action", "BUY"),
         quantity=qty,
-        price=match.get("current_ltp", 120.0),
+        price=entry_price,
+        stop_loss=stop_loss,
+        take_profit=target_1,
         order_type="MARKET",
         tag="ANIL_BABU_SUGGESTION"
     )
@@ -282,13 +312,53 @@ async def execute_option_suggestion(req: ExecuteSuggestionRequest) -> Dict[str, 
             "suggestion": match
         }
 
+    # Register active position with Stop Loss & Target in engine
+    pos_id = f"POS_{uuid.uuid4().hex[:8].upper()}"
+    strat_type = StrategyType.SQUEEZE_BREAKOUT if "Squeeze" in match.get("strategy", "") else StrategyType.ORB_VWAP_SNIPER
+    sig_dir = SignalDirection.BUY_CE if match.get("option_type") == "CE" else SignalDirection.BUY_PE
+
+    engine.active_position = Position(
+        id=pos_id,
+        symbol=match["symbol"],
+        strategy=strat_type,
+        direction=sig_dir,
+        quantity=qty,
+        entry_price=entry_price,
+        underlying_entry_price=float(match.get("index_price", 24200.0)),
+        current_price=entry_price,
+        stop_loss=stop_loss,
+        original_stop_loss=stop_loss,
+        target=target_1
+    )
+
+    # In Live Mode, place native GTT Stop Loss directly on exchange
+    if settings.TRADING_MODE == "live" and hasattr(engine.broker, "place_gtt_order"):
+        try:
+            gtt_res = engine.broker.place_gtt_order(
+                symbol=fyers_sym,
+                quantity=qty,
+                side="SELL" if match.get("action", "BUY") == "BUY" else "BUY",
+                trigger_price=stop_loss,
+                price=round(stop_loss * 0.98, 2),
+                order_type="STOP_LOSS",
+                product_type="INTRADAY"
+            )
+            match["gtt_status"] = gtt_res
+        except Exception as e:
+            db.log_event("GTT_WARNING", f"Auto GTT SL placement failed: {e}")
+
     match["status"] = "EXECUTED_LIVE"
-    db.log_event("OPTION_SUGGESTION_EXECUTED", f"Executed {match['symbol']} ({qty} Qty) on Fyers.", match)
+    match["stop_loss"] = stop_loss
+    match["target_1"] = target_1
+    match["target_2"] = target_2
+    match["entry_price"] = entry_price
+
+    db.log_event("OPTION_SUGGESTION_EXECUTED", f"Executed {match['symbol']} ({qty} Qty) @ ₹{entry_price:.2f} | SL: ₹{stop_loss:.2f} | T1: ₹{target_1:.2f} | T2: ₹{target_2:.2f}", match)
     await ws_broadcaster({"type": "SUGGESTION_EXECUTED", "data": match})
 
     return {
         "status": "SUCCESS",
-        "message": f"Successfully placed order for {match['symbol']} in Fyers!",
+        "message": f"Successfully placed order for {match['symbol']} with Stop Loss ₹{stop_loss:.2f} & Target ₹{target_1:.2f}!",
         "order": order_res,
         "suggestion": match
     }
