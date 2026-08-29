@@ -149,14 +149,14 @@
                 <div class="flex flex-1 relative min-h-[380px]">
                     <!-- Left Drawing Tools -->
                     <div class="w-9 bg-[#131722] border-r border-[#1e222d] flex flex-col items-center py-1.5 space-y-2 select-none text-slate-400 z-10">
-                        <button class="p-1 hover:bg-[#2a2e39] hover:text-white rounded" title="Crosshair"><i data-lucide="plus" class="w-3.5 h-3.5 text-blue-400"></i></button>
-                        <button class="p-1 hover:bg-[#2a2e39] hover:text-white rounded" title="Trendline"><i data-lucide="trending-up" class="w-3.5 h-3.5"></i></button>
-                        <button class="p-1 hover:bg-[#2a2e39] hover:text-white rounded" title="Fib Retracement"><i data-lucide="git-commit" class="w-3.5 h-3.5"></i></button>
-                        <button class="p-1 hover:bg-[#2a2e39] hover:text-white rounded" title="Brush"><i data-lucide="brush" class="w-3.5 h-3.5"></i></button>
-                        <button class="p-1 hover:bg-[#2a2e39] hover:text-white rounded font-bold text-xs" title="Text">T</button>
-                        <button class="p-1 hover:bg-[#2a2e39] hover:text-white rounded" title="Ruler"><i data-lucide="ruler" class="w-3.5 h-3.5"></i></button>
-                        <button class="p-1 hover:bg-[#2a2e39] hover:text-white rounded" title="Zoom"><i data-lucide="zoom-in" class="w-3.5 h-3.5"></i></button>
-                        <button class="p-1 hover:bg-[#2a2e39] hover:text-rose-400 rounded mt-auto" title="Delete"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                        <button onclick="setDrawingTool('crosshair')" id="tool-crosshair" class="drawing-tool-btn p-1 bg-[#2a2e39] text-blue-400 rounded transition cursor-pointer" title="Pointer: Crosshair & Tooltips"><i data-lucide="plus" class="w-3.5 h-3.5"></i></button>
+                        <button onclick="setDrawingTool('trendline')" id="tool-trendline" class="drawing-tool-btn p-1 hover:bg-[#2a2e39] hover:text-white text-slate-400 rounded transition cursor-pointer" title="Pointer: Trendline (Click & Drag)"><i data-lucide="trending-up" class="w-3.5 h-3.5"></i></button>
+                        <button onclick="setDrawingTool('horizontal')" id="tool-horizontal" class="drawing-tool-btn p-1 hover:bg-[#2a2e39] hover:text-white text-slate-400 rounded transition cursor-pointer" title="Pointer: Horizontal Support/Resistance"><i data-lucide="minus" class="w-3.5 h-3.5"></i></button>
+                        <button onclick="setDrawingTool('fib')" id="tool-fib" class="drawing-tool-btn p-1 hover:bg-[#2a2e39] hover:text-white text-slate-400 rounded transition cursor-pointer" title="Pointer: Fibonacci Retracement"><i data-lucide="git-commit" class="w-3.5 h-3.5"></i></button>
+                        <button onclick="setDrawingTool('brush')" id="tool-brush" class="drawing-tool-btn p-1 hover:bg-[#2a2e39] hover:text-white text-slate-400 rounded transition cursor-pointer" title="Pointer: Freehand Pen Brush"><i data-lucide="brush" class="w-3.5 h-3.5"></i></button>
+                        <button onclick="setDrawingTool('ruler')" id="tool-ruler" class="drawing-tool-btn p-1 hover:bg-[#2a2e39] hover:text-white text-slate-400 rounded transition cursor-pointer" title="Pointer: Price & Range Ruler"><i data-lucide="ruler" class="w-3.5 h-3.5"></i></button>
+                        <button onclick="resetChartZoom()" id="tool-zoom" class="drawing-tool-btn p-1 hover:bg-[#2a2e39] hover:text-white text-slate-400 rounded transition cursor-pointer" title="Reset View / Fit Graph"><i data-lucide="zoom-in" class="w-3.5 h-3.5"></i></button>
+                        <button onclick="clearChartDrawings()" id="tool-delete" class="drawing-tool-btn p-1 hover:bg-rose-900/30 hover:text-rose-400 text-slate-400 rounded mt-auto transition cursor-pointer" title="Clear All Drawings"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
                     </div>
 
                     <!-- Canvas Area -->
