@@ -98,19 +98,21 @@
                     <div class="flex flex-wrap items-center gap-2">
                         <!-- Quick Symbol Pills -->
                         <div class="flex items-center bg-[#1e222d] border border-[#2a2e39] p-0.5 rounded-lg gap-1">
-                            <button onclick="changeChartSymbol('NSE:NIFTY', 'NIFTY 50')" id="chart-btn-nifty" class="chart-sym-btn px-2.5 py-1 rounded text-[11px] font-bold text-cyan-300 bg-cyan-500/20 border border-cyan-500/30 transition cursor-pointer">NIFTY 50</button>
-                            <button onclick="changeChartSymbol('NSE:BANKNIFTY', 'BANK NIFTY')" id="chart-btn-banknifty" class="chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">BANK NIFTY</button>
-                            <button onclick="changeChartSymbol('BSE:SENSEX', 'SENSEX')" id="chart-btn-sensex" class="chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">SENSEX</button>
-                            <button onclick="changeChartSymbol('NSE:FINNIFTY', 'FINNIFTY')" id="chart-btn-finnifty" class="chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">FINNIFTY</button>
-                            <button onclick="changeChartSymbol('BSE:BANKEX', 'BANKEX')" id="chart-btn-bankex" class="chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">BANKEX</button>
+                            <button onclick="changeChartSymbol('NSE:NIFTY', 'NIFTY 50')" data-symbol="NSE:NIFTY" class="chart-sym-btn px-2.5 py-1 rounded text-[11px] font-bold text-cyan-300 bg-cyan-500/20 border border-cyan-500/30 transition cursor-pointer">NIFTY 50</button>
+                            <button onclick="changeChartSymbol('NSE:BANKNIFTY', 'BANK NIFTY')" data-symbol="NSE:BANKNIFTY" class="chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">BANK NIFTY</button>
+                            <button onclick="changeChartSymbol('BSE:SENSEX', 'SENSEX')" data-symbol="BSE:SENSEX" class="chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">SENSEX</button>
+                            <button onclick="changeChartSymbol('NSE:FINNIFTY', 'FINNIFTY')" data-symbol="NSE:FINNIFTY" class="chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">FINNIFTY</button>
+                            <button onclick="changeChartSymbol('BSE:BANKEX', 'BANKEX')" data-symbol="BSE:BANKEX" class="chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">BANKEX</button>
+                            <button onclick="changeChartSymbol('NSE:RELIANCE', 'RELIANCE')" data-symbol="NSE:RELIANCE" class="chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">RELIANCE</button>
+                            <button onclick="changeChartSymbol('NSE:HDFCBANK', 'HDFCBANK')" data-symbol="NSE:HDFCBANK" class="chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer">HDFC</button>
                         </div>
 
-                        <!-- Custom Search Box -->
-                        <div class="flex items-center bg-[#1e222d] border border-[#2a2e39] rounded-lg px-2 py-0.5 group focus-within:border-cyan-500/60 transition">
-                            <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 mr-1.5 shrink-0"></i>
-                            <input id="custom-chart-symbol-input" type="text" placeholder="Search Ticker (e.g. RELIANCE)..." onkeydown="if(event.key==='Enter') searchCustomSymbol(this.value)" class="bg-transparent text-white font-mono text-[11px] focus:outline-none w-36 placeholder:text-slate-500">
-                            <button onclick="searchCustomSymbol(document.getElementById('custom-chart-symbol-input').value)" class="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded transition ml-1 cursor-pointer">Load</button>
-                        </div>
+                        <!-- Custom Search Box Form with Enter Key & Search Button -->
+                        <form onsubmit="event.preventDefault(); searchCustomSymbol(document.getElementById('custom-chart-symbol-input').value);" class="flex items-center bg-[#1e222d] border border-[#2a2e39] rounded-lg px-2 py-0.5 group focus-within:border-cyan-500/60 transition">
+                            <i data-lucide="search" class="w-3.5 h-3.5 text-cyan-400 mr-1.5 shrink-0"></i>
+                            <input id="custom-chart-symbol-input" type="text" placeholder="Search (e.g. TCS, INFY)..." class="bg-transparent text-white font-mono text-[11px] focus:outline-none w-40 placeholder:text-slate-500">
+                            <button type="submit" class="text-[10px] font-bold bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded transition ml-1 cursor-pointer">Search</button>
+                        </form>
 
                         <!-- Timeframe Selector -->
                         <div class="flex items-center bg-[#1e222d] border border-[#2a2e39] p-0.5 rounded-lg gap-0.5">
@@ -129,7 +131,7 @@
 
                 <!-- 2. Main Full-Featured TradingView Pro Live Chart Engine -->
                 <div id="tradingview_chart_container" class="flex-1 relative w-full h-[580px] min-h-[580px] bg-[#131722] overflow-hidden flex flex-col">
-                    <!-- Populated dynamically via TradingView SDK -->
+                    <iframe id="tradingview_active_iframe" src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=NSE%3ANIFTY&interval=1&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=131722&studies=%5B%22MASimple%40tv-basicstudies%22%2C%22Volume%40tv-basicstudies%22%5D&theme=dark&style=1&timezone=Asia%2FKolkata&withdateranges=1&locale=in" class="w-full h-full min-h-[580px] flex-1 border-0" frameborder="0" allowtransparency="true" scrolling="no" allowfullscreen></iframe>
                 </div>
 
                 <!-- 3. Bottom Status Bar -->

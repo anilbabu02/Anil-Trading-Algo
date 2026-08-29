@@ -190,32 +190,50 @@ let candles = generateCandlesFor("NIFTY", "1m");
 let currentTvSymbol = "NSE:NIFTY";
 let currentTvInterval = "1";
 
+const POPULAR_SYMBOLS_MAP = {
+    "NIFTY": "NSE:NIFTY",
+    "NIFTY 50": "NSE:NIFTY",
+    "NIFTY50": "NSE:NIFTY",
+    "BANKNIFTY": "NSE:BANKNIFTY",
+    "BANK NIFTY": "NSE:BANKNIFTY",
+    "NIFTYBANK": "NSE:BANKNIFTY",
+    "SENSEX": "BSE:SENSEX",
+    "BSE SENSEX": "BSE:SENSEX",
+    "FINNIFTY": "NSE:FINNIFTY",
+    "CNXFINANCE": "NSE:FINNIFTY",
+    "BANKEX": "BSE:BANKEX",
+    "RELIANCE": "NSE:RELIANCE",
+    "HDFC": "NSE:HDFCBANK",
+    "HDFCBANK": "NSE:HDFCBANK",
+    "TCS": "NSE:TCS",
+    "INFY": "NSE:INFY",
+    "INFOSYS": "NSE:INFY",
+    "TATAMOTORS": "NSE:TATAMOTORS",
+    "SBIN": "NSE:SBIN",
+    "STATE BANK": "NSE:SBIN",
+    "ICICIBANK": "NSE:ICICIBANK",
+    "AXISBANK": "NSE:AXISBANK",
+    "KOTAKBANK": "NSE:KOTAKBANK",
+    "ITC": "NSE:ITC",
+    "LT": "NSE:LT"
+};
+
 function changeChartSymbol(symbol, name) {
-    currentTvSymbol = symbol;
+    if (!symbol) return;
+    currentTvSymbol = symbol.trim();
     
     // Update quick symbol button styles
-    const btnMap = {
-        "NSE:NIFTY": "nifty",
-        "NSE:BANKNIFTY": "banknifty",
-        "BSE:SENSEX": "sensex",
-        "NSE:FINNIFTY": "finnifty",
-        "BSE:BANKEX": "bankex"
-    };
-
     document.querySelectorAll(".chart-sym-btn").forEach(b => {
-        b.className = "chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer";
+        const btnSym = b.getAttribute("data-symbol");
+        if (btnSym === currentTvSymbol) {
+            b.className = "chart-sym-btn px-2.5 py-1 rounded text-[11px] font-bold text-cyan-300 bg-cyan-500/20 border border-cyan-500/30 transition cursor-pointer";
+        } else {
+            b.className = "chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer";
+        }
     });
 
-    const activeId = btnMap[symbol];
-    if (activeId) {
-        const btn = document.getElementById(`chart-btn-${activeId}`);
-        if (btn) {
-            btn.className = "chart-sym-btn px-2.5 py-1 rounded text-[11px] font-bold text-cyan-300 bg-cyan-500/20 border border-cyan-500/30 transition cursor-pointer";
-        }
-    }
-
     const labelEl = document.getElementById("active-chart-label");
-    if (labelEl) labelEl.textContent = `${symbol} · ${currentTvInterval === 'D' ? '1D' : currentTvInterval + 'm'}`;
+    if (labelEl) labelEl.textContent = `${currentTvSymbol} · ${currentTvInterval === 'D' ? '1D' : currentTvInterval + 'm'}`;
 
     loadTradingViewWidget(currentTvSymbol, currentTvInterval);
 }
@@ -240,60 +258,36 @@ function changeChartInterval(interval) {
 
 function searchCustomSymbol(query) {
     if (!query || !query.trim()) return;
-    let clean = query.trim().toUpperCase();
-    if (!clean.includes(":")) {
-        clean = `NSE:${clean}`;
+    const raw = query.trim().toUpperCase().replace(/\s+/g, ' ');
+    
+    let resolved = POPULAR_SYMBOLS_MAP[raw];
+    if (!resolved) {
+        if (raw.startsWith("NSE:") || raw.startsWith("BSE:") || raw.startsWith("INDEX:") || raw.startsWith("TVC:")) {
+            resolved = raw;
+        } else {
+            resolved = `NSE:${raw}`;
+        }
     }
-    changeChartSymbol(clean, clean);
+    
+    changeChartSymbol(resolved, raw);
 }
 
 function loadTradingViewWidget(symbol = "NSE:NIFTY", interval = "1") {
     const container = document.getElementById("tradingview_chart_container");
     if (!container) return;
-    container.innerHTML = "";
 
-    const chartDiv = document.createElement("div");
-    chartDiv.id = "tv_chart_inner_" + Date.now();
-    chartDiv.style.width = "100%";
-    chartDiv.style.height = "100%";
-    container.appendChild(chartDiv);
+    const cleanSym = symbol.trim();
+    const encodedSym = encodeURIComponent(cleanSym);
+    const widgetUrl = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=${encodedSym}&interval=${interval}&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=131722&studies=%5B%22MASimple%40tv-basicstudies%22%2C%22Volume%40tv-basicstudies%22%5D&theme=dark&style=1&timezone=Asia%2FKolkata&withdateranges=1&locale=in`;
 
-    if (typeof TradingView !== "undefined") {
-        try {
-            new TradingView.widget({
-                "autosize": true,
-                "symbol": symbol,
-                "interval": interval,
-                "timezone": "Asia/Kolkata",
-                "theme": "dark",
-                "style": "1",
-                "locale": "in",
-                "toolbar_bg": "#131722",
-                "enable_publishing": false,
-                "allow_symbol_change": true,
-                "withdateranges": true,
-                "hide_side_toolbar": false,
-                "save_image": true,
-                "studies": [
-                    "MASimple@tv-basicstudies",
-                    "Volume@tv-basicstudies"
-                ],
-                "container_id": chartDiv.id
-            });
-            return;
-        } catch (e) {
-            console.error("TV widget constructor error:", e);
-        }
+    const existingIframe = document.getElementById("tradingview_active_iframe");
+    if (existingIframe) {
+        existingIframe.src = widgetUrl;
+    } else {
+        container.innerHTML = `
+            <iframe id="tradingview_active_iframe" src="${widgetUrl}" class="w-full h-full min-h-[580px] flex-1 border-0" frameborder="0" allowtransparency="true" scrolling="no" allowfullscreen></iframe>
+        `;
     }
-
-    // Direct embed iframe with explicit symbol & interval
-    const iframe = document.createElement("iframe");
-    iframe.src = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=${encodeURIComponent(symbol)}&interval=${interval}&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=131722&studies=%5B%22MASimple%40tv-basicstudies%22%2C%22Volume%40tv-basicstudies%22%5D&theme=dark&style=1&timezone=Asia%2FKolkata&withdateranges=1&locale=in`;
-    iframe.style.width = "100%";
-    iframe.style.height = "100%";
-    iframe.style.border = "0";
-    iframe.setAttribute("allowfullscreen", "true");
-    chartDiv.appendChild(iframe);
 }
 
 function initTradingViewChart(symbolKey = "NSE:NIFTY", tfKey = "1") {
