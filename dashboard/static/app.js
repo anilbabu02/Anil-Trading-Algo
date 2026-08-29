@@ -188,11 +188,11 @@ async function loadRealChartHistory(symbol, tf) {
 
 let candles = generateCandlesFor("NIFTY", "5m");
 const TV_SYMBOL_MAP = {
-    "NIFTY": "NSE:NIFTY",
+    "NIFTY": "NSE:NIFTY50",
     "BANKNIFTY": "NSE:BANKNIFTY",
     "SENSEX": "BSE:SENSEX",
-    "BANKEX": "BSE:BANKEX",
-    "FINNIFTY": "NSE:CNXFINANCE"
+    "FINNIFTY": "NSE:CNXFINANCE",
+    "BANKEX": "BSE:BANKEX"
 };
 
 const TV_TF_MAP = {
@@ -203,14 +203,22 @@ const TV_TF_MAP = {
     "1D": "D"
 };
 
+const INSTRUMENT_PCR_MAP = {
+    "NIFTY": { pcr: "0.59", bias: "Bearish (Call Build)", isBull: false },
+    "BANKNIFTY": { pcr: "0.74", bias: "Bearish Consolidation", isBull: false },
+    "SENSEX": { pcr: "0.82", bias: "Neutral / Consolidation", isBull: true },
+    "FINNIFTY": { pcr: "0.65", bias: "Bearish Pressure", isBull: false },
+    "BANKEX": { pcr: "0.78", bias: "Sideways Drift", isBull: true }
+};
+
 function initTradingViewChart(symbolKey = "NIFTY", tfKey = "5m") {
-    const sym = TV_SYMBOL_MAP[symbolKey] || "NSE:NIFTY";
+    const sym = TV_SYMBOL_MAP[symbolKey] || "NSE:NIFTY50";
     const tf = TV_TF_MAP[tfKey] || "5";
 
     const iframe = document.getElementById("tradingview_fyers_iframe");
     if (!iframe) return;
 
-    const newSrc = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=${encodeURIComponent(sym)}&interval=${tf}&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=131722&studies=%5B%22MASimple%40tv-basicstudies%22%2C%22Volume%40tv-basicstudies%22%5D&theme=dark&style=1&timezone=Asia%2FKolkata&locale=in`;
+    const newSrc = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=${encodeURIComponent(sym)}&interval=${tf}&hidetoptoolbar=0&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=131722&studies=%5B%22MASimple%40tv-basicstudies%22%2C%22Volume%40tv-basicstudies%22%5D&theme=dark&style=1&timezone=Asia%2FKolkata&locale=in`;
     if (iframe.src !== newSrc) {
         iframe.src = newSrc;
     }
@@ -230,8 +238,16 @@ async function onInstrumentSelectChange(symbol) {
     const selectEl = document.getElementById("instrument-select");
     if (selectEl && selectEl.value !== symbol) selectEl.value = symbol;
 
-    const chartTitle = document.getElementById("chart-title-text");
-    if (chartTitle) chartTitle.textContent = `${info.name.toUpperCase()} • ${currentTimeframe} • NSE`;
+    // Update PCR Sentiment Pill linked to top bar
+    const pcrData = INSTRUMENT_PCR_MAP[symbol] || INSTRUMENT_PCR_MAP.NIFTY;
+    const pcrText = document.getElementById("pcr-sentiment-text");
+    const pcrPill = document.getElementById("pcr-sentiment-pill");
+    if (pcrText && pcrPill) {
+        pcrText.textContent = `PCR ${pcrData.pcr} - ${pcrData.bias}`;
+        pcrPill.className = pcrData.isBull 
+            ? "px-2.5 py-1 rounded bg-[#1e222d] border border-[#2a2e39] text-[11px] font-bold text-emerald-400 flex items-center gap-1.5"
+            : "px-2.5 py-1 rounded bg-[#1e222d] border border-[#2a2e39] text-[11px] font-bold text-rose-400 flex items-center gap-1.5";
+    }
 
     const atrEl = document.getElementById("metric-atr");
     const rvolEl = document.getElementById("metric-rvol");
