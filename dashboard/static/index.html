@@ -93,34 +93,19 @@
             <!-- Left: TradingView Graph Window (2 Cols) matching screenshot -->
             <div class="lg:col-span-2 bg-[#131722] border border-[#1e222d] rounded-xl flex flex-col shadow-2xl overflow-hidden">
                 
-                <!-- 1. Unified Chart Control Bar (Connected to Graph) -->
-                <div class="bg-[#131722] border-b border-[#1e222d] px-3 py-2 flex flex-wrap items-center justify-between gap-2 select-none text-xs text-slate-300">
-                    <div class="flex items-center gap-2">
-                        <!-- Symbol Search & Selector Dropdown -->
-                        <div class="flex items-center bg-[#1e222d] hover:bg-[#2a2e39] border border-[#2a2e39] hover:border-cyan-500/50 px-2.5 py-1 rounded-lg transition group">
-                            <i data-lucide="trending-up" class="w-3.5 h-3.5 text-cyan-400 mr-1.5 shrink-0"></i>
-                            <select id="instrument-select" onchange="onInstrumentSelectChange(this.value)" class="bg-[#1e222d] text-white font-bold font-mono text-xs focus:outline-none cursor-pointer border-none outline-none appearance-none pr-3">
-                                <option value="NIFTY" class="bg-[#131722] text-white font-bold py-1">NIFTY 50 (NSE)</option>
-                                <option value="BANKNIFTY" class="bg-[#131722] text-white font-bold py-1">BANK NIFTY (NSE)</option>
-                                <option value="SENSEX" class="bg-[#131722] text-white font-bold py-1">BSE SENSEX</option>
-                                <option value="FINNIFTY" class="bg-[#131722] text-white font-bold py-1">NIFTY FINANCIAL (NSE)</option>
-                                <option value="BANKEX" class="bg-[#131722] text-white font-bold py-1">BSE BANKEX</option>
-                            </select>
-                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 pointer-events-none -ml-1.5 shrink-0"></i>
+                <!-- 1. Terminal Chart Header & Telemetry Bar -->
+                <div class="bg-[#131722] border-b border-[#1e222d] px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 select-none text-xs text-slate-300">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="line-chart" class="w-4 h-4 text-cyan-400"></i>
+                            <span class="font-bold text-white tracking-wide">Fyers & TradingView Institutional Real-Time Stream</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                LIVE NSE/BSE
+                            </span>
                         </div>
 
-                        <div class="h-4 w-px bg-[#2a2e39] mx-0.5"></div>
-
-                        <!-- Dynamic Timeframe Bar -->
-                        <div class="flex items-center bg-[#1e222d]/60 border border-[#2a2e39] p-0.5 rounded-lg gap-0.5">
-                            <button onclick="selectTimeframe('1m')" id="tf-1m" class="px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition">1m</button>
-                            <button onclick="selectTimeframe('5m')" id="tf-5m" class="px-2 py-0.5 rounded text-[11px] font-bold text-blue-400 bg-blue-500/20 border border-blue-500/30 transition">5m</button>
-                            <button onclick="selectTimeframe('15m')" id="tf-15m" class="px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition">15m</button>
-                            <button onclick="selectTimeframe('1h')" id="tf-1h" class="px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition">1h</button>
-                            <button onclick="selectTimeframe('1D')" id="tf-1D" class="px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition">1D</button>
-                        </div>
-
-                        <div class="h-4 w-px bg-[#2a2e39] mx-0.5"></div>
+                        <div class="h-4 w-px bg-[#2a2e39] mx-1"></div>
 
                         <!-- AI Actions Button -->
                         <button onclick="toggleAiActionsDropdown()" class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-gradient-to-r from-purple-900/40 to-blue-900/40 border border-purple-500/40 text-purple-300 hover:text-white text-[11px] font-bold shadow cursor-pointer transition">
@@ -138,16 +123,16 @@
                     </div>
                 </div>
 
-                <!-- 2. Main Official TradingView / Fyers Real-Time Advanced Chart Body -->
-                <div class="flex-1 relative w-full h-[540px] min-h-[540px] bg-[#131722] overflow-hidden flex flex-col">
-                    <iframe id="tradingview_fyers_iframe" src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=NSE%3ANIFTY&interval=5&hidetoptoolbar=0&hidesidetoolbar=0&symboledit=1&saveimage=0&toolbarbg=131722&studies=%5B%22MASimple%40tv-basicstudies%22%2C%22Volume%40tv-basicstudies%22%5D&theme=dark&style=1&timezone=Asia%2FKolkata&locale=in" class="w-full h-full min-h-[540px] flex-1 border-0" frameborder="0" allowtransparency="true" scrolling="no" allowfullscreen></iframe>
+                <!-- 2. Main Full-Featured TradingView Pro Live Chart Engine -->
+                <div class="flex-1 relative w-full h-[580px] min-h-[580px] bg-[#131722] overflow-hidden flex flex-col">
+                    <iframe id="tradingview_fyers_iframe" src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=NSE%3ANIFTY&interval=1&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=131722&studies=%5B%22MASimple%40tv-basicstudies%22%2C%22Volume%40tv-basicstudies%22%5D&theme=dark&style=1&timezone=Asia%2FKolkata&withdateranges=1&locale=in" class="w-full h-full min-h-[580px] flex-1 border-0" frameborder="0" allowtransparency="true" scrolling="no" allowfullscreen></iframe>
                 </div>
 
-                <!-- 3. Bottom Status & Live Exchange Clock Bar -->
+                <!-- 3. Bottom Status Bar -->
                 <div class="bg-[#131722] border-t border-[#1e222d] px-3 py-1.5 flex items-center justify-between text-[11px] text-slate-400 select-none">
                     <div class="flex items-center gap-2 font-mono text-[10px] text-slate-400">
                         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        <span class="text-emerald-400 font-bold">Fyers & TradingView Real-Time Institutional Feed</span>
+                        <span class="text-emerald-400 font-bold">100% Real-Time Candlestick Feed (NSE:NIFTY, BANKNIFTY, SENSEX)</span>
                     </div>
                     <div class="flex items-center gap-3 font-mono text-[10px]">
                         <div id="chart-bottom-clock" class="text-slate-300 font-semibold">15:30:00 IST</div>
