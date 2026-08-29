@@ -186,42 +186,118 @@ async function loadRealChartHistory(symbol, tf) {
     if (chartRenderFunc) chartRenderFunc();
 }
 
-let candles = generateCandlesFor("NIFTY", "5m");
-const TV_SYMBOL_MAP = {
-    "NIFTY": "NSE:NIFTY",
-    "BANKNIFTY": "NSE:BANKNIFTY",
-    "SENSEX": "BSE:SENSEX",
-    "FINNIFTY": "NSE:FINNIFTY",
-    "BANKEX": "BSE:BANKEX"
-};
+let candles = generateCandlesFor("NIFTY", "1m");
+let currentTvSymbol = "NSE:NIFTY";
+let currentTvInterval = "1";
 
-const TV_TF_MAP = {
-    "1m": "1",
-    "5m": "5",
-    "15m": "15",
-    "1h": "60",
-    "1D": "D"
-};
+function changeChartSymbol(symbol, name) {
+    currentTvSymbol = symbol;
+    
+    // Update quick symbol button styles
+    const btnMap = {
+        "NSE:NIFTY": "nifty",
+        "NSE:BANKNIFTY": "banknifty",
+        "BSE:SENSEX": "sensex",
+        "NSE:FINNIFTY": "finnifty",
+        "BSE:BANKEX": "bankex"
+    };
 
-const INSTRUMENT_PCR_MAP = {
-    "NIFTY": { pcr: "0.59", bias: "Bearish (Call Build)", isBull: false },
-    "BANKNIFTY": { pcr: "0.74", bias: "Bearish Consolidation", isBull: false },
-    "SENSEX": { pcr: "0.82", bias: "Neutral / Consolidation", isBull: true },
-    "FINNIFTY": { pcr: "0.65", bias: "Bearish Pressure", isBull: false },
-    "BANKEX": { pcr: "0.78", bias: "Sideways Drift", isBull: true }
-};
+    document.querySelectorAll(".chart-sym-btn").forEach(b => {
+        b.className = "chart-sym-btn px-2.5 py-1 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer";
+    });
 
-function initTradingViewChart(symbolKey = "NIFTY", tfKey = "5m") {
-    const sym = TV_SYMBOL_MAP[symbolKey] || "NSE:NIFTY";
-    const tf = TV_TF_MAP[tfKey] || "5";
-
-    const iframe = document.getElementById("tradingview_fyers_iframe");
-    if (!iframe) return;
-
-    const newSrc = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=${encodeURIComponent(sym)}&interval=${tf}&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=131722&studies=%5B%22MASimple%40tv-basicstudies%22%2C%22Volume%40tv-basicstudies%22%5D&theme=dark&style=1&timezone=Asia%2FKolkata&withdateranges=1&locale=in`;
-    if (iframe.src !== newSrc) {
-        iframe.src = newSrc;
+    const activeId = btnMap[symbol];
+    if (activeId) {
+        const btn = document.getElementById(`chart-btn-${activeId}`);
+        if (btn) {
+            btn.className = "chart-sym-btn px-2.5 py-1 rounded text-[11px] font-bold text-cyan-300 bg-cyan-500/20 border border-cyan-500/30 transition cursor-pointer";
+        }
     }
+
+    const labelEl = document.getElementById("active-chart-label");
+    if (labelEl) labelEl.textContent = `${symbol} · ${currentTvInterval === 'D' ? '1D' : currentTvInterval + 'm'}`;
+
+    loadTradingViewWidget(currentTvSymbol, currentTvInterval);
+}
+
+function changeChartInterval(interval) {
+    currentTvInterval = interval;
+
+    document.querySelectorAll(".chart-tf-btn").forEach(b => {
+        b.className = "chart-tf-btn px-2 py-0.5 rounded text-[11px] font-semibold text-slate-400 hover:text-white transition cursor-pointer";
+    });
+
+    const activeBtn = document.getElementById(`tf-btn-${interval}`);
+    if (activeBtn) {
+        activeBtn.className = "chart-tf-btn px-2 py-0.5 rounded text-[11px] font-bold text-blue-400 bg-blue-500/20 border border-blue-500/30 transition cursor-pointer";
+    }
+
+    const labelEl = document.getElementById("active-chart-label");
+    if (labelEl) labelEl.textContent = `${currentTvSymbol} · ${interval === 'D' ? '1D' : interval + 'm'}`;
+
+    loadTradingViewWidget(currentTvSymbol, currentTvInterval);
+}
+
+function searchCustomSymbol(query) {
+    if (!query || !query.trim()) return;
+    let clean = query.trim().toUpperCase();
+    if (!clean.includes(":")) {
+        clean = `NSE:${clean}`;
+    }
+    changeChartSymbol(clean, clean);
+}
+
+function loadTradingViewWidget(symbol = "NSE:NIFTY", interval = "1") {
+    const container = document.getElementById("tradingview_chart_container");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const chartDiv = document.createElement("div");
+    chartDiv.id = "tv_chart_inner_" + Date.now();
+    chartDiv.style.width = "100%";
+    chartDiv.style.height = "100%";
+    container.appendChild(chartDiv);
+
+    if (typeof TradingView !== "undefined") {
+        try {
+            new TradingView.widget({
+                "autosize": true,
+                "symbol": symbol,
+                "interval": interval,
+                "timezone": "Asia/Kolkata",
+                "theme": "dark",
+                "style": "1",
+                "locale": "in",
+                "toolbar_bg": "#131722",
+                "enable_publishing": false,
+                "allow_symbol_change": true,
+                "withdateranges": true,
+                "hide_side_toolbar": false,
+                "save_image": true,
+                "studies": [
+                    "MASimple@tv-basicstudies",
+                    "Volume@tv-basicstudies"
+                ],
+                "container_id": chartDiv.id
+            });
+            return;
+        } catch (e) {
+            console.error("TV widget constructor error:", e);
+        }
+    }
+
+    // Direct embed iframe with explicit symbol & interval
+    const iframe = document.createElement("iframe");
+    iframe.src = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=${encodeURIComponent(symbol)}&interval=${interval}&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=131722&studies=%5B%22MASimple%40tv-basicstudies%22%2C%22Volume%40tv-basicstudies%22%5D&theme=dark&style=1&timezone=Asia%2FKolkata&withdateranges=1&locale=in`;
+    iframe.style.width = "100%";
+    iframe.style.height = "100%";
+    iframe.style.border = "0";
+    iframe.setAttribute("allowfullscreen", "true");
+    chartDiv.appendChild(iframe);
+}
+
+function initTradingViewChart(symbolKey = "NSE:NIFTY", tfKey = "1") {
+    loadTradingViewWidget(symbolKey, tfKey);
 }
 
 let hoverIndex = -1;
@@ -407,8 +483,8 @@ async function fetchRealFyersQuotes() {
 }
 
 function initLivePriceTicker() {
-    initTradingViewChart(currentInstrument, currentTimeframe);
-    loadRealChartHistory(currentInstrument, currentTimeframe);
+    loadTradingViewWidget("NSE:NIFTY", "1");
+    loadRealChartHistory("NIFTY", "1m");
     fetchRealFyersQuotes();
     fetchOptionSuggestions();
     updateOptionDeskPcrBadge("ALL");
