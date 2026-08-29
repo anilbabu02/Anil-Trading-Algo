@@ -207,35 +207,12 @@ function initTradingViewChart(symbolKey = "NIFTY", tfKey = "5m") {
     const sym = TV_SYMBOL_MAP[symbolKey] || "NSE:NIFTY";
     const tf = TV_TF_MAP[tfKey] || "5";
 
-    const container = document.getElementById("tradingview_fyers_widget");
-    if (!container) return;
-    container.innerHTML = "";
+    const iframe = document.getElementById("tradingview_fyers_iframe");
+    if (!iframe) return;
 
-    try {
-        if (typeof TradingView !== "undefined") {
-            new TradingView.widget({
-                "autosize": true,
-                "symbol": sym,
-                "interval": tf,
-                "timezone": "Asia/Kolkata",
-                "theme": "dark",
-                "style": "1",
-                "locale": "in",
-                "toolbar_bg": "#131722",
-                "enable_publishing": false,
-                "allow_symbol_change": true,
-                "withdateranges": true,
-                "hide_side_toolbar": false,
-                "save_image": false,
-                "container_id": "tradingview_fyers_widget",
-                "studies": [
-                    "MASimple@tv-basicstudies",
-                    "Volume@tv-basicstudies"
-                ]
-            });
-        }
-    } catch (e) {
-        console.error("TradingView widget init error:", e);
+    const newSrc = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_widget&symbol=${encodeURIComponent(sym)}&interval=${tf}&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=131722&studies=%5B%22MASimple%40tv-basicstudies%22%2C%22Volume%40tv-basicstudies%22%5D&theme=dark&style=1&timezone=Asia%2FKolkata&locale=in`;
+    if (iframe.src !== newSrc) {
+        iframe.src = newSrc;
     }
 }
 
