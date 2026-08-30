@@ -26,23 +26,23 @@ def get_weights_ffd(d: float, thres: float = 1e-3, max_width: int = 50) -> np.nd
 
 def frac_diff_ffd(series: pd.DataFrame, d: float = 0.40, thres: float = 1e-3, max_width: int = 50) -> pd.DataFrame:
     """
-    Applies fixed-width fractional differentiation to retain memory while making series stationary.
+    Applies fixed-width fractional differentiation with vectorized 1D convolution
+    to retain memory while making the series stationary.
     """
-    w = get_weights_ffd(d, thres, max_width)
+    w = get_weights_ffd(d, thres, max_width).flatten()
     width = len(w) - 1
     df = {}
     for name in series.columns:
-        s_f = series[[name]].ffill().dropna()
-        res = pd.Series(index=s_f.index, dtype=float)
-        if s_f.shape[0] > width:
-            for i in range(width, s_f.shape[0]):
-                loc0, loc1 = s_f.index[i - width], s_f.index[i]
-                if not np.isfinite(s_f.loc[loc1, name]):
-                    continue
-                res.loc[loc1] = np.dot(w.T, s_f.loc[loc0:loc1])[0, 0]
+        s_f = series[name].ffill().dropna()
+        if len(s_f) > width:
+            vals = s_f.to_numpy(dtype=float)
+            # Vectorized 1D convolution
+            convolved = np.convolve(vals, w, mode='valid')
+            res = pd.Series(index=s_f.index, dtype=float)
+            res.iloc[width:] = convolved
+            df[name] = res
         else:
-            res = s_f[name]
-        df[name] = res
+            df[name] = s_f
     return pd.DataFrame(df)
 
 # =====================================================================
@@ -53,18 +53,28 @@ def frac_diff_ffd(series: pd.DataFrame, d: float = 0.40, thres: float = 1e-3, ma
 def get_cusum_events(raw_series: pd.Series, threshold: float) -> pd.DatetimeIndex:
     """
     Symmetric CUSUM Filter: Detects volatility breakouts when cumulative returns exceed dynamic threshold h.
+    Optimized with fast 1D NumPy iteration.
     """
-    t_events, s_pos, s_neg = [], 0.0, 0.0
     diff = raw_series.diff().dropna()
-    for i in diff.index:
-        s_pos = max(0.0, s_pos + diff.loc[i])
-        s_neg = min(0.0, s_neg + diff.loc[i])
+    if diff.empty:
+        return pd.DatetimeIndex([])
+    
+    diff_vals = diff.to_numpy(dtype=float)
+    diff_idx = diff.index
+    t_events = []
+    s_pos, s_neg = 0.0, 0.0
+    
+    for i in range(len(diff_vals)):
+        v = diff_vals[i]
+        s_pos = max(0.0, s_pos + v)
+        s_neg = min(0.0, s_neg + v)
         if s_neg < -threshold:
             s_neg = 0.0
-            t_events.append(i)
+            t_events.append(diff_idx[i])
         elif s_pos > threshold:
             s_pos = 0.0
-            t_events.append(i)
+            t_events.append(diff_idx[i])
+            
     return pd.DatetimeIndex(t_events)
 
 # =====================================================================

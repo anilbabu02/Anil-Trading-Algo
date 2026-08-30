@@ -75,12 +75,27 @@ async def ws_broadcaster(msg: Dict[str, Any]):
 
 engine.register_ws_listener(ws_broadcaster)
 
-# ----------------- REST ENDPOINTS ----------------- #
+# ----------------- IN-MEMORY TTL CACHE & REST ENDPOINTS ----------------- #
+import time
+_cache_store: Dict[str, Any] = {}
+
+def get_from_cache(key: str, ttl_seconds: float) -> Optional[Any]:
+    entry = _cache_store.get(key)
+    if entry and (time.time() - entry["time"]) < ttl_seconds:
+        return entry["data"]
+    return None
+
+def set_in_cache(key: str, data: Any):
+    _cache_store[key] = {"time": time.time(), "data": data}
 
 @app.get("/api/status")
 def get_status() -> Dict[str, Any]:
+    cached = get_from_cache("system_status", 0.5)
+    if cached:
+        return cached
+
     status = engine.get_system_status()
-    return {
+    res = {
         "status": status.model_dump(mode="json"),
         "regime_info": engine.regime_info,
         "config": {
@@ -93,6 +108,8 @@ def get_status() -> Dict[str, Any]:
             "trailing_trigger_pts": settings.TRAILING_TRIGGER_PTS
         }
     }
+    set_in_cache("system_status", res)
+    return res
 
 @app.get("/api/positions")
 def get_positions() -> Dict[str, Any]:
@@ -154,7 +171,11 @@ def get_events(limit: int = 50) -> List[Dict[str, Any]]:
 
 @app.get("/api/live-quotes")
 def get_live_quotes() -> Dict[str, Any]:
-    """Fetches real live quotes for all indices directly from Fyers API."""
+    """Fetches real live quotes for all indices directly from Fyers API (cached 400ms)."""
+    cached = get_from_cache("live_quotes", 0.4)
+    if cached:
+        return cached
+
     symbols = [
         "NSE:NIFTY50-INDEX",
         "NSE:NIFTYBANK-INDEX",
@@ -188,7 +209,9 @@ def get_live_quotes() -> Dict[str, Any]:
     except Exception as e:
         print("Live quotes error:", e)
 
-    return {"status": "SUCCESS", "is_live": bool(data_map), "quotes": data_map}
+    res = {"status": "SUCCESS", "is_live": bool(data_map), "quotes": data_map}
+    set_in_cache("live_quotes", res)
+    return res
 
 @app.get("/api/market-depth")
 def get_market_depth(symbol: str = "NSE:NIFTY50-INDEX", ltp: Optional[float] = None) -> Dict[str, Any]:

@@ -1,7 +1,27 @@
-// Anil Babu Trades System Dashboard Client Controller
+// Anil Babu Trades System Dashboard Client Controller - High Performance Engine
 
 let priceChart = null;
 let ws = null;
+
+// High-Performance DOM Elements Cache Registry
+const DOM_CACHE = new Map();
+function getCachedElement(id) {
+    if (!DOM_CACHE.has(id)) {
+        DOM_CACHE.set(id, document.getElementById(id));
+    }
+    return DOM_CACHE.get(id);
+}
+
+// Visibility-Aware State Manager
+let isDocumentVisible = !document.hidden;
+document.addEventListener('visibilitychange', () => {
+    isDocumentVisible = (document.visibilityState === 'visible');
+    if (isDocumentVisible) {
+        // Instant sync on window/tab resume
+        fetchRealFyersQuotes();
+        fetchOptionSuggestions();
+    }
+});
 
 // Initialize Lucide Icons & Components on DOM Load
 document.addEventListener("DOMContentLoaded", () => {
@@ -1012,8 +1032,8 @@ async function fetchRealFyersQuotes() {
                 const isPositive = currentChange >= 0;
                 const changeStr = `${isPositive ? '+' : ''}${currentChange.toFixed(2)} (${isPositive ? '+' : ''}${currentChangePct.toFixed(2)}%)`;
 
-                const domSell = document.getElementById("dom-sell-price");
-                const domBuy = document.getElementById("dom-buy-price");
+                const domSell = getCachedElement("dom-sell-price");
+                const domBuy = getCachedElement("dom-buy-price");
                 if (domSell) domSell.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 if (domBuy) domBuy.textContent = currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 
@@ -1026,7 +1046,7 @@ async function fetchRealFyersQuotes() {
                     });
                 }
 
-                const bottomStatus = document.getElementById("chart-bottom-status");
+                const bottomStatus = getCachedElement("chart-bottom-status");
                 if (bottomStatus) {
                     bottomStatus.textContent = `100% Real-Time NSE Stream · ${currentInstrument}: ₹${currentLTP.toLocaleString('en-IN', { minimumFractionDigits: 2 })} (${changeStr})`;
                 }
@@ -1045,9 +1065,18 @@ function initLivePriceTicker() {
     fetchRealFyersQuotes();
     fetchOptionSuggestions();
     updateOptionDeskPcrBadge("ALL");
-    setInterval(fetchRealFyersQuotes, 1500);
-    setInterval(fetchOptionSuggestions, 3000);
-    setInterval(() => updateOptionDeskPcrBadge(currentSuggestionFilter), 3000);
+    
+    // Visibility-Aware Polling Intervals
+    setInterval(() => {
+        if (isDocumentVisible) fetchRealFyersQuotes();
+    }, 1500);
+    
+    setInterval(() => {
+        if (isDocumentVisible) {
+            fetchOptionSuggestions();
+            updateOptionDeskPcrBadge(currentSuggestionFilter);
+        }
+    }, 3000);
 }
 
 function initWebSocket() {
