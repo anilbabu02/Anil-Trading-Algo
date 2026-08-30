@@ -1,21 +1,38 @@
 (() => {
   'use strict';
-  const LWC = window.LightweightCharts;
 
-  // ==========================================================================
-  // 1. CHART
-  // ==========================================================================
-  const root   = document.getElementById('abtChart');
-  const canvas = document.getElementById('abtCanvas');
-  const css    = (name) => getComputedStyle(root).getPropertyValue(name).trim();
+  function initChart() {
+    const LWC = window.LightweightCharts;
+    if (!LWC) {
+      console.warn('[ANIL BABU TRADES] LightweightCharts not loaded yet, retrying in 50ms...');
+      setTimeout(initChart, 50);
+      return;
+    }
 
-  const C = {
-    bg: css('--bg'), text: css('--text'), muted: css('--muted'),
-    border: css('--border'), grid: css('--grid'),
-    up: css('--up'), down: css('--down'), accent: css('--accent'),
-  };
+    // ==========================================================================
+    // 1. CHART
+    // ==========================================================================
+    const root   = document.getElementById('abtChart');
+    const canvas = document.getElementById('abtCanvas');
+    if (!root || !canvas) {
+      console.warn('[ANIL BABU TRADES] Canvas container not ready, retrying in 50ms...');
+      setTimeout(initChart, 50);
+      return;
+    }
+    const css    = (name) => getComputedStyle(root).getPropertyValue(name).trim();
 
-  const chart = LWC.createChart(canvas, {
+    const C = {
+      bg: css('--bg') || '#0e1117', text: css('--text') || '#d5dae3', muted: css('--muted') || '#7d879c',
+      border: css('--border') || '#232a36', grid: css('--grid') || '#1c2230',
+      up: css('--up') || '#26a69a', down: css('--down') || '#ef5350', accent: css('--accent') || '#3b82f6',
+    };
+
+    const initialWidth = canvas.clientWidth || root.clientWidth || 800;
+    const initialHeight = canvas.clientHeight || 480;
+
+    const chart = LWC.createChart(canvas, {
+      width: initialWidth,
+      height: initialHeight,
     layout: {
       background: { type: LWC.ColorType.Solid, color: C.bg },
       textColor: C.muted,
@@ -373,13 +390,20 @@
   // ==========================================================================
   // 9. PUBLIC HANDLE
   // ==========================================================================
-  window.abtChart = {
-    chart, candles, volume, ema20, ema50,
-    load,                       // load(symbol, resolution, label, signalObject)
-    onTick,                     // feed websocket ticks
-    setSignal: (s) => { drawLevels(s); renderSignalStrip(s); },
-    destroy: () => chart.remove(),
-  };
+    window.abtChart = {
+      chart, candles, volume, ema20, ema50,
+      load,                       // load(symbol, resolution, label, signalObject)
+      onTick,                     // feed websocket ticks
+      setSignal: (s) => { drawLevels(s); renderSignalStrip(s); },
+      destroy: () => chart.remove(),
+    };
 
-  refresh();
+    refresh();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initChart);
+  } else {
+    initChart();
+  }
 })();

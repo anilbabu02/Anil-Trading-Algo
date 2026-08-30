@@ -1,9 +1,4 @@
-into your page.
-
-  SWAP IN REAL DATA: see the DATA ADAPTER section near the bottom.
-  Replace fetchCandles() with a call to YOUR backend (not Fyers directly — see notes).
--->
-<script>/*!
+/*!
  * @license
  * TradingView Lightweight Charts™ v5.2.1
  * Copyright (c) 2026 TradingView, Inc.
