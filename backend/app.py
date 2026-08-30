@@ -839,8 +839,15 @@ async def emergency_squareoff() -> Dict[str, Any]:
 
 @app.post("/api/premarket-digest")
 async def trigger_premarket_digest() -> Dict[str, Any]:
-    await telegram_bot.broadcast_macro_premarket_digest()
-    return {"status": "SUCCESS", "message": "08:30 AM Pre-market macro digest broadcasted via @anil_konda_bot."}
+    pm_data = get_pre_market_analysis()
+    res = await telegram_bot.broadcast_macro_premarket_digest(pm_data)
+    success = res[0] if isinstance(res, tuple) else bool(res)
+    detail = res[1] if isinstance(res, tuple) and len(res) > 1 else ("Dispatched to Telegram" if success else "Failed to send")
+    return {
+        "status": "SUCCESS" if success else "FAILED",
+        "message": f"Live 08:30 AM Pre-Market Digest: {detail}",
+        "premarket_analysis": pm_data
+    }
 
 @app.get("/api/telegram/bot-info")
 async def get_telegram_bot_info() -> Dict[str, Any]:

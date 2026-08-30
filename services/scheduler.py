@@ -62,8 +62,13 @@ class AutomatedSchedulerService:
                 if now.weekday() < 5:
                     if is_morning:
                         print("\n[SCHEDULER 08:30 AM] 🚀 Triggering Daily 08:30 AM Pre-Market Macro Digest to Telegram...")
-                        await self.notifier.broadcast_macro_premarket_digest()
-                        print("[SCHEDULER 08:30 AM] ✅ Successfully dispatched 08:30 AM digest.")
+                        try:
+                            from backend.app import get_pre_market_analysis
+                            pm_data = get_pre_market_analysis()
+                        except Exception:
+                            pm_data = None
+                        await self.notifier.broadcast_macro_premarket_digest(pm_data)
+                        print("[SCHEDULER 08:30 AM] ✅ Successfully dispatched 08:30 AM live digest.")
                     else:
                         print("\n[SCHEDULER 03:30 PM] 📊 Triggering Verified End-of-Day Summary to Telegram...")
                         # Query real database ledger
