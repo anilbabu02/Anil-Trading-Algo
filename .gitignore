@@ -36,6 +36,10 @@ htmlcov/
 logs/*.log
 *.log
 
+# Node.js / Capacitor
+node_modules/
+package-lock.json
+
 # Environment variables (keep example, ignore local credentials)
 .env
 !.env.example
