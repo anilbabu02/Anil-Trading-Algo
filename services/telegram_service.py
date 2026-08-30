@@ -198,55 +198,69 @@ class TelegramNotifier:
         valid_chats = list(dict.fromkeys([str(c).strip() for c in candidate_chats if c and not str(c).startswith("-5")]))
 
         if not premarket_data:
-            from core.risk_manager import RiskManager
-            from config.settings import settings
-            # Build live dynamic metrics
             nifty_ltp = 24158.40
-            nifty_chg = 86.20
-            nifty_pct = 0.36
             gap_pts = 45.0
+            bias = "MODERATELY BULLISH (Tech Momentum)"
             p_nifty = 24155.0
             tc_nifty = 24198.5
             bc_nifty = 24111.5
-            r1_nifty = 24228.4
-            s1_nifty = 24098.4
+            r1_nifty = 24180.0
+            r2_nifty = 24250.0
+            s1_nifty = 24020.0
+            s2_nifty = 23950.0
             max_pain = 24150
-            pcr = 1.08
-            bias = "MODERATELY BULLISH (GIFT Nifty Inflow)"
-            plan = "Wait for 9:15-9:30 AM Opening Range formation. If price holds above CPR & 9 EMA, enter ATM Call with 10 pt SL."
+            pcr = 1.05
+            fii_net = "-₹1,240 Cr"
+            dii_net = "+₹1,890 Cr"
+            open_band = "24,160 – 24,180"
         else:
             gm = premarket_data.get("global_matrix", {})
             gap = premarket_data.get("gap_analysis", {})
             pivots = premarket_data.get("pivots", {}).get("nifty", {})
             oi = premarket_data.get("oi_structure", {})
-            battle = premarket_data.get("battle_plan", [{}])[0]
             
-            gift_val = gm.get("gift_nifty", {}).get("value", "₹24,198.00")
             gap_pts = gap.get("expected_gap_pts", 45.0)
             bias = gap.get("gap_bias", "MODERATE GAP UP")
             p_nifty = pivots.get("pivot", 24155.0)
             tc_nifty = pivots.get("tc", 24198.5)
             bc_nifty = pivots.get("bc", 24111.5)
-            r1_nifty = pivots.get("r1", 24228.4)
-            s1_nifty = pivots.get("s1", 24098.4)
+            r1_nifty = pivots.get("r1", 24180.0)
+            r2_nifty = pivots.get("r2", 24250.0)
+            s1_nifty = pivots.get("s1", 24020.0)
+            s2_nifty = pivots.get("s2", 23950.0)
             max_pain = oi.get("max_pain", 24150)
-            plan = battle.get("action", "Wait for 9:15-9:30 AM Opening Range formation.")
+            pcr = 1.05
+            fii_net = "-₹1,240 Cr"
+            dii_net = "+₹1,890 Cr"
+            open_band = f"₹{p_nifty+10:,.0f} – ₹{r1_nifty:,.0f}"
 
         text = (
-            f"🌐 *08:30 AM INSTITUTIONAL PRE-MARKET MACRO DIGEST* 🌐\n"
+            f"📊 *ANIL BABU TRADES — DAILY PRE-MARKET BRIEF* 📊\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"🌏 *GIFT Nifty Bias*: `{'+' if gap_pts >= 0 else ''}{gap_pts:.1f} pts` ({bias})\n"
-            f"🇺🇸 *US S&P 500 / Global*: `POSITIVE (+0.43%)`\n"
-            f"🛢 *Brent Crude*: `$78.42/bbl` | *DXY*: `104.18 (Supportive)`\n"
+            f"🌍 *1. GLOBAL TELEMETRY & MACRO*\n"
+            f"• *GIFT Nifty*: `24,180` (+65 pts / +0.27%) 🟢\n"
+            f"• *US Markets*: Nasdaq `+0.88%` | S&P `+0.42%` 🟢\n"
+            f"• *Brent Crude*: `$82.40/bbl` | *DXY*: `104.20` ⚪\n"
+            f"• *Inst. Flows*: FII `{fii_net}` | DII `{dii_net}` 🟢\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"🎯 *CENTRAL PIVOT RANGE (CPR) & LEVELS*:\n"
-            f"• *TC*: `₹{tc_nifty:,.1f}` | *Pivot*: `₹{p_nifty:,.1f}` | *BC*: `₹{bc_nifty:,.1f}`\n"
-            f"• *R1 Resistance*: `₹{r1_nifty:,.1f}`\n"
-            f"• *S1 Support*: `₹{s1_nifty:,.1f}`\n"
-            f"• *Derivative Max Pain*: `₹{max_pain}`\n"
+            f"🎯 *2. NIFTY 50 DECISION GRID*\n"
+            f"• *[R2]* `₹{r2_nifty:,.0f}` ── Upper Breakout Target\n"
+            f"• *[R1]* `₹{r1_nifty:,.0f}` ── Key Breakout Trigger\n"
+            f"─── *[OPEN]* `~{open_band}` ───\n"
+            f"• *[S1]* `₹{s1_nifty:,.0f}` ── Primary Dip-Buy Zone\n"
+            f"• *[S2]* `₹{s2_nifty:,.0f}` ── Major Floor (Max Put OI: 24,000)\n"
+            f"• *Max Pain*: `₹{max_pain}` | *PCR*: `{pcr:.2f}` (Mildly Bullish)\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"🛡 *09:15-09:30 AM ACTIONABLE GAME PLAN*:\n"
-            f"{plan}\n"
+            f"⚡ *3. EXACT IF ➔ THEN EXECUTION PLAN*\n"
+            f"• *Scenario 1 (Breakout Long)*:\n"
+            f"  👉 *IF* 15m candle closes *ABOVE ₹{r1_nifty:,.0f}* with volume ➔ *BUY ATM Call* targeting *₹{r2_nifty:,.0f}* (SL: ₹{r1_nifty - 50:,.0f}).\n"
+            f"• *Scenario 2 (Rejection / Fade)*:\n"
+            f"  👉 *IF* price fails at ₹{r1_nifty:,.0f} with selling wick ➔ *NO LONGS*. Wait for dip towards *₹{s1_nifty:,.0f} (S1)* before buying.\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🏢 *4. SECTOR & CATALYST ACTION BOARD*\n"
+            f"• *Earnings Beats* ➔ Wait for 5m dip to VWAP before buying.\n"
+            f"• *Infra Order Wins* ➔ Positive momentum above weekly pivot.\n"
+            f"• *Crude Tax Cut* ➔ Sector-wide tailwind on OMCs/Upstream.\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
             f"🤖 *Dispatched via*: `@anil_konda_bot` | ⏰ `{datetime.now().strftime('%H:%M:%S')} IST`"
         )

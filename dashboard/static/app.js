@@ -2228,12 +2228,20 @@ async function loadPreMarketAnalysis() {
 
         const bpContainer = document.getElementById('pm-battle-plan-container');
         if (bpContainer && data.battle_plan) {
-            bpContainer.innerHTML = data.battle_plan.map(bp => `
-                <div class="bg-slate-900/90 border border-slate-800 p-2.5 rounded-lg space-y-1">
-                    <span class="text-[10px] font-bold text-cyan-400 uppercase tracking-wider block">${bp.scenario}</span>
-                    <p class="text-[11px] text-slate-300 leading-relaxed">${bp.action}</p>
-                </div>
-            `).join('');
+            bpContainer.innerHTML = data.battle_plan.map(bp => {
+                const isBull = bp.scenario.toLowerCase().includes('gap up') || bp.scenario.toLowerCase().includes('breakout');
+                const isBear = bp.scenario.toLowerCase().includes('gap down') || bp.scenario.toLowerCase().includes('rejection');
+                const badgeColor = isBull ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : (isBear ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' : 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30');
+                return `
+                    <div class="bg-slate-900/90 border border-slate-800 p-2.5 rounded-lg space-y-1 hover:border-slate-700 transition">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-bold text-white uppercase tracking-wider">${bp.scenario}</span>
+                            <span class="px-1.5 py-0.2 rounded text-[9px] font-bold border ${badgeColor}">EXACT TRIGGER</span>
+                        </div>
+                        <p class="text-[11px] text-slate-300 leading-relaxed">${bp.action}</p>
+                    </div>
+                `;
+            }).join('');
         }
     } catch (e) {
         console.error("Load Pre-Market Analysis Error:", e);
