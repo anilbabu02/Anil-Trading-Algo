@@ -953,23 +953,34 @@ window.onInstrumentSelectChange = onInstrumentSelectChange;
 window.selectInstrument = selectInstrument;
 window.selectTimeframe = selectTimeframe;
 
-function updateFyersLiveHeaderBadge(isLive) {
+let lastFyersFundsAmount = null;
+
+function updateFyersLiveHeaderBadge(isLive, amount) {
     const btn = document.getElementById("connect-fyers-btn");
     if (!btn) return;
+    
+    if (amount !== undefined && amount !== null && amount > 0) {
+        lastFyersFundsAmount = amount;
+    }
+    
     if (isLive) {
-        btn.className = "flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-bold transition cursor-pointer shadow-sm shadow-emerald-500/10";
+        const displayAmt = (lastFyersFundsAmount !== null && lastFyersFundsAmount > 0)
+            ? `₹${Number(lastFyersFundsAmount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            : "CONNECTED";
+            
+        btn.className = "flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-bold transition cursor-pointer shadow-sm shadow-emerald-500/10 whitespace-nowrap";
         btn.innerHTML = `
             <span class="relative flex h-2 w-2">
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            <span>Fyers Live Connected</span>
+            <span>FYERS LIVE: ${displayAmt}</span>
         `;
     } else {
-        btn.className = "flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 border border-blue-500/30 rounded-lg text-xs font-semibold transition cursor-pointer";
+        btn.className = "flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 border border-blue-500/30 rounded-lg text-xs font-semibold transition cursor-pointer whitespace-nowrap";
         btn.innerHTML = `
-            <span>⚡</span>
-            <span>Connect Fyers</span>
+            <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+            <span>⚡ Connect Fyers</span>
         `;
     }
 }
@@ -2226,10 +2237,10 @@ async function checkFyersAccountStatus() {
         const dot = document.getElementById("fyers-modal-dot");
 
         if (data.is_connected && data.profile && data.profile.name) {
-            updateFyersLiveHeaderBadge(true);
             const name = data.profile.name;
             const fyId = data.profile.fy_id || "FAK28459";
             const cap = data.funds?.available_capital || 13376.15;
+            updateFyersLiveHeaderBadge(true, cap);
             if (statusText) statusText.innerHTML = `🟢 LIVE BROKER CONNECTED`;
             if (statusText) statusText.className = "font-bold text-emerald-400 block";
             if (userInfo) userInfo.textContent = `${name} (${fyId}) • Available: ₹${cap.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
