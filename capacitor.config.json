@@ -1,0 +1,13 @@
+{
+  "appId": "com.anilbabu.trades",
+  "appName": "Anil Beu Trades",
+  "webDir": "dashboard/static",
+  "server": {
+    "url": "https://slope-closing-courage-pharmacology.trycloudflare.com",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#020617"
+  }
+}
