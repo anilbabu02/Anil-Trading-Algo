@@ -429,8 +429,9 @@
                 </div>
             </div>
 
-            <!-- Tab 6: NSE Algo AI Trading Copilot -->
-            <div id="tab-ai-chat" class="hidden p-4 space-y-3">
+            <!-- Tab 6: NSE Algo AI Trading Copilot (Pre-Market, Current-Market & Interactive Chat) -->
+            <div id="tab-ai-chat" class="hidden p-4 space-y-4">
+                <!-- Header Banner & Sub-Tab Switcher -->
                 <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3">
                     <div class="flex items-center gap-2.5">
                         <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-base">
@@ -441,36 +442,196 @@
                                 <h3 class="font-bold text-xs text-white">NSE Quantitative AI Trading Copilot</h3>
                                 <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">REAL-TIME FYERS / NSE</span>
                             </div>
-                            <p class="text-[11px] text-slate-400">Natural language market queries, PCR support/resistance analysis & 1-click execution.</p>
+                            <p class="text-[11px] text-slate-400">Institutional Pre-Market Analytics, Live Market Microstructure & Interactive Quant Bot.</p>
                         </div>
                     </div>
+                    <!-- Internal Sub-Tab Switcher -->
+                    <div class="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800 shrink-0">
+                        <button onclick="switchAiCopilotSubTab('pre-market')" id="subtab-btn-pre-market" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 transition cursor-pointer flex items-center gap-1.5">
+                            <span>🌅</span>
+                            <span>Pre-Market Analysis</span>
+                        </button>
+                        <button onclick="switchAiCopilotSubTab('current-market')" id="subtab-btn-current-market" class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span>Current Market Analysis</span>
+                        </button>
+                        <button onclick="switchAiCopilotSubTab('chat')" id="subtab-btn-chat" class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer flex items-center gap-1.5">
+                            <i data-lucide="message-square" class="w-3 h-3 text-cyan-400"></i>
+                            <span>Interactive Chat</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SUB-TAB 1: Pre-Market Analysis (08:30 AM - 09:15 AM IST) -->
+                <div id="ai-subtab-pre-market" class="space-y-4">
+                    <!-- Global Macro Matrix & Gap Forecast Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3" id="premarket-global-cards">
+                        <!-- Populated by JS -->
+                        <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800/90 flex flex-col justify-between">
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold">GIFT NIFTY SENSE</span>
+                            <div class="text-sm font-black text-emerald-400" id="pm-gift-nifty">Loading...</div>
+                            <span class="text-[9px] text-slate-500">Global Sentiment Matrix</span>
+                        </div>
+                        <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800/90 flex flex-col justify-between">
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold">OPENING GAP FORECAST</span>
+                            <div class="text-sm font-black text-cyan-400" id="pm-gap-forecast">Loading...</div>
+                            <span class="text-[9px] text-slate-500">15-Min Buffer Filter Active</span>
+                        </div>
+                        <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800/90 flex flex-col justify-between">
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold">INDIA VIX RISK REGIME</span>
+                            <div class="text-sm font-black text-emerald-400" id="pm-vix-status">Loading...</div>
+                            <span class="text-[9px] text-slate-500">Option Buyer Favorable</span>
+                        </div>
+                    </div>
+
+                    <!-- Pre-Market Central Pivot Range (CPR) & Key Levels Grid -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <!-- Left: CPR & Institutional Pivots -->
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800/90 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                                    <i data-lucide="target" class="w-3.5 h-3.5 text-cyan-400"></i>
+                                    <span>NIFTY 50 Central Pivot Range (CPR) & Key Levels</span>
+                                </h4>
+                                <span id="pm-cpr-type" class="px-2 py-0.5 rounded text-[9px] font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">CPR CALC</span>
+                            </div>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center" id="pm-pivots-grid">
+                                <div class="bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+                                    <span class="text-[9px] text-slate-400 block font-semibold">R1 RESISTANCE</span>
+                                    <span id="pm-r1" class="text-xs font-bold text-rose-400">--</span>
+                                </div>
+                                <div class="bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+                                    <span class="text-[9px] text-slate-400 block font-semibold">TC (TOP CPR)</span>
+                                    <span id="pm-tc" class="text-xs font-bold text-cyan-300">--</span>
+                                </div>
+                                <div class="bg-slate-900/90 p-2 rounded-lg border border-cyan-500/40 bg-cyan-500/5">
+                                    <span class="text-[9px] text-cyan-400 block font-semibold">CENTRAL PIVOT</span>
+                                    <span id="pm-pivot" class="text-xs font-black text-cyan-300">--</span>
+                                </div>
+                                <div class="bg-slate-900/90 p-2 rounded-lg border border-slate-800">
+                                    <span class="text-[9px] text-slate-400 block font-semibold">S1 SUPPORT</span>
+                                    <span id="pm-s1" class="text-xs font-bold text-emerald-400">--</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-800/80">
+                                <span>Previous Day High (PDH): <strong id="pm-pdh" class="text-slate-200">--</strong></span>
+                                <span>Previous Day Low (PDL): <strong id="pm-pdl" class="text-slate-200">--</strong></span>
+                                <span>Max Pain Strike: <strong id="pm-max-pain" class="text-amber-400">--</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- Right: Morning Battle Plan & Scenario Actions -->
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800/90 space-y-2.5">
+                            <h4 class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                                <i data-lucide="shield" class="w-3.5 h-3.5 text-emerald-400"></i>
+                                <span>Quantitative Morning Battle Plan (Game-Theory Scenarios)</span>
+                            </h4>
+                            <div id="pm-battle-plan-container" class="space-y-2 text-xs">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUB-TAB 2: Current Market Analysis (09:15 AM - 03:30 PM Real-Time) -->
+                <div id="ai-subtab-current-market" class="hidden space-y-4">
+                    <!-- Top Telemetry Row: Live Regime, AI Verdict, Order Flow -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <!-- AI Conviction & Verdict -->
+                        <div class="bg-slate-950 p-4 rounded-xl border border-cyan-500/30 bg-cyan-500/5 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">AI DIRECTIONAL VERDICT</span>
+                                <span id="cm-conviction-badge" class="px-2 py-0.5 rounded text-[10px] font-black bg-cyan-500/20 text-cyan-300">85% CONVICTION</span>
+                            </div>
+                            <div id="cm-verdict-title" class="text-sm font-black text-white">ANALYZING LIVE STREAM...</div>
+                            <p id="cm-verdict-action" class="text-[11px] text-slate-300 leading-tight">Waiting for next tick...</p>
+                        </div>
+
+                        <!-- Order Flow & Microstructure Dominance -->
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800/90 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">ORDER FLOW DOMINANCE</span>
+                                <span id="cm-flow-inflow" class="text-[10px] font-mono text-emerald-400 font-bold">+12% Inflow</span>
+                            </div>
+                            <!-- Dominance Progress Bar -->
+                            <div class="w-full bg-rose-600/40 rounded-full h-3 flex overflow-hidden">
+                                <div id="cm-buyer-bar" class="bg-emerald-500 h-3 transition-all duration-500" style="width: 65%;"></div>
+                            </div>
+                            <div class="flex items-center justify-between text-[10px] font-mono">
+                                <span id="cm-buyer-pct" class="text-emerald-400 font-bold">Buyers: 65%</span>
+                                <span id="cm-seller-pct" class="text-rose-400 font-bold">Sellers: 35%</span>
+                            </div>
+                        </div>
+
+                        <!-- Options Chain Greeks & Telemetry -->
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800/90 space-y-1.5 text-xs">
+                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">OPTIONS GREEKS & VOLATILITY</span>
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span class="text-slate-400">Put-Call Ratio (PCR):</span>
+                                <span id="cm-pcr-val" class="font-bold text-emerald-400">1.08 (Bullish)</span>
+                            </div>
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span class="text-slate-400">ATM Implied Volatility:</span>
+                                <span id="cm-iv-val" class="font-bold text-slate-200">12.8%</span>
+                            </div>
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span class="text-slate-400">VWAP Distance:</span>
+                                <span id="cm-vwap-dist" class="font-bold text-cyan-400">+18.4 pts Above</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recommended Live Scalp Trade Card with 1-Click Execution -->
+                    <div id="cm-scalp-card" class="bg-slate-950 p-4 rounded-xl border border-slate-800/90 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">TOP QUANT SETUP</span>
+                                <span id="cm-scalp-symbol" class="text-xs font-bold text-white font-mono">NSE:NIFTY24AUG24200CE</span>
+                            </div>
+                            <p id="cm-scalp-rationale" class="text-[11px] text-slate-400">Confluence: 15m ORB Breakout + Positive Order Flow Inflow + Low IV Squeeze.</p>
+                        </div>
+                        <div class="flex items-center gap-3 shrink-0">
+                            <div class="text-right">
+                                <span class="text-[9px] text-slate-400 block">ENTRY LTP / SL</span>
+                                <span id="cm-scalp-prices" class="text-xs font-mono font-bold text-emerald-400">₹142.50 | SL: ₹121.00</span>
+                            </div>
+                            <button onclick="executeTopCopilotTrade()" id="cm-execute-trade-btn" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shadow-lg shadow-emerald-600/20 transition cursor-pointer flex items-center gap-1.5 active:scale-95">
+                                <span>⚡ 1-Click Fyers Order</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUB-TAB 3: Interactive Copilot Chat -->
+                <div id="ai-subtab-chat" class="hidden space-y-3">
+                    <!-- Quick Prompt Pills -->
                     <div class="flex flex-wrap items-center gap-1.5">
                         <button onclick="sendQuickChatMessage('Analyze NIFTY 50 intraday bias & PCR')" class="px-2.5 py-1 rounded bg-slate-900 hover:bg-slate-800 text-[10px] font-medium text-cyan-300 border border-cyan-500/30 transition cursor-pointer">📊 NIFTY 50 Analysis</button>
                         <button onclick="sendQuickChatMessage('Scan high probability option scalp setups')" class="px-2.5 py-1 rounded bg-slate-900 hover:bg-slate-800 text-[10px] font-medium text-emerald-300 border border-emerald-500/30 transition cursor-pointer">🎯 Scan Scalps</button>
                         <button onclick="sendQuickChatMessage('Analyze Bank Nifty PCR and trend')" class="px-2.5 py-1 rounded bg-slate-900 hover:bg-slate-800 text-[10px] font-medium text-amber-300 border border-amber-500/30 transition cursor-pointer">🏦 Bank Nifty PCR</button>
                         <button onclick="sendQuickChatMessage('Check Fyers margin and balance')" class="px-2.5 py-1 rounded bg-slate-900 hover:bg-slate-800 text-[10px] font-medium text-teal-300 border border-teal-500/30 transition cursor-pointer">💼 Fyers Margin</button>
                     </div>
-                </div>
 
-                <!-- Chat Message Feed -->
-                <div id="ai-chat-messages" class="h-72 overflow-y-auto space-y-3 p-4 bg-slate-950/80 rounded-xl border border-slate-800 font-sans text-xs">
-                    <div class="flex items-start gap-2.5">
-                        <div class="w-7 h-7 rounded-full bg-cyan-600/30 text-cyan-400 flex items-center justify-center text-xs shrink-0 font-bold">🤖</div>
-                        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 max-w-2xl text-slate-200 space-y-1.5 shadow-md">
-                            <p class="font-semibold text-cyan-400 text-[11px]">NSE Quantitative AI Copilot</p>
-                            <p class="leading-relaxed">Namaste Anil Babu! I am synchronized with your live Fyers terminal and real-time NSE options chain. Ask me anything about NIFTY / BANK NIFTY PCR, support pivots, scalp setups, or account metrics.</p>
+                    <!-- Chat Message Feed -->
+                    <div id="ai-chat-messages" class="h-64 overflow-y-auto space-y-3 p-4 bg-slate-950/80 rounded-xl border border-slate-800 font-sans text-xs">
+                        <div class="flex items-start gap-2.5">
+                            <div class="w-7 h-7 rounded-full bg-cyan-600/30 text-cyan-400 flex items-center justify-center text-xs shrink-0 font-bold">🤖</div>
+                            <div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 max-w-2xl text-slate-200 space-y-1.5 shadow-md">
+                                <p class="font-semibold text-cyan-400 text-[11px]">NSE Quantitative AI Copilot</p>
+                                <p class="leading-relaxed">Namaste Anil Babu! I am synchronized with your live Fyers terminal and real-time NSE options chain. Ask me anything about NIFTY / BANK NIFTY PCR, support pivots, scalp setups, or account metrics.</p>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Chat Input Box -->
-                <form onsubmit="event.preventDefault(); submitUserChatMessage();" class="flex items-center gap-2">
-                    <input id="ai-chat-input" type="text" placeholder="Ask NSE Quant AI (e.g. 'Analyze NIFTY PCR', 'Scan Bank Nifty calls', 'Check margin')..." class="flex-1 bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none transition">
-                    <button type="submit" class="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-cyan-600/20 transition cursor-pointer flex items-center gap-1.5 active:scale-95">
-                        <span>Send</span>
-                        <i data-lucide="send" class="w-3.5 h-3.5"></i>
-                    </button>
-                </form>
+                    <!-- Chat Input Box -->
+                    <form onsubmit="event.preventDefault(); submitUserChatMessage();" class="flex items-center gap-2">
+                        <input id="ai-chat-input" type="text" placeholder="Ask NSE Quant AI (e.g. 'Analyze NIFTY PCR', 'Scan Bank Nifty calls', 'Check margin')..." class="flex-1 bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-slate-500 focus:outline-none transition">
+                        <button type="submit" class="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-cyan-600/20 transition cursor-pointer flex items-center gap-1.5 active:scale-95">
+                            <span>Send</span>
+                            <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
 
