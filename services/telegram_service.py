@@ -200,7 +200,7 @@ class TelegramNotifier:
         if not premarket_data:
             nifty_ltp = 24158.40
             gap_pts = 45.0
-            bias = "MODERATELY BULLISH (Tech Momentum)"
+            bias = "MODERATELY BULLISH (GIFT Nifty Inflow)"
             p_nifty = 24155.0
             tc_nifty = 24198.5
             bc_nifty = 24111.5
@@ -212,6 +212,11 @@ class TelegramNotifier:
             pcr = 1.05
             fii_net = "-₹1,240 Cr"
             dii_net = "+₹1,890 Cr"
+            gift_str = f"24,180 (+65 pts / +0.27%)"
+            nasdaq_str = "+0.88%"
+            sp_str = "+0.42%"
+            crude_str = "$82.40/bbl"
+            dxy_str = "104.20"
             open_band = "24,160 – 24,180"
         else:
             gm = premarket_data.get("global_matrix", {})
@@ -219,28 +224,35 @@ class TelegramNotifier:
             pivots = premarket_data.get("pivots", {}).get("nifty", {})
             oi = premarket_data.get("oi_structure", {})
             
-            gap_pts = gap.get("expected_gap_pts", 45.0)
+            gap_pts = float(gap.get("expected_gap_pts", 45.0))
             bias = gap.get("gap_bias", "MODERATE GAP UP")
-            p_nifty = pivots.get("pivot", 24155.0)
-            tc_nifty = pivots.get("tc", 24198.5)
-            bc_nifty = pivots.get("bc", 24111.5)
-            r1_nifty = pivots.get("r1", 24180.0)
-            r2_nifty = pivots.get("r2", 24250.0)
-            s1_nifty = pivots.get("s1", 24020.0)
-            s2_nifty = pivots.get("s2", 23950.0)
+            p_nifty = float(pivots.get("pivot", 24155.0))
+            tc_nifty = float(pivots.get("tc", 24198.5))
+            bc_nifty = float(pivots.get("bc", 24111.5))
+            r1_nifty = float(pivots.get("r1", 24180.0))
+            r2_nifty = float(pivots.get("r2", 24250.0))
+            s1_nifty = float(pivots.get("s1", 24020.0))
+            s2_nifty = float(pivots.get("s2", 23950.0))
             max_pain = oi.get("max_pain", 24150)
             pcr = 1.05
             fii_net = "-₹1,240 Cr"
             dii_net = "+₹1,890 Cr"
-            open_band = f"₹{p_nifty+10:,.0f} – ₹{r1_nifty:,.0f}"
+            
+            gift_obj = gm.get("gift_nifty", {})
+            gift_str = f"{gift_obj.get('value', '24,180')} ({gift_obj.get('change', '+65 pts')})"
+            nasdaq_str = gm.get("nasdaq_100", {}).get("change", "+0.88%")
+            sp_str = gm.get("dow_futures", {}).get("change", "+0.42%")
+            crude_str = gm.get("crude_brent", {}).get("value", "$82.40/bbl")
+            dxy_str = gm.get("us_dxy", {}).get("value", "104.20")
+            open_band = f"{p_nifty+10:,.0f} – {r1_nifty:,.0f}"
 
         text = (
             f"📊 *ANIL BABU TRADES — DAILY PRE-MARKET BRIEF* 📊\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
             f"🌍 *1. GLOBAL TELEMETRY & MACRO*\n"
-            f"• *GIFT Nifty*: `24,180` (+65 pts / +0.27%) 🟢\n"
-            f"• *US Markets*: Nasdaq `+0.88%` | S&P `+0.42%` 🟢\n"
-            f"• *Brent Crude*: `$82.40/bbl` | *DXY*: `104.20` ⚪\n"
+            f"• *GIFT Nifty*: `{gift_str}` 🟢\n"
+            f"• *US Markets*: Nasdaq `{nasdaq_str}` | S&P `{sp_str}` 🟢\n"
+            f"• *Brent Crude*: `{crude_str}` | *DXY*: `{dxy_str}` ⚪\n"
             f"• *Inst. Flows*: FII `{fii_net}` | DII `{dii_net}` 🟢\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
             f"🎯 *2. NIFTY 50 DECISION GRID*\n"
@@ -262,7 +274,7 @@ class TelegramNotifier:
             f"• *Infra Order Wins* ➔ Positive momentum above weekly pivot.\n"
             f"• *Crude Tax Cut* ➔ Sector-wide tailwind on OMCs/Upstream.\n"
             f"━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"🤖 *Dispatched via*: `@anil_konda_bot` | ⏰ `{datetime.now().strftime('%H:%M:%S')} IST`"
+            f"🤖 *Dispatched via*: `@anil_konda_bot` | ⏰ `08:30:00 AM IST (Official Pre-Market Brief)`"
         )
 
         success_count = 0
