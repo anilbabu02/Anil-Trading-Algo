@@ -1085,19 +1085,20 @@ function initLivePriceTicker() {
     loadCurrentMarketAnalysis();
     loadPreMarketAnalysis();
     
-    // Visibility-Aware Polling Intervals
+    // High-Frequency 1-Second Continuous Live Exchange Stream
     setInterval(() => {
-        if (isDocumentVisible) fetchRealFyersQuotes();
-    }, 1500);
+        if (isDocumentVisible) {
+            fetchRealFyersQuotes();
+            fetchOptionSuggestions();
+        }
+    }, 1000);
     
     setInterval(() => {
         if (isDocumentVisible) {
-            fetchOptionSuggestions();
             updateOptionDeskPcrBadge(currentSuggestionFilter);
             loadCurrentMarketAnalysis();
-            loadPreMarketAnalysis();
         }
-    }, 3000);
+    }, 1500);
 }
 
 function initWebSocket() {
@@ -1149,7 +1150,7 @@ function handleWsMessage(msg) {
 // ----------------- OPTION SUGGESTION CALLS ----------------- //
 
 async function fetchOptionSuggestions(showFeedback = false) {
-    const refreshBtnIcon = document.querySelector('button[onclick*="fetchOptionSuggestions"] i');
+    const refreshBtnIcon = showFeedback ? document.querySelector('button[onclick*="fetchOptionSuggestions"] i') : null;
     if (refreshBtnIcon) refreshBtnIcon.classList.add('animate-spin');
 
     try {
