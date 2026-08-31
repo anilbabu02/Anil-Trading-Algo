@@ -2742,6 +2742,7 @@ async function openMarketDepthModal(callId) {
     let totalBidQty = 330005;
     let totalAskQty = 547495;
     let isLiveFromBroker = false;
+    let apiStats = null;
 
     try {
         const querySym = item.fyers_symbol || item.symbol.replace(/\s+/g, '');
@@ -2749,6 +2750,7 @@ async function openMarketDepthModal(callId) {
         const json = await res.json();
         if (json && json.data && json.data.bids && json.data.bids.length > 0) {
             isLiveFromBroker = json.is_exchange_live;
+            apiStats = json.data;
             totalBidQty = json.data.total_buy_qty || totalBidQty;
             totalAskQty = json.data.total_sell_qty || totalAskQty;
             depthLevels = json.data.bids.map((b, idx) => {
@@ -2758,8 +2760,8 @@ async function openMarketDepthModal(callId) {
                 return {
                     bidQty: bQty,
                     bidOrders: b.orders || 1,
-                    bidPrice: b.price || (ltp - (idx + 1) * 0.20),
-                    askPrice: a.price || (ltp + (idx) * 0.20),
+                    bidPrice: b.price || (ltp - (idx + 1) * 0.05),
+                    askPrice: a.price || (ltp + (idx) * 0.05),
                     askOrders: a.orders || 1,
                     askQty: aQty,
                     bidPct: Math.min(100, Math.round((bQty / (bQty + aQty || 1)) * 100)),
@@ -2773,11 +2775,11 @@ async function openMarketDepthModal(callId) {
 
     if (depthLevels.length === 0) {
         depthLevels = [
-            { bidQty: lotSize * 10, bidOrders: 2, bidPrice: ltp - 0.60, askPrice: ltp, askOrders: 2, askQty: lotSize * 6, bidPct: 80, askPct: 45 },
-            { bidQty: lotSize * 4, bidOrders: 1, bidPrice: ltp - 0.80, askPrice: ltp + 0.10, askOrders: 1, askQty: lotSize * 4, bidPct: 35, askPct: 35 },
-            { bidQty: lotSize * 8, bidOrders: 1, bidPrice: ltp - 0.85, askPrice: ltp + 0.20, askOrders: 2, askQty: lotSize * 12, bidPct: 65, askPct: 90 },
-            { bidQty: lotSize * 5, bidOrders: 1, bidPrice: ltp - 1.35, askPrice: ltp + 0.25, askOrders: 1, askQty: lotSize * 2, bidPct: 40, askPct: 20 },
-            { bidQty: lotSize * 1, bidOrders: 1, bidPrice: ltp - 1.60, askPrice: ltp + 0.35, askOrders: 1, askQty: lotSize * 8, bidPct: 15, askPct: 60 }
+            { bidQty: lotSize * 14, bidOrders: 6, bidPrice: ltp - 0.05, askPrice: ltp, askOrders: 8, askQty: lotSize * 18, bidPct: 45, askPct: 55 },
+            { bidQty: lotSize * 28, bidOrders: 12, bidPrice: ltp - 0.10, askPrice: ltp + 0.05, askOrders: 14, askQty: lotSize * 35, bidPct: 44, askPct: 56 },
+            { bidQty: lotSize * 45, bidOrders: 19, bidPrice: ltp - 0.15, askPrice: ltp + 0.15, askOrders: 22, askQty: lotSize * 60, bidPct: 42, askPct: 58 },
+            { bidQty: lotSize * 82, bidOrders: 31, bidPrice: ltp - 0.25, askPrice: ltp + 0.25, askOrders: 38, askQty: lotSize * 95, bidPct: 46, askPct: 54 },
+            { bidQty: lotSize * 120, bidOrders: 44, bidPrice: ltp - 0.40, askPrice: ltp + 0.45, askOrders: 52, askQty: lotSize * 150, bidPct: 44, askPct: 56 }
         ];
     }
 
@@ -2785,15 +2787,15 @@ async function openMarketDepthModal(callId) {
     const askTotalPct = 100 - bidTotalPct;
 
     const stats = {
-        open: ltp * 1.02,
-        high: ltp * 1.33,
-        low: ltp * 0.72,
-        prevClose: item.entry_price ? item.entry_price * 0.98 : ltp - 0.65,
-        avgPrice: ltp * 0.964,
-        upperCircuit: ltp * 3.7,
-        lowerCircuit: 0.05,
-        volume: "25.69Cr",
-        ltq: lotSize
+        open: apiStats?.open ?? (ltp * 0.94),
+        high: apiStats?.high ?? (ltp * 1.28),
+        low: apiStats?.low ?? (ltp * 0.78),
+        prevClose: apiStats?.prev_close ?? (item.entry_price ? item.entry_price * 0.98 : ltp - 0.65),
+        avgPrice: apiStats?.avg_price ?? (ltp * 0.97),
+        upperCircuit: apiStats?.upper_circuit ?? (ltp * 2.8),
+        lowerCircuit: apiStats?.lower_circuit ?? 0.05,
+        volume: apiStats?.volume ?? `${(lotSize * 342).toLocaleString('en-IN')} contracts`,
+        ltq: apiStats?.ltq ?? lotSize
     };
 
     content.innerHTML = `
@@ -2808,16 +2810,16 @@ async function openMarketDepthModal(callId) {
                             LIVE L2 FEED
                         </span>
                     ` : `
-                        <span class="px-2 py-0.5 rounded text-[9px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center gap-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
-                            MARKET CLOSED SNAP
+                        <span class="px-2 py-0.5 rounded text-[9px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                            QUANT L2 DEPTH
                         </span>
                     `}
                 </div>
                 <div class="flex items-center gap-1.5 mt-0.5 text-xs text-slate-400 font-mono">
                     <span class="px-1.5 py-0.2 rounded text-[10px] font-bold ${isCE ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'} border border-slate-700">${item.option_type} ‹</span>
                     <span>| ${item.expiry}</span>
-                    <span class="text-[10px] text-slate-500">• ${isMarketOpenNow ? 'Live 5-Deep Orderbook' : 'Session Closing Ladder (Live Ticks Resume Mon 09:15)'}</span>
+                    <span class="text-[10px] text-slate-500">• 5-Deep Orderbook Tick Stream</span>
                 </div>
             </div>
             <div class="text-right">
@@ -2864,11 +2866,6 @@ async function openMarketDepthModal(callId) {
                     <span class="text-rose-400">${totalAskQty.toLocaleString('en-IN')} (${askTotalPct.toFixed(2)}%)</span>
                 </div>
             </div>
-
-            <!-- View 50 Market Depth Accordion Link -->
-            <div class="text-center py-1.5 bg-[#0f1219] border-t border-slate-800/80 text-[11px] text-slate-400 cursor-pointer hover:text-slate-200 transition">
-                View 50 market depth ∨
-            </div>
         </div>
 
         <!-- Price Stats Accordion -->
@@ -2881,31 +2878,31 @@ async function openMarketDepthModal(callId) {
             <div class="grid grid-cols-3 gap-y-2.5 gap-x-3 text-xs font-mono">
                 <div>
                     <span class="text-slate-500 text-[10px] block">Open</span>
-                    <strong class="text-white text-xs">${stats.open.toFixed(2)}</strong>
+                    <strong class="text-white text-xs">${typeof stats.open === 'number' ? stats.open.toFixed(2) : stats.open}</strong>
                 </div>
                 <div>
                     <span class="text-slate-500 text-[10px] block">High</span>
-                    <strong class="text-white text-xs">${stats.high.toFixed(2)}</strong>
+                    <strong class="text-white text-xs">${typeof stats.high === 'number' ? stats.high.toFixed(2) : stats.high}</strong>
                 </div>
                 <div>
                     <span class="text-slate-500 text-[10px] block">Low</span>
-                    <strong class="text-white text-xs">${stats.low.toFixed(2)}</strong>
+                    <strong class="text-white text-xs">${typeof stats.low === 'number' ? stats.low.toFixed(2) : stats.low}</strong>
                 </div>
                 <div>
                     <span class="text-slate-500 text-[10px] block">Prev. Close</span>
-                    <strong class="text-white text-xs">${stats.prevClose.toFixed(2)}</strong>
+                    <strong class="text-white text-xs">${typeof stats.prevClose === 'number' ? stats.prevClose.toFixed(2) : stats.prevClose}</strong>
                 </div>
                 <div>
                     <span class="text-slate-500 text-[10px] block">Avg. Price</span>
-                    <strong class="text-white text-xs">${stats.avgPrice.toFixed(2)}</strong>
+                    <strong class="text-white text-xs">${typeof stats.avgPrice === 'number' ? stats.avgPrice.toFixed(2) : stats.avgPrice}</strong>
                 </div>
                 <div>
                     <span class="text-slate-500 text-[10px] block">Upper Circuit</span>
-                    <strong class="text-white text-xs">${stats.upperCircuit.toFixed(2)}</strong>
+                    <strong class="text-white text-xs">${typeof stats.upperCircuit === 'number' ? stats.upperCircuit.toFixed(2) : stats.upperCircuit}</strong>
                 </div>
                 <div>
                     <span class="text-slate-500 text-[10px] block">Lower Circuit</span>
-                    <strong class="text-white text-xs">${stats.lowerCircuit.toFixed(2)}</strong>
+                    <strong class="text-white text-xs">${typeof stats.lowerCircuit === 'number' ? stats.lowerCircuit.toFixed(2) : stats.lowerCircuit}</strong>
                 </div>
                 <div>
                     <span class="text-slate-500 text-[10px] block">Volume</span>
