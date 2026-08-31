@@ -19,8 +19,8 @@ class SpreadBuilderService:
 
         nifty_spot = 24090.85
         nifty_chg = -116.90
-        banknifty_spot = 57509.95
-        banknifty_chg = -475.05
+        banknifty_spot = 51240.80
+        banknifty_chg = 145.20
 
         if live_quotes:
             if "NIFTY" in live_quotes and live_quotes["NIFTY"].get("ltp"):
