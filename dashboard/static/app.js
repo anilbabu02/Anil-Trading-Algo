@@ -1076,6 +1076,8 @@ function initLivePriceTicker() {
     fetchRealFyersQuotes();
     fetchOptionSuggestions();
     updateOptionDeskPcrBadge("ALL");
+    loadCurrentMarketAnalysis();
+    loadPreMarketAnalysis();
     
     // Visibility-Aware Polling Intervals
     setInterval(() => {
@@ -1086,6 +1088,8 @@ function initLivePriceTicker() {
         if (isDocumentVisible) {
             fetchOptionSuggestions();
             updateOptionDeskPcrBadge(currentSuggestionFilter);
+            loadCurrentMarketAnalysis();
+            loadPreMarketAnalysis();
         }
     }, 3000);
 }
