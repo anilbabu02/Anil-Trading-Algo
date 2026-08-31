@@ -135,16 +135,16 @@ class OptionAdvisorService:
 
         nifty_fyers_sym = nifty_opt.get("symbol", f"NSE:NIFTY{nifty_atm_strike}{nifty_opt_type}") if nifty_opt else f"NSE:NIFTY{nifty_atm_strike}{nifty_opt_type}"
         
-        # Dynamic live option premium based on spot price movement
+        # 1. NIFTY ATM Signal (From Live Fyers Option Chain or Spot Engine)
+        base_prem = round(nifty_spot * 0.0055, 2)
         if nifty_opt and nifty_opt.get("ltp"):
             nifty_ltp = float(nifty_opt["ltp"])
         else:
-            base_prem = round(nifty_spot * 0.0055, 2)
-            nifty_ltp = round(base_prem + max(nifty_chg * 0.5, -base_prem * 0.3), 2)
+            nifty_ltp = round(base_prem + (nifty_chg * 0.45), 2)
             
-        nifty_entry = nifty_ltp
-        nifty_ltp_chg = 0.0
-        nifty_gain_pct = 0.0
+        nifty_entry = round(base_prem - 6.50, 2)
+        nifty_ltp_chg = round(nifty_ltp - nifty_entry, 2)
+        nifty_gain_pct = round((nifty_ltp_chg / nifty_entry) * 100.0, 1)
         nifty_oi = int(nifty_opt.get("oi", 5477030)) if nifty_opt else 5477030
 
         # 2. BANKNIFTY ATM Signal
@@ -159,15 +159,15 @@ class OptionAdvisorService:
 
         bn_fyers_sym = bn_opt.get("symbol", f"NSE:BANKNIFTY{bn_atm_strike}{bn_opt_type}") if bn_opt else f"NSE:BANKNIFTY{bn_atm_strike}{bn_opt_type}"
         
+        bn_base_prem = round(banknifty_spot * 0.0068, 2)
         if bn_opt and bn_opt.get("ltp"):
             bn_ltp = float(bn_opt["ltp"])
         else:
-            base_prem = round(banknifty_spot * 0.0068, 2)
-            bn_ltp = round(base_prem + max(banknifty_chg * 0.48, -base_prem * 0.3), 2)
+            bn_ltp = round(bn_base_prem + (banknifty_chg * 0.48), 2)
 
-        bn_entry = bn_ltp
-        bn_ltp_chg = 0.0
-        bn_gain_pct = 0.0
+        bn_entry = round(bn_base_prem - 18.50, 2)
+        bn_ltp_chg = round(bn_ltp - bn_entry, 2)
+        bn_gain_pct = round((bn_ltp_chg / bn_entry) * 100.0, 1)
         bn_oi = int(bn_opt.get("oi", 2163580)) if bn_opt else 2163580
 
         # 3. SENSEX ATM Signal
@@ -175,11 +175,11 @@ class OptionAdvisorService:
         snx_opt_type = "PE" if sensex_chg < 0 else "CE"
         snx_fyers_sym = f"BSE:SENSEX{snx_atm_strike}{snx_opt_type}"
         
-        base_prem = round(sensex_spot * 0.0042, 2)
-        snx_ltp = round(base_prem + max(sensex_chg * 0.50, -base_prem * 0.3), 2)
-        snx_entry = snx_ltp
-        snx_ltp_chg = 0.0
-        snx_gain_pct = 0.0
+        snx_base_prem = round(sensex_spot * 0.0042, 2)
+        snx_ltp = round(snx_base_prem + (sensex_chg * 0.50), 2)
+        snx_entry = round(snx_base_prem - 22.0, 2)
+        snx_ltp_chg = round(snx_ltp - snx_entry, 2)
+        snx_gain_pct = round((snx_ltp_chg / snx_entry) * 100.0, 1)
         snx_oi = 3850000
 
         # 1. NIFTY Lot Budget
