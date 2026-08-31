@@ -1,7 +1,7 @@
 """
 Pure Computation Option Suggestion Calls Desk.
-Reads from services.market_store.store without making outbound HTTP calls.
-Applies López de Prado Meta-Labeling, Scaled Wilder's ATR Stops, and Capital Budget Validation.
+Reads from services.market_store.store with analytical Black-Scholes Greeks,
+Scaled Wilder's ATR Stops, and Capital Budget Validation.
 """
 
 from __future__ import annotations
@@ -13,6 +13,7 @@ from typing import List, Dict, Any, Optional
 from config.settings import settings
 from services.market_calendar import now_ist, is_market_open
 from services.market_store import store
+from core.greeks import compute_greeks
 
 
 def get_next_expiry_info(target_weekday: int = 1) -> Dict[str, Any]:
@@ -40,7 +41,7 @@ class OptionAdvisorService:
     """
     Pure compute option desk:
     - Reads from MarketStore singleton (Zero outbound broker latency).
-    - Memoized 1s execution.
+    - Analytical Black-Scholes Greeks (Delta, Gamma, Theta, Vega, IV).
     - Scaled ATR(14) Stops: effective_atr = atr_5m * sqrt(horizon / 5).
     - Hard capital guardrails: flags 'BLOCKED' when risk > ₹500 or cost > ₹10,800.
     """
@@ -98,13 +99,12 @@ class OptionAdvisorService:
         # 3. ATR Data from Store (scaled to 45m holding horizon)
         atr_map = store.atr_map()
         holding_mins = settings.STAGNATION_EXIT_MINUTES or 45
-        time_scaling = math.sqrt(holding_mins / 5.0)  # sqrt(45 / 5) = 3.0
+        time_scaling = math.sqrt(holding_mins / 5.0)
 
         def get_effective_atr(inst: str, spot: float) -> tuple[float, float, str]:
             if inst in atr_map and atr_map[inst] > 0:
                 bar_atr = atr_map[inst]
                 return bar_atr, round(bar_atr * time_scaling, 2), "measured"
-            # Proxy fallback: 0.15% of spot
             bar_atr = round(spot * 0.0015, 2)
             return bar_atr, round(bar_atr * time_scaling, 2), "proxy"
 
@@ -143,7 +143,7 @@ class OptionAdvisorService:
             "SENSEX": {"pcr": s_pcr, "bias": s_bias, "is_bull": s_bull, "underlying": "BSE SENSEX", "put_oi": s_poi, "call_oi": s_coi}
         }
 
-        # 5. Strike Selection & Option Cards
+        # 5. Strike Selection & Dynamic Black-Scholes Greeks
         calls = []
 
         # --- NIFTY ---
@@ -158,6 +158,15 @@ class OptionAdvisorService:
         n_lot_cost = round(n_entry * n_lot, 2)
         n_stop_pts = round(n_eff_atr * 0.75, 2)
         n_risk = round(n_stop_pts * n_lot, 2)
+
+        # Dynamic Black-Scholes Greeks
+        n_greeks = compute_greeks(
+            spot=nifty_spot,
+            strike=n_strike,
+            dte_days=max(0.1, nifty_exp["dte"]),
+            iv_pct=float(n_row.get("iv", 14.2)) if n_row and n_row.get("iv") else 14.2,
+            option_type=n_opt_type
+        )
 
         n_blocked = []
         if n_lot_cost > 10800.0: n_blocked.append(f"Capital required ₹{n_lot_cost:,.2f} > ₹10,800 limit")
@@ -189,11 +198,11 @@ class OptionAdvisorService:
             "blocked_reasons": n_blocked,
             "lot_size": n_lot,
             "confidence": 96,
-            "delta": -0.52 if n_opt_type == "PE" else 0.52,
-            "theta": -9.8,
-            "gamma": 0.0031,
-            "vega": 13.5,
-            "iv": 14.2,
+            "delta": n_greeks["delta"],
+            "theta": n_greeks["theta"],
+            "gamma": n_greeks["gamma"],
+            "vega": n_greeks["vega"],
+            "iv": n_greeks["iv"],
             "open_interest": int(n_row.get("oi", 20529990)) if n_row else 20529990,
             "timestamp": now_str,
             "data_source": n_src,
@@ -201,7 +210,7 @@ class OptionAdvisorService:
             "atr_5m_points": n_bar_atr,
             "atr_effective_points": n_eff_atr,
             "market_closed": market_closed,
-            "reason": f"NIFTY {n_strike} {n_opt_type} @ ₹{n_ltp:.2f}. ATR(14): {n_bar_atr} pts. 45m Horizon Risk: ₹{n_risk:,.2f}."
+            "reason": f"NIFTY {n_strike} {n_opt_type} @ ₹{n_ltp:.2f}. BS Delta: {n_greeks['delta']} | Theta: {n_greeks['theta']}. ATR(14): {n_bar_atr} pts. 45m Horizon Risk: ₹{n_risk:,.2f}."
         })
 
         # --- BANKNIFTY ---
@@ -216,6 +225,14 @@ class OptionAdvisorService:
         bn_lot_cost = round(bn_entry * bn_lot, 2)
         bn_stop_pts = round(bn_eff_atr * 0.75, 2)
         bn_risk = round(bn_stop_pts * bn_lot, 2)
+
+        bn_greeks = compute_greeks(
+            spot=bn_spot,
+            strike=bn_strike,
+            dte_days=max(0.1, bn_exp["dte"]),
+            iv_pct=float(bn_row.get("iv", 16.5)) if bn_row and bn_row.get("iv") else 16.5,
+            option_type=bn_opt_type
+        )
 
         bn_blocked = []
         if bn_lot_cost > 10800.0: bn_blocked.append(f"Capital required ₹{bn_lot_cost:,.2f} > ₹10,800 limit")
@@ -247,11 +264,11 @@ class OptionAdvisorService:
             "blocked_reasons": bn_blocked,
             "lot_size": bn_lot,
             "confidence": 98,
-            "delta": 0.58 if bn_opt_type == "CE" else -0.58,
-            "theta": -24.5,
-            "gamma": 0.0018,
-            "vega": 28.2,
-            "iv": 16.5,
+            "delta": bn_greeks["delta"],
+            "theta": bn_greeks["theta"],
+            "gamma": bn_greeks["gamma"],
+            "vega": bn_greeks["vega"],
+            "iv": bn_greeks["iv"],
             "open_interest": int(bn_row.get("oi", 8450120)) if bn_row else 8450120,
             "timestamp": now_str,
             "data_source": bn_src,
@@ -259,7 +276,7 @@ class OptionAdvisorService:
             "atr_5m_points": bn_bar_atr,
             "atr_effective_points": bn_eff_atr,
             "market_closed": market_closed,
-            "reason": f"BANKNIFTY {bn_strike} {bn_opt_type} @ ₹{bn_ltp:.2f}. ATR(14): {bn_bar_atr} pts. 45m Horizon Risk: ₹{bn_risk:,.2f}."
+            "reason": f"BANKNIFTY {bn_strike} {bn_opt_type} @ ₹{bn_ltp:.2f}. BS Delta: {bn_greeks['delta']} | Theta: {bn_greeks['theta']}. ATR(14): {bn_bar_atr} pts. 45m Horizon Risk: ₹{bn_risk:,.2f}."
         })
 
         # --- SENSEX ---
@@ -274,6 +291,14 @@ class OptionAdvisorService:
         s_lot_cost = round(s_entry * s_lot, 2)
         s_stop_pts = round(s_eff_atr * 0.75, 2)
         s_risk = round(s_stop_pts * s_lot, 2)
+
+        s_greeks = compute_greeks(
+            spot=snx_spot,
+            strike=s_strike,
+            dte_days=max(0.1, snx_exp["dte"]),
+            iv_pct=float(s_row.get("iv", 13.8)) if s_row and s_row.get("iv") else 13.8,
+            option_type=s_opt_type
+        )
 
         s_blocked = []
         if s_lot_cost > 10800.0: s_blocked.append(f"Capital required ₹{s_lot_cost:,.2f} > ₹10,800 limit")
@@ -305,11 +330,11 @@ class OptionAdvisorService:
             "blocked_reasons": s_blocked,
             "lot_size": s_lot,
             "confidence": 95,
-            "delta": -0.48 if s_opt_type == "PE" else 0.48,
-            "theta": -12.4,
-            "gamma": 0.0022,
-            "vega": 18.0,
-            "iv": 13.8,
+            "delta": s_greeks["delta"],
+            "theta": s_greeks["theta"],
+            "gamma": s_greeks["gamma"],
+            "vega": s_greeks["vega"],
+            "iv": s_greeks["iv"],
             "open_interest": int(s_row.get("oi", 5200000)) if s_row else 5200000,
             "timestamp": now_str,
             "data_source": s_src,
@@ -317,7 +342,7 @@ class OptionAdvisorService:
             "atr_5m_points": s_bar_atr,
             "atr_effective_points": s_eff_atr,
             "market_closed": market_closed,
-            "reason": f"SENSEX {s_strike} {s_opt_type} @ ₹{s_ltp:.2f}. ATR(14): {s_bar_atr} pts. 45m Horizon Risk: ₹{s_risk:,.2f}."
+            "reason": f"SENSEX {s_strike} {s_opt_type} @ ₹{s_ltp:.2f}. BS Delta: {s_greeks['delta']} | Theta: {s_greeks['theta']}. ATR(14): {s_bar_atr} pts. 45m Horizon Risk: ₹{s_risk:,.2f}."
         })
 
         self._cached_suggestions = calls
