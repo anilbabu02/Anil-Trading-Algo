@@ -4,18 +4,25 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 from config.settings import settings
 
-def get_next_expiry_date(target_weekday: int) -> str:
+def get_next_expiry_info(target_weekday: int = 1) -> Dict[str, Any]:
     """
-    Calculates the exact upcoming market expiry date.
-    target_weekday: 0=Monday, 1=Tuesday, 2=Wednesday, 3=Thursday, 4=Friday
+    Calculates the exact upcoming market expiry date and DTE matching the exchange option chain.
+    target_weekday: 0=Mon, 1=Tue (NIFTY weekly), 2=Wed (BANKNIFTY), 3=Thu, 4=Fri (SENSEX)
     """
     now = datetime.now()
     days_ahead = target_weekday - now.weekday()
-    # If today is expiry day but after 15:30 IST market close, advance to next week
     if days_ahead < 0 or (days_ahead == 0 and (now.hour > 15 or (now.hour == 15 and now.minute >= 30))):
         days_ahead += 7
     expiry_dt = now + timedelta(days=days_ahead)
-    return expiry_dt.strftime("%d-%b-%Y")
+    dte = days_ahead
+    date_str = expiry_dt.strftime("%d-%b-%Y")
+    label = f"{date_str} ({dte}D)" if dte > 0 else f"{date_str} (0DTE)"
+    return {
+        "date_str": date_str,
+        "dte": dte,
+        "label": label,
+        "short_label": f"{expiry_dt.strftime('%d-%b')} ({dte}D)"
+    }
 
 
 class OptionAdvisorService:
@@ -53,10 +60,14 @@ class OptionAdvisorService:
         now_str = now.strftime("%H:%M:%S")
         is_market_closed = (now.hour > 15) or (now.hour == 15 and now.minute >= 30) or (now.hour < 9)
 
-        # Dynamic Expiry Calculation for active contracts
-        nifty_expiry_str = f"Current Weekly ({get_next_expiry_date(3)})"     # Thursday
-        banknifty_expiry_str = f"Current Weekly ({get_next_expiry_date(2)})" # Wednesday
-        sensex_expiry_str = f"Current Weekly ({get_next_expiry_date(4)})"    # Friday
+        # Dynamic Expiry Calculation matching live exchange option chain
+        nifty_exp = get_next_expiry_info(1)       # Tuesday weekly (e.g. 01-Sep-2026 1D)
+        banknifty_exp = get_next_expiry_info(2)   # Wednesday weekly (e.g. 02-Sep-2026 2D)
+        sensex_exp = get_next_expiry_info(4)      # Friday weekly (e.g. 04-Sep-2026 4D)
+
+        nifty_expiry_str = nifty_exp["label"]
+        banknifty_expiry_str = banknifty_exp["label"]
+        sensex_expiry_str = sensex_exp["label"]
 
         # Base spot defaults
         nifty_spot = 24150.25

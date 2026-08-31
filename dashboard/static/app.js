@@ -1251,7 +1251,10 @@ function renderSuggestions(list) {
                             <span class="text-sm font-black text-white tracking-wide">${item.symbol}</span>
                             ${unifiedBuyBadge}
                         </div>
-                        <p class="text-[11px] text-slate-400 mt-0.5 font-mono">${item.expiry} • Strike ${item.strike}</p>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-cyan-300 font-mono text-[10px] font-bold">📅 ${item.expiry}</span>
+                            <span class="text-[11px] text-slate-400 font-mono">Strike ${item.strike}</span>
+                        </div>
                     </div>
                     ${statusBadge}
                 </div>
