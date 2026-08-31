@@ -2440,8 +2440,18 @@ async function startFyersOAuthLogin() {
         const res = await fetch("/api/fyers/login-url");
         const data = await res.json();
         if (data.login_url) {
-            // Open Fyers OAuth authorization login in new window/tab
-            window.open(data.login_url, "_blank", "width=600,height=750");
+            // Listen for cross-window message from callback popup
+            const authHandler = (event) => {
+                if (event.data && event.data.type === 'FYERS_AUTH_SUCCESS') {
+                    window.removeEventListener('message', authHandler);
+                    closeFyersConnectModal();
+                    checkFyersAccountStatus();
+                    alert(`🎉 Fyers Connected Successfully!\n\nAccount: ${event.data.name}\nAvailable Margin: ₹${Number(event.data.capital).toLocaleString('en-IN')}`);
+                }
+            };
+            window.addEventListener('message', authHandler);
+            // Open Fyers OAuth authorization login in popup
+            window.open(data.login_url, "fyers_oauth_login", "width=600,height=750,menubar=no,toolbar=no");
         } else {
             alert("Error obtaining Fyers login URL.");
         }
