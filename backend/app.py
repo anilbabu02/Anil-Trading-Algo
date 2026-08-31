@@ -6,7 +6,7 @@ from typing import Dict, Any, List, Optional
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse, HTMLResponse
+from fastapi.responses import FileResponse, JSONResponse, HTMLResponse, StreamingResponse
 from pydantic import BaseModel
 
 from config.settings import settings
@@ -22,6 +22,8 @@ from services.scheduler import AutomatedSchedulerService
 from services.spread_builder import spread_builder_service
 from services.fyers_totp_auth import fyers_totp_service
 from services.fyers_websocket_service import fyers_ws_service
+from services.market_store import store
+from services.feed_manager import feed
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_DIR = BASE_DIR / "dashboard" / "static"
@@ -38,9 +40,11 @@ scheduler_service = AutomatedSchedulerService(telegram_bot)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
+    feed.start()
     scheduler_service.start()
     yield
     # Shutdown
+    feed.stop()
     scheduler_service.stop()
 
 app = FastAPI(
@@ -465,20 +469,83 @@ async def generate_breaking_news() -> Dict[str, Any]:
     await ws_broadcaster({"type": "NEW_BREAKING_NEWS", "data": new_item})
     return {"status": "SUCCESS", "news": new_item}
 
+@app.get("/api/feed/health")
+def get_feed_health() -> Dict[str, Any]:
+    """Unified feed health, request budget status, and data provenance."""
+    return store.snapshot()
+
+@app.get("/api/market-snapshot")
+def get_market_snapshot() -> Dict[str, Any]:
+    """Consolidated market snapshot replacing multiple polled endpoints."""
+    snap = store.snapshot()
+    return {
+        **snap,
+        "suggestions": option_advisor.get_all_suggestions(),
+        "pcr": option_advisor.get_pcr_data()
+    }
+
+@app.get("/api/stream")
+async def sse_market_stream(interval: float = 1.0):
+    """Server-Sent Events (SSE) stream for zero-lag market snapshot push."""
+    import json
+    async def event_generator():
+        last_epoch = 0.0
+        while True:
+            snap = store.snapshot()
+            curr_epoch = snap.get("epoch", 0.0)
+            if curr_epoch != last_epoch:
+                last_epoch = curr_epoch
+                payload = json.dumps({
+                    **snap,
+                    "suggestions": option_advisor.get_all_suggestions(),
+                    "pcr": option_advisor.get_pcr_data()
+                })
+                yield f"data: {payload}\n\n"
+            await asyncio.sleep(interval)
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "X-Accel-Buffering": "no",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive"
+        }
+    )
+
+@app.get("/api/option-suggestions/status")
+def get_option_suggestions_status() -> Dict[str, Any]:
+    """Reports why option desk signals are active or blocked with live provenance."""
+    suggestions = option_advisor.get_all_suggestions()
+    return {
+        "count": len(suggestions),
+        "as_of": datetime.now().strftime("%H:%M:%S"),
+        "suggestions": [
+            {
+                "symbol": s["symbol"],
+                "status": s["status"],
+                "blocked_reasons": s.get("blocked_reasons", []),
+                "data_source": s.get("data_source"),
+                "atr_source": s.get("atr_source"),
+                "atr_5m_points": s.get("atr_5m_points"),
+                "atr_effective_points": s.get("atr_effective_points"),
+                "entry_price": s.get("entry_price"),
+                "current_ltp": s.get("current_ltp"),
+                "lot_cost": s.get("total_lot_cost")
+            }
+            for s in suggestions
+        ]
+    }
+
 @app.get("/api/option-suggestions")
 def get_option_suggestions() -> List[Dict[str, Any]]:
-    quotes_res = get_live_quotes()
-    live_map = quotes_res.get("quotes", {})
-    return option_advisor.get_all_suggestions(live_map)
+    return option_advisor.get_all_suggestions()
 
 @app.get("/api/pcr")
 def get_live_pcr_telemetry() -> Dict[str, Any]:
-    quotes_res = get_live_quotes()
-    live_map = quotes_res.get("quotes", {})
     return {
         "status": "SUCCESS",
         "timestamp": datetime.now().strftime("%H:%M:%S"),
-        "data": option_advisor.get_pcr_data(live_map)
+        "data": option_advisor.get_pcr_data()
     }
 
 class AIChatRequest(BaseModel):

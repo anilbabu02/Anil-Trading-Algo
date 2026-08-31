@@ -1078,25 +1078,78 @@ async function fetchRealFyersQuotes() {
     }
 }
 
+let marketStream = null;
+
+function renderFeedBadge(snap) {
+    const el = document.getElementById('version-live-badge');
+    if (!el) return;
+    const spot = snap && snap.spot_live;
+    const chain = snap && snap.chain_live;
+    let label, cls;
+    if (spot && chain) {
+        label = 'LIVE';
+        cls = 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40';
+    } else if (spot && !chain) {
+        label = 'SPOT ONLY';
+        cls = 'bg-amber-500/20 text-amber-400 border border-amber-500/40';
+    } else {
+        label = 'NO LIVE FEED';
+        cls = 'bg-rose-500/20 text-rose-400 border border-rose-500/40';
+    }
+    el.className = `px-2 py-0.5 rounded text-[10px] font-mono font-bold ${cls} flex items-center gap-1 shrink-0`;
+    el.innerHTML = `<span class="w-1.5 h-1.5 rounded-full ${spot && chain ? 'bg-emerald-400 animate-ping' : 'bg-rose-400'}"></span><span>${label}</span>`;
+}
+
+function initMarketStream() {
+    if (typeof EventSource !== "undefined") {
+        if (marketStream) {
+            try { marketStream.close(); } catch (e) {}
+        }
+        try {
+            marketStream = new EventSource('/api/stream?interval=1');
+            marketStream.onmessage = (evt) => {
+                try {
+                    const snap = JSON.parse(evt.data);
+                    renderFeedBadge(snap);
+                    if (snap.quotes) {
+                        for (const [key, q] of Object.entries(snap.quotes)) {
+                            if (INSTRUMENTS_DATA[key]) {
+                                INSTRUMENTS_DATA[key].basePrice = q.ltp;
+                                INSTRUMENTS_DATA[key].change = q.change;
+                                INSTRUMENTS_DATA[key].changePct = q.change_pct;
+                            }
+                        }
+                    }
+                    if (snap.suggestions) {
+                        allSuggestionsData = snap.suggestions;
+                        applyCurrentSuggestionFilter();
+                    }
+                } catch (err) {
+                    console.error("SSE parse error:", err);
+                }
+            };
+            marketStream.onerror = () => {
+                renderFeedBadge({ spot_live: false, chain_live: false });
+            };
+        } catch (e) {
+            console.error("EventSource initialization error:", e);
+        }
+    }
+}
+
 function initLivePriceTicker() {
     fetchRealFyersQuotes();
     fetchOptionSuggestions();
     updateOptionDeskPcrBadge("ALL");
     loadCurrentMarketAnalysis();
     loadPreMarketAnalysis();
+    initMarketStream();
     
-    // High-Frequency 1-Second Continuous Live Exchange Stream
+    // Low-overhead backup polling interval
     setInterval(() => {
         if (isDocumentVisible) {
             fetchRealFyersQuotes();
             fetchOptionSuggestions();
-        }
-    }, 1000);
-    
-    setInterval(() => {
-        if (isDocumentVisible) {
-            updateOptionDeskPcrBadge(currentSuggestionFilter);
-            loadCurrentMarketAnalysis();
         }
     }, 1500);
 }
