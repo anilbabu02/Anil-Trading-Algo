@@ -172,36 +172,37 @@ def get_events(limit: int = 50) -> List[Dict[str, Any]]:
 def fetch_external_live_quotes() -> Dict[str, Any]:
     """Fetches 100% real-time live Indian exchange quotes directly from exchange data stream."""
     tickers = {
-        "NIFTY": ("^NSEI", "NSE:NIFTY50-INDEX"),
-        "BANKNIFTY": ("^NSEBANK", "NSE:NIFTYBANK-INDEX"),
-        "SENSEX": ("^BSESN", "BSE:SENSEX-INDEX"),
-        "BANKEX": ("^BSEBANK", "BSE:BANKEX-INDEX"),
+        "NIFTY": ("%5ENSEI", "NSE:NIFTY50-INDEX"),
+        "BANKNIFTY": ("%5ENSEBANK", "NSE:NIFTYBANK-INDEX"),
+        "SENSEX": ("%5EBSESN", "BSE:SENSEX-INDEX"),
+        "BANKEX": ("%5EBSEBANK", "BSE:BANKEX-INDEX"),
         "FINNIFTY": ("NIFTY_FIN_SERVICE.NS", "NSE:FINNIFTY-INDEX")
     }
     data_map = {}
     for name, (tick, sym) in tickers.items():
         try:
             url = f"https://query1.finance.yahoo.com/v8/finance/chart/{tick}?interval=1m&range=1d"
-            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-            with urllib.request.urlopen(req, timeout=1.8) as resp:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"})
+            with urllib.request.urlopen(req, timeout=2.5) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
-                meta = data["chart"]["result"][0]["meta"]
-                ltp = float(meta["regularMarketPrice"])
-                prev_close = float(meta.get("previousClose", meta.get("chartPreviousClose", ltp)))
-                chg = round(ltp - prev_close, 2)
-                chgp = round((chg / prev_close) * 100.0, 2)
-                data_map[name] = {
-                    "symbol": sym,
-                    "ltp": ltp,
-                    "change": chg,
-                    "change_pct": chgp,
-                    "open": float(meta.get("regularMarketDayHigh", ltp)),
-                    "high": float(meta.get("regularMarketDayHigh", ltp)),
-                    "low": float(meta.get("regularMarketDayLow", ltp)),
-                    "prev_close": prev_close
-                }
-        except Exception:
-            pass
+                if data.get("chart", {}).get("result"):
+                    meta = data["chart"]["result"][0]["meta"]
+                    ltp = float(meta["regularMarketPrice"])
+                    prev_close = float(meta.get("previousClose", meta.get("chartPreviousClose", ltp)))
+                    chg = round(ltp - prev_close, 2)
+                    chgp = round((chg / prev_close) * 100.0, 2)
+                    data_map[name] = {
+                        "symbol": sym,
+                        "ltp": ltp,
+                        "change": chg,
+                        "change_pct": chgp,
+                        "open": float(meta.get("regularMarketDayHigh", ltp)),
+                        "high": float(meta.get("regularMarketDayHigh", ltp)),
+                        "low": float(meta.get("regularMarketDayLow", ltp)),
+                        "prev_close": prev_close
+                    }
+        except Exception as e:
+            print(f"Error fetching external quote for {name}:", e)
     return data_map
 
 @app.get("/api/live-quotes")
