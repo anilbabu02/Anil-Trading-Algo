@@ -171,6 +171,7 @@ def get_events(limit: int = 50) -> List[Dict[str, Any]]:
 
 def fetch_external_live_quotes() -> Dict[str, Any]:
     """Fetches 100% real-time live Indian exchange quotes directly from exchange data stream."""
+    import urllib.request, json
     tickers = {
         "NIFTY": ("%5ENSEI", "NSE:NIFTY50-INDEX"),
         "BANKNIFTY": ("%5ENSEBANK", "NSE:NIFTYBANK-INDEX"),
