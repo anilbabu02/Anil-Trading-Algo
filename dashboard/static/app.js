@@ -1034,6 +1034,12 @@ async function fetchRealFyersQuotes() {
                 }
             }
 
+            const verBadge = document.getElementById("version-live-badge");
+            if (verBadge) {
+                verBadge.className = "px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center gap-1 shrink-0";
+                verBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span><span>REAL LIVE STREAM</span>`;
+            }
+
             const activeQ = data.quotes[currentInstrument] || data.quotes["NIFTY"];
             if (activeQ) {
                 currentLTP = activeQ.ltp;
