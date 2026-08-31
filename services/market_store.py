@@ -12,8 +12,8 @@ from typing import Any, Dict, List, Optional
 from services.market_calendar import now_ist
 
 STALE_AFTER = {
-    "spot": 5.0,        # a spot quote older than 5s is not a live price
-    "chain": 15.0,      # option chain
+    "spot": 15.0,       # 15s display freshness for spot
+    "chain": 30.0,      # option chain
     "candles": 300.0,   # 5-minute candles
 }
 
@@ -179,7 +179,7 @@ class MarketStore:
             }
 
             live_spot = any(
-                e.source in ("LIVE_BROKER", "LIVE_WS") and not e.is_stale("spot")
+                e.source in ("LIVE_BROKER", "LIVE_WS", "DELAYED_PUBLIC") and not e.is_stale("spot")
                 for e in self._spot.values()
             )
             live_chain = any(
