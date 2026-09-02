@@ -223,52 +223,12 @@ def fetch_external_live_quotes() -> Dict[str, Any]:
 
 @app.get("/api/live-quotes")
 def get_live_quotes() -> Dict[str, Any]:
-    """Fetches real live quotes for all indices directly from Fyers API or Live Exchange Stream (cached 500ms)."""
-    cached = get_from_cache("live_quotes", 0.5)
-    if cached:
-        return cached
-
-    symbols = [
-        "NSE:NIFTY50-INDEX",
-        "NSE:NIFTYBANK-INDEX",
-        "BSE:SENSEX-INDEX",
-        "BSE:BANKEX-INDEX",
-        "NSE:FINNIFTY-INDEX"
-    ]
-    data_map = {}
-    try:
-        if hasattr(engine.broker, "get_quotes"):
-            quotes = engine.broker.get_quotes(symbols)
-            if quotes and quotes.get("d"):
-                for item in quotes["d"]:
-                    sym = item.get("n", "")
-                    v = item.get("v", {})
-                    key = "NIFTY"
-                    if "NIFTYBANK" in sym: key = "BANKNIFTY"
-                    elif "SENSEX" in sym: key = "SENSEX"
-                    elif "BANKEX" in sym: key = "BANKEX"
-                    elif "FINNIFTY" in sym: key = "FINNIFTY"
-                    
-                    data_map[key] = {
-                        "symbol": sym,
-                        "ltp": float(v.get("lp", 0.0)),
-                        "change": float(v.get("ch", 0.0)),
-                        "change_pct": float(v.get("chp", 0.0)),
-                        "open": float(v.get("open_price", 0.0)),
-                        "high": float(v.get("high_price", 0.0)),
-                        "low": float(v.get("low_price", 0.0)),
-                        "prev_close": float(v.get("prev_close_price", 0.0))
-                    }
-    except Exception as e:
-        print("Live quotes error:", e)
-
-    # Fallback to direct real-time exchange stream if broker token is offline/expired
+    """Fetches real live quotes from in-memory MarketStore snapshot (< 2ms response time)."""
+    data_map = store.all_spot()
     if not data_map:
         data_map = fetch_external_live_quotes()
-
-    res = {"status": "SUCCESS", "is_live": bool(data_map), "quotes": data_map}
-    set_in_cache("live_quotes", res)
-    return res
+        store.put_spot(data_map, "DELAYED_PUBLIC")
+    return {"status": "SUCCESS", "is_live": bool(data_map), "quotes": data_map}
 
 @app.get("/api/market-depth")
 def get_market_depth(symbol: str = "NSE:NIFTY50-INDEX", ltp: Optional[float] = None) -> Dict[str, Any]:
