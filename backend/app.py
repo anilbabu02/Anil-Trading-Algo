@@ -1018,6 +1018,20 @@ async def trigger_premarket_digest() -> Dict[str, Any]:
         "premarket_analysis": pm_data
     }
 
+@app.post("/api/telegram/trigger-845-signals")
+async def trigger_845_option_signals() -> Dict[str, Any]:
+    """Manually triggers or tests the 08:45 AM Option Signal & Live Data Analysis Telegram broadcast."""
+    suggestions = option_advisor.get_all_suggestions()
+    pcr_data = option_advisor.get_pcr_data()
+    res = await telegram_bot.broadcast_845am_option_signals(suggestions, pcr_data)
+    success = res[0] if isinstance(res, tuple) else bool(res)
+    detail = res[1] if isinstance(res, tuple) and len(res) > 1 else ("Dispatched to Telegram" if success else "Failed to send")
+    return {
+        "status": "SUCCESS" if success else "FAILED",
+        "message": f"08:45 AM Option Signals Alert: {detail}",
+        "signals_count": len(suggestions)
+    }
+
 @app.get("/api/telegram/bot-info")
 async def get_telegram_bot_info() -> Dict[str, Any]:
     try:

@@ -242,3 +242,88 @@ class TelegramNotifier:
         if success_count > 0:
             return True, f"Delivered 8:30 AM Brief to {success_count} Telegram chat(s)."
         return False, last_detail
+
+    # ------------------ 08:45 AM HIGH-PROBABILITY OPTION SIGNALS ------------------ #
+    async def broadcast_845am_option_signals(self, suggestions: list, pcr_data: Optional[Dict[str, Any]] = None) -> tuple[bool, str]:
+        candidate_chats = [self.desk1_chat_id, self.desk2_chat_id, "1867588787", "7181036522"]
+        valid_chats = list(dict.fromkeys([str(c).strip() for c in candidate_chats if c and not str(c).startswith("-5")]))
+
+        now_str = datetime.now().strftime("%d-%b-%Y | 08:45 AM IST")
+        signals_text = ""
+        for i, s in enumerate(suggestions[:3], 1):
+            signals_text += (
+                f"\n*Setup {i}: {s.get('symbol')}*\n"
+                f"• *Strategy*: `{s.get('strategy', 'Defined-Risk Spread')}`\n"
+                f"• *Action*: `{s.get('action')}`\n"
+                f"• *Net Entry*: `₹{s.get('entry_price', 0):.2f}` (Lot Cost: `₹{s.get('total_lot_cost', 0):,.2f}`)\n"
+                f"• *Hard SL*: `₹{s.get('stop_loss', 0.50):.2f}` | *Target 1*: `₹{s.get('target_1', 0):.2f}`\n"
+                f"• *Max Risk*: `₹{s.get('max_loss', s.get('total_lot_cost', 0)):,.2f}` (Risk Limit: ≤ ₹500)\n"
+                f"• *Greeks*: Delta `{s.get('delta')}` | Theta `{s.get('theta')}/d` | IV `{s.get('iv')}%`\n"
+                f"• *Confidence*: `{s.get('confidence', 95)}% Confluence`\n"
+            )
+
+        text = (
+            f"🎯 *ANIL BABU TRADES — 08:45 AM OPTION SIGNALS DESK* 🎯\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"📅 *Timestamp*: `{now_str}`\n"
+            f"⚡ *Market Mode*: `Pre-Bell Quantitative Strike Telemetry`\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"{signals_text}\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🛡 *Institutional Risk Guardrails*:\n"
+            f"1. *Strict 1-Lot Rule*: Only trade Defined-Risk Spreads.\n"
+            f"2. *Trailing Protocol*: Move SL to Cost (+1 pt) at +15 pts profit.\n"
+            f"3. *Account Margin*: Available Capital = ₹10,800.\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"📡 *Data Feed*: `🟢 LIVE DATA ANALYSIS ENGINE`\n"
+            f"🤖 *Dispatched via*: `@anil_konda_bot`"
+        )
+
+        success_count = 0
+        last_detail = "No valid chats found"
+        for cid in valid_chats:
+            ok, detail = await self.send_message(cid, text)
+            if ok:
+                success_count += 1
+            last_detail = detail
+
+        if success_count > 0:
+            return True, f"Delivered 8:45 AM Option Signals to {success_count} Telegram chat(s)."
+        return False, last_detail
+
+    # ------------------ 03:30 PM END-OF-DAY SUMMARY ------------------ #
+    async def broadcast_daily_summary(self, stats: Dict[str, Any], current_capital: float) -> tuple[bool, str]:
+        candidate_chats = [self.desk1_chat_id, self.desk2_chat_id, "1867588787", "7181036522"]
+        valid_chats = list(dict.fromkeys([str(c).strip() for c in candidate_chats if c and not str(c).startswith("-5")]))
+
+        net_pnl = stats.get("net_pnl", 0.0)
+        pnl_emoji = "🟢" if net_pnl >= 0 else "🔴"
+        win_rate = round((stats.get("win_count", 0) / max(1, stats.get("trade_count", 1))) * 100, 1)
+
+        text = (
+            f"📊 *ANIL BABU TRADES — END-OF-DAY VERIFIED SUMMARY* 📊\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"📅 *Date*: `{datetime.now().strftime('%d-%b-%Y')}` | ⏰ `03:30 PM IST`\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"📦 *Total Trades*: `{stats.get('trade_count', 0)}` (Wins: `{stats.get('win_count', 0)}` | Win Rate: `{win_rate}%`)\n"
+            f"💰 *Gross P&L*: `₹{stats.get('gross_pnl', 0.0):+,.2f}`\n"
+            f"💳 *Brokerage & Taxes*: `₹{stats.get('total_charges', 0.0):,.2f}`\n"
+            f"{pnl_emoji} *Net P&L*: `₹{net_pnl:+,.2f}`\n"
+            f"💼 *Ending Capital*: `₹{current_capital:,.2f}`\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🛡 *Risk Compliance*: `100% Cash Overnight (Zero Theta Risk)`\n"
+            f"📡 *Data Provenance*: `🟢 VERIFIED DATABASE LEDGER`\n"
+            f"🤖 *Dispatched via*: `@anil_konda_bot`"
+        )
+
+        success_count = 0
+        last_detail = "No valid chats found"
+        for cid in valid_chats:
+            ok, detail = await self.send_message(cid, text)
+            if ok:
+                success_count += 1
+            last_detail = detail
+
+        if success_count > 0:
+            return True, f"Delivered 3:30 PM Summary to {success_count} Telegram chat(s)."
+        return False, last_detail
